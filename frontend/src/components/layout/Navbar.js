@@ -33,13 +33,13 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
       <div className="w-full mx-auto px-2 sm:px-4 lg:px-6">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-4">
             <img
               src={require('../../assets/logo/delta.jpg')}
               alt="Delta Fashion"
-              className="h-16 w-16 rounded object-cover"
+              className="h-12 w-12 md:h-16 md:w-16 rounded object-cover"
               loading="eager"
             />
             <div className="text-3xl md:text-4xl font-extrabold text-blue-600 tracking-tight">
@@ -101,7 +101,7 @@ const Navbar = () => {
 
             {/* User Menu */}
             {isAuthenticated ? (
-              <div className="relative group">
+              <div className="hidden md:block relative group">
                 <button className="flex items-center space-x-2 p-2 text-gray-700 hover:text-blue-600">
                   <UserIcon className="h-6 w-6" />
                   <span className="hidden sm:block">{user?.firstName}</span>
@@ -134,7 +134,7 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="hidden md:flex items-center space-x-2">
                 <Link to="/login" className="text-gray-700 hover:text-blue-600">
                   Connexion
                 </Link>
@@ -192,7 +192,6 @@ const Navbar = () => {
               <Link to="/contact" className="text-gray-700 hover:text-blue-600">
                 Contact
               </Link>
-              
               {!isAuthenticated && (
                 <>
                   <Link to="/login" className="text-gray-700 hover:text-blue-600">
