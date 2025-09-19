@@ -5,7 +5,7 @@ node_modules/
 .env
 .env.local
 backend/.env
-frontend/.env
+# frontend/.env (temporairement commenté pour debug)
 
 # Build outputs
 build/
