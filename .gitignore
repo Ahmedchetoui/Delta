@@ -1,0 +1,26 @@
+# Node
+node_modules/
+
+# Env files
+.env
+.env.local
+backend/.env
+frontend/.env
+
+# Build outputs
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads (non-persistent in prod)
+uploads/
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

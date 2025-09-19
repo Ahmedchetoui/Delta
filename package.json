@@ -1,0 +1,20 @@
+{
+  "name": "delta-fashion",
+  "version": "1.0.0",
+  "description": "Site e-commerce Delta Fashion - Inspiré d'alfarouk.tn",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm start",
+    "build": "cd frontend && npm run build",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "start": "cd backend && npm start"
+  },
+  "keywords": ["e-commerce", "fashion", "react", "nodejs", "mongodb"],
+  "author": "Delta Fashion",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
