@@ -76,6 +76,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Route temporaire pour peupler la base de données (À SUPPRIMER EN PRODUCTION)
+app.get('/api/seed-database', async (req, res) => {
+  try {
+    // Importer et exécuter le script de peuplement
+    const seedFunction = require('./scripts/seedData');
+    await seedFunction();
+    res.json({ 
+      message: 'Base de données peuplée avec succès !',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Erreur lors du peuplement:', error);
+    res.status(500).json({ 
+      message: 'Erreur lors du peuplement de la base de données',
+      error: error.message
+    });
+  }
+});
+
 // Gestion des erreurs 404
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route non trouvée' });

@@ -11,10 +11,19 @@
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "start": "cd backend && npm start"
   },
-  "keywords": ["e-commerce", "fashion", "react", "nodejs", "mongodb"],
+  "keywords": [
+    "e-commerce",
+    "fashion",
+    "react",
+    "nodejs",
+    "mongodb"
+  ],
   "author": "Delta Fashion",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "mongodb": "^6.20.0"
   }
 }
