@@ -11,20 +11,35 @@ require('dotenv').config();
 const app = express();
 
 // Configuration CORS en premier
-const allowedOrigins = [
+const envOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const defaultOrigins = [
   'http://localhost:3000',
   'https://delta-fashion-e-commerce.vercel.app',
-  'https://delta-12jv2d3wl-deltas-projects-ce7253f2.vercel.app'
+  'https://delta-12jv2d3wl-deltas-projects-ce7253f2.vercel.app',
+  'https://delta-e79s.vercel.app'
 ];
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Autoriser les requêtes sans origin (comme Postman) ou si l'origin est dans la liste blanche
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // Autoriser les requêtes sans origin (Postman, serveurs) ou si l'origin est dans la liste blanche
+    if (!origin) return callback(null, true);
+
+    // Normaliser en supprimant un éventuel trailing slash
+    const normalized = origin.replace(/\/$/, '');
+    const isAllowed = allowedOrigins.some(o => normalized === o.replace(/\/$/, ''));
+
+    if (isAllowed) return callback(null, true);
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`CORS: origin rejeté: ${origin}. Autorisés: ${allowedOrigins.join(', ')}`);
     }
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
