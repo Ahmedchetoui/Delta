@@ -10,15 +10,35 @@ require('dotenv').config();
 
 const app = express();
 
+// Configuration CORS en premier
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://delta-fashion-e-commerce.vercel.app',
+  'https://delta-12jv2d3wl-deltas-projects-ce7253f2.vercel.app'
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Autoriser les requêtes sans origin (comme Postman) ou si l'origin est dans la liste blanche
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+
+// Gérer les requêtes preflight OPTIONS explicitement
+app.options('*', cors(corsOptions));
+
 // Middleware de sécurité
 app.use(helmet());
 app.use(compression());
-
-// Configuration CORS
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true
-}));
 
 // Rate limiting
 const limiter = rateLimit({
