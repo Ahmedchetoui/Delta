@@ -1,7 +1,15 @@
 import axios from 'axios';
 
 // Configuration de base d'axios
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://delta-n5d8.onrender.com/api';
+let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://delta-n5d8.onrender.com/api';
+// Normaliser pour garantir le préfixe /api
+if (/^https?:\/\//i.test(API_BASE_URL)) {
+  const url = new URL(API_BASE_URL);
+  if (!url.pathname.startsWith('/api')) {
+    url.pathname = '/api' + (url.pathname === '/' ? '' : url.pathname);
+    API_BASE_URL = url.toString().replace(/\/$/, '');
+  }
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -101,3 +109,4 @@ export const adminService = {
 };
 
 export default api;
+export { API_BASE_URL };
