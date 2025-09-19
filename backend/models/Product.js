@@ -102,7 +102,7 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  isNew: {
+  isNewProduct: {
     type: Boolean,
     default: false
   },
@@ -172,17 +172,18 @@ const productSchema = new mongoose.Schema({
 });
 
 // Index pour améliorer les performances
-productSchema.index({ slug: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ isActive: 1 });
 productSchema.index({ isFeatured: 1 });
 productSchema.index({ isOnSale: 1 });
+productSchema.index({ isNewProduct: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ 'rating.average': -1 });
 productSchema.index({ createdAt: -1 });
 
 // Générer le slug et calculer des champs dérivés avant validation
 productSchema.pre('validate', function(next) {
+  // Utilise la propriété d'état de Mongoose `this.isNew` seulement (pas de champ utilisateur "isNew")
   if (this.isModified('name') || this.isNew) {
     this.slug = (this.name || '')
       .toLowerCase()

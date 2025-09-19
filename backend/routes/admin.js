@@ -387,7 +387,7 @@ router.get('/analytics/products', async (req, res) => {
           totalProducts: { $sum: 1 },
           activeProducts: { $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] } },
           featuredProducts: { $sum: { $cond: [{ $eq: ['$isFeatured', true] }, 1, 0] } },
-          newProducts: { $sum: { $cond: [{ $eq: ['$isNew', true] }, 1, 0] } },
+          newProducts: { $sum: { $cond: [{ $eq: ['$isNewProduct', true] }, 1, 0] } },
           onSaleProducts: { $sum: { $cond: [{ $eq: ['$isOnSale', true] }, 1, 0] } },
           totalStock: { $sum: '$totalStock' },
           totalViews: { $sum: '$viewCount' },

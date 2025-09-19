@@ -159,7 +159,7 @@ const seedData = async () => {
         colors: [{ name: 'Blanc', code: '#FFFFFF' }],
         sizes: ['S', 'M', 'L', 'XL'],
         isFeatured: true,
-        isNew: true,
+        isNewProduct: true,
         isOnSale: true,
         tags: ['basique', 'coton', 'confort'],
         totalStock: 45
@@ -182,7 +182,7 @@ const seedData = async () => {
         colors: [{ name: 'Bleu', code: '#4169E1' }],
         sizes: ['S', 'M', 'L', 'XL'],
         isFeatured: true,
-        isNew: false,
+        isNewProduct: false,
         tags: ['jean', 'denim', 'slim'],
         totalStock: 36
       },
@@ -230,7 +230,7 @@ const seedData = async () => {
         colors: [{ name: 'Rose', code: '#FFB6C1' }],
         sizes: ['XS', 'S', 'M', 'L'],
         isFeatured: false,
-        isNew: true,
+        isNewProduct: true,
         tags: ['top', 'fleuri', 'été'],
         totalStock: 28
       },
@@ -250,7 +250,7 @@ const seedData = async () => {
         colors: [{ name: 'Marron', code: '#8B4513' }],
         sizes: ['M'],
         isFeatured: true,
-        isNew: false,
+        isNewProduct: false,
         tags: ['sac', 'cuir', 'accessoire'],
         totalStock: 15
       }

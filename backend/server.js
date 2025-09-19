@@ -76,6 +76,33 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Vérification de la base de données
+app.get('/api/db-health', async (req, res) => {
+  try {
+    const state = mongoose.connection.readyState; // 0:disconnected, 1:connected, 2:connecting, 3:disconnecting
+    const stateMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+
+    let pingResult = null;
+    if (state === 1 && mongoose.connection.db) {
+      // Effectue un ping pour confirmer la réactivité de MongoDB
+      const admin = mongoose.connection.db.admin();
+      const ping = await admin.ping();
+      pingResult = ping?.ok === 1 ? 'ok' : ping;
+    }
+
+    res.json({
+      status: stateMap[state] || String(state),
+      dbName: mongoose.connection.name || null,
+      host: mongoose.connection.host || null,
+      ping: pingResult,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Erreur /api/db-health:', error);
+    res.status(500).json({ message: 'Erreur de vérification DB', error: error.message });
+  }
+});
+
 // Route temporaire pour peupler la base de données (À SUPPRIMER EN PRODUCTION)
 app.get('/api/seed-database', async (req, res) => {
   try {
@@ -117,6 +144,20 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/delta-fas
   .catch((err) => {
     console.error('❌ Erreur de connexion MongoDB:', err);
   });
+
+// Observabilité de la connexion MongoDB
+mongoose.connection.on('connected', () => {
+  console.log('🔌 Mongoose connecté');
+});
+mongoose.connection.on('error', (err) => {
+  console.error('⚠️  Mongoose erreur de connexion:', err);
+});
+mongoose.connection.on('disconnected', () => {
+  console.warn('🔌 Mongoose déconnecté');
+});
+mongoose.connection.on('reconnected', () => {
+  console.log('🔄 Mongoose reconnecté');
+});
 
 // Démarrage du serveur
 const PORT = process.env.PORT || 5000;

@@ -203,7 +203,7 @@ router.get('/new', async (req, res) => {
   try {
     const products = await Product.find({ 
       isActive: true, 
-      isNew: true 
+      isNewProduct: true 
     })
       .populate('category', 'name slug')
       .sort({ createdAt: -1 })
@@ -469,7 +469,7 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
       sizes: processedSizes,
       totalStock,
       isFeatured: featuredFlag,
-      isNew: isNew === 'true',
+      isNewProduct: isNew === 'true',
       isOnSale: isOnSale === 'true',
       tags: processedTags,
       weight: weight ? parseFloat(weight) : undefined,
@@ -579,7 +579,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     if (brand !== undefined) product.brand = brand;
     if (sku !== undefined) product.sku = sku;
     if (isFeatured !== undefined) product.isFeatured = isFeatured === 'true';
-    if (isNew !== undefined) product.isNew = isNew === 'true';
+    if (isNew !== undefined) product.isNewProduct = isNew === 'true';
     if (isOnSale !== undefined) product.isOnSale = isOnSale === 'true';
     if (weight !== undefined) product.weight = parseFloat(weight);
     if (metaTitle !== undefined) product.metaTitle = metaTitle;

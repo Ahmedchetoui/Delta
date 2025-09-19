@@ -43,7 +43,7 @@ const ProductCard = ({ product }) => {
           <div className="absolute top-3 left-3">
             {discountPercent ? (
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-200 text-amber-800">-{discountPercent}%</span>
-            ) : product.isNew ? (
+            ) : product.isNewProduct ? (
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-200 text-green-800">Nouveau</span>
             ) : null}
           </div>

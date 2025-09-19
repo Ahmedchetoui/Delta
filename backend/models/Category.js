@@ -46,7 +46,6 @@ const categorySchema = new mongoose.Schema({
 });
 
 // Index pour améliorer les performances
-categorySchema.index({ slug: 1 });
 categorySchema.index({ isActive: 1 });
 categorySchema.index({ parentCategory: 1 });
 

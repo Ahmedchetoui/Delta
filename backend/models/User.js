@@ -65,7 +65,6 @@ const userSchema = new mongoose.Schema({
 });
 
 // Index pour améliorer les performances
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
 // Méthode pour hasher le mot de passe avant sauvegarde
