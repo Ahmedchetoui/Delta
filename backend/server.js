@@ -20,30 +20,45 @@ const defaultOrigins = [
   'http://localhost:3000',
   'https://delta-fashion-e-commerce.vercel.app',
   'https://delta-12jv2d3wl-deltas-projects-ce7253f2.vercel.app',
-  'https://delta-e79s.vercel.app'
+  'https://delta-e79s.vercel.app',
+  'https://delta-e79s-4lp8o17ah-deltas-projects-ce7253f2.vercel.app',
+  'https://delta-n5d8.onrender.com'
 ];
 
 const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Autoriser les requêtes sans origin (Postman, serveurs) ou si l'origin est dans la liste blanche
+    // Autoriser les requêtes sans origin (Postman, serveurs, mobile apps)
     if (!origin) return callback(null, true);
 
     // Normaliser en supprimant un éventuel trailing slash
     const normalized = origin.replace(/\/$/, '');
+    
+    // Vérifier si l'origin est dans la liste autorisée
     const isAllowed = allowedOrigins.some(o => normalized === o.replace(/\/$/, ''));
-
-    if (isAllowed) return callback(null, true);
-
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`CORS: origin rejeté: ${origin}. Autorisés: ${allowedOrigins.join(', ')}`);
+    
+    // En développement, autoriser localhost avec n'importe quel port
+    const isLocalhost = /^https?:\/\/localhost(:\d+)?$/.test(normalized);
+    
+    // Autoriser les domaines Vercel (pour les previews)
+    const isVercel = /^https:\/\/.*\.vercel\.app$/.test(normalized);
+    
+    if (isAllowed || isLocalhost || (process.env.NODE_ENV !== 'production' && isVercel)) {
+      console.log(`✅ CORS: origin autorisé: ${origin}`);
+      return callback(null, true);
     }
-    return callback(new Error('Not allowed by CORS'));
+
+    console.warn(`❌ CORS: origin rejeté: ${origin}`);
+    console.warn(`📋 Origins autorisés: ${allowedOrigins.join(', ')}`);
+    console.warn(`🔍 Vérifications: isAllowed=${isAllowed}, isLocalhost=${isLocalhost}, isVercel=${isVercel}`);
+    return callback(null, false); // Ne pas lever d'erreur, juste refuser
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // Cache preflight pendant 24h
 };
 
 app.use(cors(corsOptions));
@@ -72,6 +87,25 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Servir les fichiers statiques (images)
 // Les fichiers sont enregistrés dans backend/uploads (voir middleware/upload.js)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Route pour servir manifest.json (si nécessaire depuis le backend)
+app.get('/manifest.json', (req, res) => {
+  res.json({
+    "short_name": "Delta Fashion",
+    "name": "Delta Fashion - Votre style, notre passion",
+    "icons": [
+      {
+        "src": "favicon.ico",
+        "sizes": "64x64 32x32 24x24 16x16",
+        "type": "image/x-icon"
+      }
+    ],
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#0ea5e9",
+    "background_color": "#ffffff"
+  });
+});
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -180,4 +214,6 @@ app.listen(PORT, () => {
   console.log(`🚀 Serveur Delta Fashion démarré sur le port ${PORT}`);
   console.log(`📱 API disponible sur: http://localhost:${PORT}/api`);
   console.log(`🛍️ Mode: ${process.env.NODE_ENV}`);
+  console.log(`🔗 CORS configuré pour: ${allowedOrigins.join(', ')}`);
+  console.log(`📋 Variables d'environnement chargées: ${Object.keys(process.env).filter(k => k.startsWith('CORS_') || k.startsWith('NODE_') || k.startsWith('MONGODB_')).join(', ')}`);
 });

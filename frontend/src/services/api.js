@@ -13,6 +13,8 @@ if (/^https?:\/\//i.test(API_BASE_URL)) {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 10000, // 10 secondes timeout
+  withCredentials: true, // Inclure les cookies pour CORS
 });
 
 // Intercepteur pour ajouter le token d'authentification
@@ -34,12 +36,36 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expiré ou invalide
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+    // Gestion des erreurs CORS
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      console.error('Erreur réseau - Vérifiez la configuration CORS:', error);
+      // Ne pas rediriger automatiquement pour les erreurs réseau
+      return Promise.reject({
+        ...error,
+        message: 'Erreur de connexion au serveur. Vérifiez votre connexion internet.'
+      });
     }
+
+    // Gestion des erreurs d'authentification
+    if (error.response?.status === 401) {
+      // Ne supprimer le token que si ce n'est pas une tentative de login
+      const isLoginAttempt = error.config?.url?.includes('/auth/login');
+      if (!isLoginAttempt) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+    }
+
+    // Gestion des erreurs CORS spécifiques
+    if (error.response?.status === 0 || error.code === 'ERR_BLOCKED_BY_CLIENT') {
+      console.error('Requête bloquée par CORS:', error);
+      return Promise.reject({
+        ...error,
+        message: 'Accès bloqué par la politique CORS. Contactez l\'administrateur.'
+      });
+    }
+
     return Promise.reject(error);
   }
 );
