@@ -44,14 +44,14 @@ const seedData = async () => {
     await adminUser.save();
     console.log('👤 Utilisateur admin créé');
 
-    // 2. Créer un utilisateur normal pour tester la connexion
+    // 2. Créer un utilisateur admin Ahmed
     const testUser = new User({
       firstName: 'Ahmed',
       lastName: 'Chetoui',
       email: 'ahmedchetoui987@gmail.com',
-      password: 'test123',
+      password: '200223Ata',
       phone: '+216 98 765 432',
-      role: 'user',
+      role: 'admin',
       address: {
         street: '456 Avenue de la Liberté',
         city: 'Tunis',
@@ -60,7 +60,7 @@ const seedData = async () => {
       }
     });
     await testUser.save();
-    console.log('👤 Utilisateur test créé');
+    console.log('👤 Utilisateur admin Ahmed créé');
 
     // 3. Créer des catégories
     const categories = [
@@ -270,7 +270,7 @@ const seedData = async () => {
     
     console.log('\n🔑 Comptes de test :');
     console.log('Admin: admin@deltafashion.com / admin123');
-    console.log('User: ahmedchetoui987@gmail.com / test123');
+    console.log('Admin Ahmed: ahmedchetoui987@gmail.com / 200223Ata');
 
   } catch (error) {
     console.error('❌ Erreur lors du peuplement:', error);
