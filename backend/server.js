@@ -22,6 +22,7 @@ const defaultOrigins = [
   'https://delta-12jv2d3wl-deltas-projects-ce7253f2.vercel.app',
   'https://delta-e79s.vercel.app',
   'https://delta-e79s-4lp8o17ah-deltas-projects-ce7253f2.vercel.app',
+  'https://delta-e79s-7wjv9yhjg-deltas-projects-ce7253f2.vercel.app',
   'https://delta-n5d8.onrender.com'
 ];
 
