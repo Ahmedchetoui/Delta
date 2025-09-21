@@ -23,6 +23,7 @@ const defaultOrigins = [
   'https://delta-e79s.vercel.app',
   'https://delta-e79s-4lp8o17ah-deltas-projects-ce7253f2.vercel.app',
   'https://delta-e79s-7wjv9yhjg-deltas-projects-ce7253f2.vercel.app',
+  'https://delta-e79s-d82s4f8jb-deltas-projects-ce7253f2.vercel.app',
   'https://delta-n5d8.onrender.com'
 ];
 
@@ -45,7 +46,10 @@ const corsOptions = {
     // Autoriser les domaines Vercel (pour les previews)
     const isVercel = /^https:\/\/.*\.vercel\.app$/.test(normalized);
     
-    if (isAllowed || isLocalhost || (process.env.NODE_ENV !== 'production' && isVercel)) {
+    // Autoriser spécifiquement les domaines delta-e79s-* de votre projet
+    const isDeltaVercel = /^https:\/\/delta-e79s-.*\.vercel\.app$/.test(normalized);
+    
+    if (isAllowed || isLocalhost || isVercel || isDeltaVercel) {
       console.log(`✅ CORS: origin autorisé: ${origin}`);
       return callback(null, true);
     }
