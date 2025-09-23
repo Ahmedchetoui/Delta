@@ -3,7 +3,7 @@ const { body, validationResult } = require('express-validator');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { uploadSingleImage, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
+const { uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -310,7 +310,7 @@ router.get('/:id/products', async (req, res) => {
 // @route   POST /api/categories
 // @desc    Créer une nouvelle catégorie
 // @access  Private (Admin)
-router.post('/', authenticateToken, requireAdmin, uploadSingleImage, handleUploadError, categoryValidation, async (req, res) => {
+router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, categoryValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -340,8 +340,15 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, handleUploa
       }
     }
 
-    // Traiter l'image uploadée
-    const image = req.file ? req.file.filename : '';
+    // Traiter l'image uploadée (Cloudinary ou local)
+    let image = '';
+    if (req.uploadedImages && req.uploadedImages.length > 0) {
+      // Image uploadée sur Cloudinary
+      image = req.uploadedImages[0].url;
+    } else if (req.file) {
+      // Image uploadée localement (fallback)
+      image = req.file.filename;
+    }
 
     const category = new Category({
       name,
@@ -376,7 +383,7 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, handleUploa
 // @route   PUT /api/categories/:id
 // @desc    Mettre à jour une catégorie
 // @access  Private (Admin)
-router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, handleUploadError, categoryValidation, async (req, res) => {
+router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, categoryValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -421,12 +428,20 @@ router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, handleUpl
       }
     }
 
-    // Traiter la nouvelle image si fournie
-    if (req.file) {
+    // Traiter la nouvelle image si fournie (Cloudinary ou local)
+    if (req.uploadedImages && req.uploadedImages.length > 0) {
       // Supprimer l'ancienne image
       if (category.image) {
         deleteFile(category.image);
       }
+      // Image uploadée sur Cloudinary
+      category.image = req.uploadedImages[0].url;
+    } else if (req.file) {
+      // Supprimer l'ancienne image
+      if (category.image) {
+        deleteFile(category.image);
+      }
+      // Image uploadée localement (fallback)
       category.image = req.file.filename;
     }
 
