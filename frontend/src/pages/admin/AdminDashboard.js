@@ -96,7 +96,7 @@ const AdminDashboard = () => {
       {/* Actions rapides */}
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions rapides</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Link to="/admin/products" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center">
             Ajouter un produit
           </Link>
@@ -105,6 +105,9 @@ const AdminDashboard = () => {
           </Link>
           <Link to="/admin/categories" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-center">
             Gérer les catégories
+          </Link>
+          <Link to="/admin/banners" className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors text-center">
+            Gérer les bannières
           </Link>
           <Link
             to="/admin/requests"
