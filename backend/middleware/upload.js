@@ -95,7 +95,38 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
     req.uploadedImages = uploads; // [{ url, public_id }]
     next();
   } catch (err) {
-    next(err);
+    // Fallback: en cas d'échec Cloudinary, enregistrer localement et continuer
+    try {
+      console.warn('Cloudinary a échoué, fallback vers stockage local:', err?.message);
+      const baseUploadPath = path.join(__dirname, process.env.UPLOAD_PATH || '../uploads');
+      const produitDir = path.join(baseUploadPath, 'produit');
+      if (!fs.existsSync(produitDir)) {
+        fs.mkdirSync(produitDir, { recursive: true });
+      }
+
+      const files = req.files || (req.file ? [req.file] : []);
+      const localUploads = [];
+      for (const f of files) {
+        const ext = path.extname(f.originalname || '.jpg') || '.jpg';
+        const filename = `images-${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+        const full = path.join(produitDir, filename);
+        // f.buffer peut ne pas exister si storage n'est pas memoryStorage. Ici, c'est memoryStorage.
+        const buffer = f.buffer || (f.path ? fs.readFileSync(f.path) : null);
+        if (!buffer) continue;
+        fs.writeFileSync(full, buffer);
+        // Renseigner comme si c'était des URLs (sera préfixé par getImageUrl)
+        localUploads.push({ url: `produit/${filename}` });
+      }
+      if (localUploads.length > 0) {
+        req.uploadedImages = localUploads;
+        return next();
+      }
+      // Si aucun fichier n'a pu être sauvegardé, remonter l'erreur
+      return next(err);
+    } catch (fallbackErr) {
+      console.error('Echec du fallback local après erreur Cloudinary:', fallbackErr);
+      return next(err);
+    }
   }
 };
 
@@ -163,6 +194,12 @@ const getImageUrl = (filename) => {
   if (!filename) return null;
   // Si c'est déjà une URL complète (Cloudinary par ex.), la renvoyer telle quelle
   if (/^https?:\/\//i.test(filename)) return filename;
+  // Si une base publique est définie (ex: https://delta-n5d8.onrender.com), renvoyer une URL absolue
+  const base = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
+  if (base) {
+    return `${base}/uploads/${filename}`;
+  }
+  // Sinon, URL relative (utile en mono-origine)
   return `/uploads/${filename}`;
 };
 
