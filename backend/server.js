@@ -95,6 +95,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Route pour servir manifest.json (si nécessaire depuis le backend)
 app.get('/manifest.json', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Content-Type', 'application/json');
   res.json({
     "short_name": "Delta Fashion",
     "name": "Delta Fashion - Votre style, notre passion",
