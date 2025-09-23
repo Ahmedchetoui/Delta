@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { fetchFeaturedProducts, fetchNewProducts } from '../store/slices/productSlice';
@@ -6,15 +6,19 @@ import { fetchCategories } from '../store/slices/categorySlice';
 import Loading from '../components/ui/Loading';
 import ProductCard from '../components/product/ProductCard';
 import HeroSlider from '../components/ui/HeroSlider';
+import api from '../services/api';
 
 const Home = () => {
   const dispatch = useDispatch();
   const { featuredProducts = [], newProducts = [], loading: productsLoading } = useSelector((state) => state.products || {});
   const { categories = [], loading: categoriesLoading } = useSelector((state) => state.categories || {});
+  const [banners, setBanners] = useState([]);
+  const [bannersLoading, setBannersLoading] = useState(true);
 
   useEffect(() => {
     dispatch(fetchFeaturedProducts());
     dispatch(fetchCategories());
+    loadBanners();
   }, [dispatch]);
 
   // Fallback: si aucune vedette, charger les nouveaux produits
@@ -24,32 +28,69 @@ const Home = () => {
     }
   }, [dispatch, featuredProducts.length]);
 
-  const heroSlides = [
+  const loadBanners = async () => {
+    try {
+      const response = await api.get('/banners');
+      setBanners(response.data.banners);
+    } catch (error) {
+      console.error('Erreur lors du chargement des bannières:', error);
+      // Fallback vers les bannières par défaut
+      setBanners(defaultBanners);
+    } finally {
+      setBannersLoading(false);
+    }
+  };
+
+  // Bannières par défaut si l'API échoue
+  const defaultBanners = [
     {
-      id: 1,
+      _id: 'default-1',
       title: "Nouvelle Collection Automne 2024",
       subtitle: "Découvrez les dernières tendances de la mode",
       image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      link: "/shop",
-      buttonText: "Découvrir"
+      buttonLink: "/shop",
+      buttonText: "Découvrir",
+      backgroundColor: "#f8f9fa",
+      textColor: "#ffffff",
+      position: "center"
     },
     {
-      id: 2,
+      _id: 'default-2',
       title: "Soldes d'Été",
       subtitle: "Jusqu'à -50% sur une sélection d'articles",
       image: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      link: "/shop?onSale=true",
-      buttonText: "Voir les offres"
+      buttonLink: "/shop?onSale=true",
+      buttonText: "Voir les offres",
+      backgroundColor: "#f8f9fa",
+      textColor: "#ffffff",
+      position: "center"
     },
     {
-      id: 3,
+      _id: 'default-3',
       title: "Livraison Gratuite",
       subtitle: "Sur toutes vos commandes dès 100 DT",
       image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      link: "/delivery",
-      buttonText: "En savoir plus"
+      buttonLink: "/delivery",
+      buttonText: "En savoir plus",
+      backgroundColor: "#f8f9fa",
+      textColor: "#ffffff",
+      position: "center"
     }
   ];
+
+  // Convertir les bannières au format attendu par HeroSlider
+  const heroSlides = banners.map(banner => ({
+    id: banner._id,
+    title: banner.title,
+    subtitle: banner.subtitle,
+    description: banner.description,
+    image: banner.image,
+    link: banner.buttonLink,
+    buttonText: banner.buttonText,
+    backgroundColor: banner.backgroundColor,
+    textColor: banner.textColor,
+    position: banner.position
+  }));
 
   if (productsLoading || categoriesLoading) {
     return <Loading size="large" text="Chargement de la page d'accueil..." />;
