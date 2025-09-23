@@ -3,11 +3,11 @@ const { body, validationResult, query } = require('express-validator');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
-const { authenticateToken, requireAdmin, requireOwnerOrAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, requireOwnerOrAdmin, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Validation pour la création de commande
+// Validation pour la création de commande (utilisateurs connectés et invités)
 const orderValidation = [
   body('items')
     .isArray({ min: 1 })
@@ -26,12 +26,12 @@ const orderValidation = [
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Le nom est requis'),
+  body('shippingAddress.email')
+    .isEmail()
+    .withMessage('Email valide requis'),
   body('shippingAddress.phone')
     .matches(/^[0-9+\-\s()]+$/)
     .withMessage('Numéro de téléphone invalide'),
-  body('shippingAddress.email')
-    .isEmail()
-    .withMessage('Email invalide'),
   body('shippingAddress.street')
     .trim()
     .isLength({ min: 5, max: 200 })
@@ -220,9 +220,9 @@ router.get('/number/:orderNumber', authenticateToken, async (req, res) => {
 });
 
 // @route   POST /api/orders
-// @desc    Créer une nouvelle commande
-// @access  Private
-router.post('/', authenticateToken, orderValidation, async (req, res) => {
+// @desc    Créer une nouvelle commande (utilisateurs connectés et invités)
+// @access  Public/Private
+router.post('/', optionalAuth, orderValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -297,9 +297,9 @@ router.post('/', authenticateToken, orderValidation, async (req, res) => {
     const tax = subtotal * 0.19; // TVA 19%
     const total = subtotal + shippingCost + tax;
 
-    // Créer la commande
+    // Créer la commande (avec ou sans utilisateur connecté)
     const order = new Order({
-      user: req.user._id,
+      user: req.user ? req.user._id : null, // null pour les commandes invités
       items: orderItems,
       shippingAddress,
       billingAddress: billingAddress || shippingAddress,
@@ -310,7 +310,9 @@ router.post('/', authenticateToken, orderValidation, async (req, res) => {
       total,
       notes,
       isGift: isGift === true,
-      giftMessage
+      giftMessage,
+      // Pour les invités, stocker l'email pour le suivi
+      guestEmail: req.user ? null : shippingAddress.email
     });
 
     await order.save();

@@ -22,6 +22,7 @@ import OrderTracking from './pages/OrderTracking';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Delivery from './pages/Delivery';
+import OrderConfirmation from './pages/OrderConfirmation';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -74,11 +75,8 @@ function App() {
             <Route path="/register" element={<Register />} />
             
             {/* Protected Routes */}
-            <Route path="/checkout" element={
-              <ProtectedRoute>
-                <Checkout />
-              </ProtectedRoute>
-            } />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />

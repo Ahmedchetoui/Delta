@@ -9,7 +9,11 @@ const orderSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false // Optionnel pour les commandes invités
+  },
+  guestEmail: {
+    type: String,
+    required: false // Email pour les commandes invités
   },
   items: [{
     product: {
@@ -228,6 +232,15 @@ orderSchema.methods.markAsDelivered = function() {
 orderSchema.methods.getTotalItems = function() {
   return this.items.reduce((total, item) => total + item.quantity, 0);
 };
+
+// Validation personnalisée : soit un utilisateur connecté, soit un email invité
+orderSchema.pre('validate', function(next) {
+  if (!this.user && !this.guestEmail) {
+    next(new Error('Une commande doit avoir soit un utilisateur connecté, soit un email invité'));
+  } else {
+    next();
+  }
+});
 
 // Méthode statique pour obtenir les statistiques
 orderSchema.statics.getStats = async function() {

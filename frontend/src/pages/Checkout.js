@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { selectCartItems, selectCartTotal } from '../store/slices/cartSlice';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const Checkout = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validation
@@ -52,9 +53,59 @@ const Checkout = () => {
       return;
     }
 
-    // TODO: Implémenter la soumission de la commande
-    toast.success('Commande passée avec succès !');
-    navigate('/orders');
+    if (items.length === 0) {
+      toast.error('Votre panier est vide');
+      return;
+    }
+
+    try {
+      // Préparer les données de commande
+      const orderData = {
+        items: items.map(item => ({
+          product: item._id,
+          quantity: item.quantity,
+          size: item.selectedSize || null,
+          color: item.selectedColor || null
+        })),
+        shippingAddress: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          street: formData.address,
+          city: formData.city,
+          postalCode: formData.postalCode,
+          country: formData.country
+        },
+        billingAddress: formData.billingSameAsShipping ? null : {
+          firstName: formData.billingFirstName,
+          lastName: formData.billingLastName,
+          street: formData.billingAddress,
+          city: formData.billingCity,
+          postalCode: formData.billingPostalCode,
+          country: formData.country
+        },
+        paymentMethod: formData.paymentMethod,
+        notes: formData.notes
+      };
+
+      // Envoyer la commande
+      const response = await api.post('/orders', orderData);
+      
+      toast.success('Commande passée avec succès !');
+      
+      // Rediriger vers une page de confirmation
+      navigate('/order-confirmation', { 
+        state: { 
+          orderId: response.data.order._id,
+          orderNumber: response.data.order.orderNumber 
+        } 
+      });
+
+    } catch (error) {
+      console.error('Erreur lors de la commande:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+    }
   };
 
   const shippingCost = totalAmount >= 100 ? 0 : 10;
