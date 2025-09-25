@@ -7,6 +7,7 @@ import { HeartIcon, ShoppingCartIcon, StarIcon, ShareIcon } from '@heroicons/rea
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import Loading from '../components/ui/Loading';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 
 const Product = () => {
   const { id } = useParams();
@@ -24,6 +25,7 @@ const Product = () => {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
+  const [isOrdering, setIsOrdering] = useState(false);
 
   const deliveryCost = 7.0; // Coût de livraison affiché dans la maquette
   const subtotal = currentProduct ? (currentProduct.finalPrice * quantity) : 0;
@@ -99,6 +101,83 @@ const Product = () => {
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast.success('Lien copié dans le presse-papiers !');
+    }
+  };
+
+  const handleDirectOrder = async () => {
+    // Validation des champs obligatoires
+    if (!fullName.trim()) {
+      toast.error('Veuillez saisir votre nom complet');
+      return;
+    }
+    if (!phone.trim()) {
+      toast.error('Veuillez saisir votre numéro de téléphone');
+      return;
+    }
+    if (!streetAddress.trim()) {
+      toast.error('Veuillez saisir votre adresse');
+      return;
+    }
+
+    // Validation du stock
+    if (currentProduct.totalStock === 0) {
+      toast.error('Ce produit n\'est plus en stock');
+      return;
+    }
+
+    // Validation de la taille si nécessaire
+    if (!selectedSize && currentProduct.variants?.length > 0) {
+      toast.error('Veuillez sélectionner une taille');
+      return;
+    }
+
+    setIsOrdering(true);
+
+    try {
+      // Séparer le nom complet en prénom et nom
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || firstName;
+
+      // Préparer les données de commande
+      const orderData = {
+        items: [{
+          product: currentProduct._id,
+          quantity: quantity,
+          size: selectedSize || null,
+          color: selectedColor || null
+        }],
+        shippingAddress: {
+          firstName: firstName,
+          lastName: lastName,
+          email: `guest_${Date.now()}@deltafashion.tn`, // Email temporaire pour les invités
+          phone: phone,
+          street: streetAddress,
+          city: 'Tunisie', // Valeur par défaut
+          postalCode: '',
+          country: 'Tunisie'
+        },
+        paymentMethod: 'cash_on_delivery'
+      };
+
+      // Envoyer la commande
+      const response = await api.post('/orders', orderData);
+      
+      toast.success('Commande passée avec succès !');
+      
+      // Rediriger vers une page de confirmation
+      navigate('/order-confirmation', { 
+        state: { 
+          orderId: response.data.order._id,
+          orderNumber: response.data.order.orderNumber 
+        } 
+      });
+
+    } catch (error) {
+      console.error('Erreur lors de la commande:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+    } finally {
+      setIsOrdering(false);
     }
   };
 
@@ -317,38 +396,52 @@ const Product = () => {
               )}
             </div>
 
-            {/* Formulaire de commande rapide (même place/design que la capture) */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900">Informations de livraison:</h3>
+            {/* Formulaire de commande rapide */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+              <div className="flex items-center">
+                <svg className="h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <h3 className="text-sm font-semibold text-blue-900">Commande rapide - Remplissez vos informations:</h3>
+              </div>
+              
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Nom complet:</label>
+                <label className="block text-sm text-gray-700 mb-1">Nom complet *</label>
                 <input
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Votre nom complet"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  required
                 />
               </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Téléphone:</label>
+                  <label className="block text-sm text-gray-700 mb-1">Téléphone *</label>
                   <input
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Ex: 22000000"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: +216 XX XXX XXX"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Adresse:</label>
+                  <label className="block text-sm text-gray-700 mb-1">Adresse *</label>
                   <input
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Votre adresse complète"
                     value={streetAddress}
                     onChange={(e) => setStreetAddress(e.target.value)}
+                    required
                   />
                 </div>
               </div>
+              
+              <p className="text-xs text-gray-600">
+                * Champs obligatoires pour la commande rapide
+              </p>
             </div>
 
             {/* Carte récapitulatif prix (pleine largeur sous les champs) */}
@@ -378,10 +471,30 @@ const Product = () => {
                 <button
                   onClick={handleAddToCart}
                   disabled={currentProduct.totalStock === 0}
-              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mb-3"
                 >
               <ShoppingCartIcon className="h-5 w-5 mr-2" />
               Ajouter au Panier – {subtotal.toFixed(2)} DT
+                </button>
+
+                <button
+                  onClick={handleDirectOrder}
+                  disabled={currentProduct.totalStock === 0 || isOrdering}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {isOrdering ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Commande en cours...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Commander maintenant – {total.toFixed(2)} DT
+                    </>
+                  )}
                 </button>
                 
             <div className="flex space-x-3">
