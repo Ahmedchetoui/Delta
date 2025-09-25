@@ -112,9 +112,9 @@ const AdminProducts = () => {
                     <button className="text-blue-600 hover:text-blue-900">
                       <EyeIcon className="h-5 w-5" />
                     </button>
-                    <button className="text-green-600 hover:text-green-900">
+                    <Link to={`/admin/products/edit/${product.id}`} className="text-green-600 hover:text-green-900">
                       <PencilIcon className="h-5 w-5" />
-                    </button>
+                    </Link>
                     <button className="text-red-600 hover:text-red-900" onClick={async()=>{
                       if(!window.confirm('Supprimer ce produit ?')) return;
                       try{

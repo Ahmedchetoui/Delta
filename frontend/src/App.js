@@ -29,6 +29,7 @@ import GuestOrderTracking from './pages/GuestOrderTracking';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminProductNew from './pages/admin/AdminProductNew';
+import AdminProductEdit from './pages/admin/AdminProductEdit';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminBanners from './pages/admin/AdminBanners';
 import AdminOrders from './pages/admin/AdminOrders';
@@ -109,6 +110,11 @@ function App() {
             <Route path="/admin/products/new" element={
               <AdminRoute>
                 <AdminProductNew />
+              </AdminRoute>
+            } />
+            <Route path="/admin/products/edit/:id" element={
+              <AdminRoute>
+                <AdminProductEdit />
               </AdminRoute>
             } />
             <Route path="/admin/categories" element={
