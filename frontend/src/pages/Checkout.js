@@ -11,29 +11,14 @@ const Checkout = () => {
   const totalAmount = useSelector(selectCartTotal);
   
   const [formData, setFormData] = useState({
-    // Shipping Address
-    firstName: '',
-    lastName: '',
-    email: '',
+    // Informations essentielles
+    fullName: '',
     phone: '',
     address: '',
-    city: '',
-    postalCode: '',
-    country: 'Tunisie',
-    
-    // Billing Address (same as shipping by default)
-    billingSameAsShipping: true,
-    billingFirstName: '',
-    billingLastName: '',
-    billingAddress: '',
-    billingCity: '',
-    billingPostalCode: '',
+    color: '',
     
     // Payment
-    paymentMethod: 'cash_on_delivery',
-    
-    // Order Notes
-    notes: ''
+    paymentMethod: 'cash_on_delivery'
   });
 
   const handleChange = (e) => {
@@ -48,7 +33,7 @@ const Checkout = () => {
     e.preventDefault();
     
     // Validation
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city) {
+    if (!formData.fullName || !formData.phone || !formData.address) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -59,34 +44,30 @@ const Checkout = () => {
     }
 
     try {
+      // Séparer le nom complet en prénom et nom
+      const nameParts = formData.fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || firstName;
+
       // Préparer les données de commande
       const orderData = {
         items: items.map(item => ({
           product: item._id,
           quantity: item.quantity,
           size: item.selectedSize || null,
-          color: item.selectedColor || null
+          color: formData.color || item.selectedColor || null
         })),
         shippingAddress: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
+          firstName: firstName,
+          lastName: lastName,
+          email: `guest_${Date.now()}@deltafashion.tn`, // Email temporaire pour les invités
           phone: formData.phone,
           street: formData.address,
-          city: formData.city,
-          postalCode: formData.postalCode,
-          country: formData.country
+          city: 'Tunisie', // Valeur par défaut
+          postalCode: '',
+          country: 'Tunisie'
         },
-        billingAddress: formData.billingSameAsShipping ? null : {
-          firstName: formData.billingFirstName,
-          lastName: formData.billingLastName,
-          street: formData.billingAddress,
-          city: formData.billingCity,
-          postalCode: formData.billingPostalCode,
-          country: formData.country
-        },
-        paymentMethod: formData.paymentMethod,
-        notes: formData.notes
+        paymentMethod: formData.paymentMethod
       };
 
       // Envoyer la commande
@@ -144,78 +125,48 @@ const Checkout = () => {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">Commande en tant qu'invité</h3>
+                    <h3 className="text-sm font-medium text-blue-800">Commande simplifiée</h3>
                     <div className="mt-1 text-sm text-blue-700">
-                      <p>Vous commandez sans créer de compte. Conservez votre numéro de commande et votre email pour le suivi.</p>
+                      <p>Remplissez simplement les informations essentielles pour passer votre commande.</p>
                     </div>
                   </div>
                 </div>
               </div>
               
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prénom *
-                    </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      required
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom *
-                    </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      required
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Téléphone *
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      required
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom complet *
+                  </label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    required
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    placeholder="Votre nom complet"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Adresse *
+                    Numéro de téléphone *
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    required
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="Ex: +216 XX XXX XXX"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Adresse de livraison *
                   </label>
                   <textarea
                     name="address"
@@ -223,51 +174,23 @@ const Checkout = () => {
                     required
                     value={formData.address}
                     onChange={handleChange}
+                    placeholder="Adresse complète de livraison"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Numéro, rue, quartier..."
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ville *
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      required
-                      value={formData.city}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Code postal
-                    </label>
-                    <input
-                      type="text"
-                      name="postalCode"
-                      value={formData.postalCode}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Pays
-                    </label>
-                    <input
-                      type="text"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Couleur préférée (facultatif)
+                  </label>
+                  <input
+                    type="text"
+                    name="color"
+                    value={formData.color}
+                    onChange={handleChange}
+                    placeholder="Ex: Rouge, Bleu, Vert..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
 
                 {/* Payment Method */}
@@ -321,20 +244,6 @@ const Checkout = () => {
                   </div>
                 </div>
 
-                {/* Order Notes */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notes de commande
-                  </label>
-                  <textarea
-                    name="notes"
-                    rows={3}
-                    value={formData.notes}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Instructions spéciales pour la livraison..."
-                  />
-                </div>
 
                 <button
                   type="submit"
