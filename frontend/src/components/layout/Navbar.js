@@ -140,6 +140,9 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="hidden md:flex items-center space-x-2">
+                <Link to="/guest-order-tracking" className="text-gray-700 hover:text-blue-600 text-sm">
+                  Suivi commande
+                </Link>
                 <Link to="/login" className="text-gray-700 hover:text-blue-600">
                   Connexion
                 </Link>

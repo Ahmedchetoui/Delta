@@ -112,7 +112,7 @@ router.get('/', authenticateToken, [
       ...order,
       items: order.items.map(item => ({
         ...item,
-        image: item.image ? `http://localhost:5000/uploads/${item.image}` : null
+        image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
       }))
     }));
 
@@ -163,7 +163,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       ...order,
       items: order.items.map(item => ({
         ...item,
-        image: item.image ? `http://localhost:5000/uploads/${item.image}` : null
+        image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
       }))
     };
 
@@ -171,6 +171,45 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Erreur lors de la récupération de la commande:', error);
+    res.status(500).json({
+      message: 'Erreur lors de la récupération de la commande'
+    });
+  }
+});
+
+// @route   GET /api/orders/guest/:orderNumber/:email
+// @desc    Obtenir une commande invité par numéro et email
+// @access  Public
+router.get('/guest/:orderNumber/:email', async (req, res) => {
+  try {
+    const { orderNumber, email } = req.params;
+
+    const order = await Order.findOne({ 
+      orderNumber: orderNumber,
+      guestEmail: email.toLowerCase()
+    })
+      .populate('items.product', 'name images slug')
+      .lean();
+
+    if (!order) {
+      return res.status(404).json({
+        message: 'Commande non trouvée. Vérifiez le numéro de commande et l\'email.'
+      });
+    }
+
+    // Ajouter les URLs d'images aux produits
+    const orderWithImageUrls = {
+      ...order,
+      items: order.items.map(item => ({
+        ...item,
+        image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
+      }))
+    };
+
+    res.json({ order: orderWithImageUrls });
+
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la commande invité:', error);
     res.status(500).json({
       message: 'Erreur lors de la récupération de la commande'
     });
@@ -205,7 +244,7 @@ router.get('/number/:orderNumber', authenticateToken, async (req, res) => {
       ...order,
       items: order.items.map(item => ({
         ...item,
-        image: item.image ? `http://localhost:5000/uploads/${item.image}` : null
+        image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
       }))
     };
 
@@ -345,7 +384,7 @@ router.post('/', optionalAuth, orderValidation, async (req, res) => {
         ...order.toObject(),
         items: order.items.map(item => ({
           ...item,
-          image: item.image ? `http://localhost:5000/uploads/${item.image}` : null
+          image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
         }))
       }
     });
@@ -419,7 +458,7 @@ router.put('/:id/status', authenticateToken, requireAdmin, [
         ...order.toObject(),
         items: order.items.map(item => ({
           ...item,
-          image: item.image ? `http://localhost:5000/uploads/${item.image}` : null
+          image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
         }))
       }
     });
@@ -504,7 +543,7 @@ router.put('/:id/cancel', authenticateToken, [
         ...order.toObject(),
         items: order.items.map(item => ({
           ...item,
-          image: item.image ? `http://localhost:5000/uploads/${item.image}` : null
+          image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
         }))
       }
     });

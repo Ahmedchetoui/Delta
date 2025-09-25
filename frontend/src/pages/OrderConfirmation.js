@@ -77,6 +77,12 @@ const OrderConfirmation = () => {
               Continuer mes achats
             </Link>
             <Link
+              to="/guest-order-tracking"
+              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Suivre ma commande
+            </Link>
+            <Link
               to="/contact"
               className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors"
             >
@@ -84,14 +90,37 @@ const OrderConfirmation = () => {
             </Link>
           </div>
 
-          {/* Note pour les invités */}
-          <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Note :</strong> Conservez ce numéro de commande pour le suivi. 
-              Pour créer un compte et suivre vos commandes facilement, 
-              <Link to="/register" className="text-yellow-900 underline ml-1">
-                inscrivez-vous ici
-              </Link>.
+          {/* Note importante pour les invités */}
+          <div className="mt-8 p-6 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-semibold text-yellow-800 mb-2">Important - Conservez ces informations</h3>
+                <div className="text-sm text-yellow-700 space-y-2">
+                  <p><strong>Numéro de commande :</strong> {orderNumber}</p>
+                  <p><strong>Email utilisé :</strong> Celui que vous avez saisi lors de la commande</p>
+                  <p className="mt-3 font-medium">
+                    Ces informations sont nécessaires pour suivre votre commande. 
+                    <Link to="/guest-order-tracking" className="text-yellow-900 underline ml-1">
+                      Cliquez ici pour le suivi
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Invitation à créer un compte */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              💡 <strong>Astuce :</strong> Créez un compte pour suivre facilement toutes vos commandes et bénéficier d'avantages exclusifs.
+              <Link to="/register" className="text-blue-900 underline ml-1 font-medium">
+                S'inscrire maintenant
+              </Link>
             </p>
           </div>
         </div>

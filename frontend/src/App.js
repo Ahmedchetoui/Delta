@@ -23,6 +23,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Delivery from './pages/Delivery';
 import OrderConfirmation from './pages/OrderConfirmation';
+import GuestOrderTracking from './pages/GuestOrderTracking';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -69,6 +70,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/delivery" element={<Delivery />} />
             <Route path="/order-tracking" element={<OrderTracking />} />
+            <Route path="/guest-order-tracking" element={<GuestOrderTracking />} />
             
             {/* Auth Routes */}
             <Route path="/login" element={<Login />} />
