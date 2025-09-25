@@ -105,6 +105,8 @@ const Product = () => {
   };
 
   const handleDirectOrder = async () => {
+    console.log('Tentative de commande rapide...', { fullName, phone, streetAddress });
+    
     // Validation des champs obligatoires
     if (!fullName.trim()) {
       toast.error('Veuillez saisir votre nom complet');
@@ -468,6 +470,12 @@ const Product = () => {
               </span>
             </div>
 
+            {/* Debug info */}
+            <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+              Debug: Stock={currentProduct.totalStock}, isOrdering={isOrdering.toString()}, 
+              Nom="{fullName}", Tel="{phone}", Adresse="{streetAddress}"
+            </div>
+
                 <button
                   onClick={handleAddToCart}
                   disabled={currentProduct.totalStock === 0}
@@ -478,7 +486,10 @@ const Product = () => {
                 </button>
 
                 <button
-                  onClick={handleDirectOrder}
+                  onClick={() => {
+                    console.log('Bouton commande rapide cliqué !');
+                    handleDirectOrder();
+                  }}
                   disabled={currentProduct.totalStock === 0 || isOrdering}
                   className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
@@ -495,6 +506,49 @@ const Product = () => {
                       Commander maintenant – {total.toFixed(2)} DT
                     </>
                   )}
+                </button>
+
+                {/* Bouton de test temporaire */}
+                <button
+                  onClick={async () => {
+                    toast.info('Test de l\'API en cours...');
+                    console.log('Test API avec données:', { fullName, phone, streetAddress });
+                    
+                    try {
+                      // Test simple de l'API
+                      const testData = {
+                        items: [{
+                          product: currentProduct._id,
+                          quantity: 1,
+                          size: selectedSize || null,
+                          color: selectedColor || null
+                        }],
+                        shippingAddress: {
+                          firstName: fullName || 'Test',
+                          lastName: 'User',
+                          email: `test_${Date.now()}@deltafashion.tn`,
+                          phone: phone || '12345678',
+                          street: streetAddress || 'Test Address',
+                          city: 'Tunis',
+                          postalCode: '',
+                          country: 'Tunisie'
+                        },
+                        paymentMethod: 'cash_on_delivery'
+                      };
+                      
+                      console.log('Données à envoyer:', testData);
+                      const response = await api.post('/orders', testData);
+                      console.log('Réponse API:', response.data);
+                      toast.success('Test API réussi !');
+                      
+                    } catch (error) {
+                      console.error('Erreur test API:', error);
+                      toast.error('Erreur test API: ' + (error.response?.data?.message || error.message));
+                    }
+                  }}
+                  className="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg mt-2 text-sm"
+                >
+                  🧪 Test API Commande
                 </button>
                 
             <div className="flex space-x-3">

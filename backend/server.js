@@ -102,9 +102,19 @@ app.get('/manifest.json', (req, res) => {
     "name": "Delta Fashion - Votre style, notre passion",
     "icons": [
       {
-        "src": "favicon.ico",
+        "src": `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/favicon.ico`,
         "sizes": "64x64 32x32 24x24 16x16",
         "type": "image/x-icon"
+      },
+      {
+        "src": `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/logo192.png`,
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/logo512.png`,
+        "type": "image/png",
+        "sizes": "512x512"
       }
     ],
     "start_url": ".",
@@ -112,6 +122,22 @@ app.get('/manifest.json', (req, res) => {
     "theme_color": "#0ea5e9",
     "background_color": "#ffffff"
   });
+});
+
+// Routes pour servir les fichiers statiques du manifest
+app.get('/favicon.ico', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.sendFile(path.join(__dirname, '../frontend/public/favicon.ico'));
+});
+
+app.get('/logo192.png', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.sendFile(path.join(__dirname, '../frontend/public/logo192.png'));
+});
+
+app.get('/logo512.png', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.sendFile(path.join(__dirname, '../frontend/public/logo512.png'));
 });
 
 // Routes
