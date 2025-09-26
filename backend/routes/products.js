@@ -502,25 +502,57 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
   }
 });
 
+// Validation pour la mise à jour de produit (plus souple)
+const productUpdateValidation = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Le nom doit contenir entre 2 et 100 caractères'),
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ min: 10, max: 2000 })
+    .withMessage('La description doit contenir entre 10 et 2000 caractères'),
+  body('price')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Le prix doit être un nombre positif'),
+  body('category')
+    .optional()
+    .isMongoId()
+    .withMessage('ID de catégorie invalide')
+];
+
 // @route   PUT /api/products/:id
 // @desc    Mettre à jour un produit
 // @access  Private (Admin)
-router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadBuffersToCloudinary, handleUploadError, productValidation, async (req, res) => {
+router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadBuffersToCloudinary, handleUploadError, productUpdateValidation, async (req, res) => {
   try {
+    console.log('=== DÉBUT MISE À JOUR PRODUIT ===');
+    console.log('ID du produit:', req.params.id);
+    console.log('Body reçu:', Object.keys(req.body));
+    console.log('Files reçus:', req.files ? req.files.length : 0);
+    console.log('uploadedImages:', req.uploadedImages ? req.uploadedImages.length : 0);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Erreurs de validation:', errors.array());
       return res.status(400).json({
         message: 'Données invalides',
         errors: errors.array()
       });
     }
 
+    console.log('Recherche du produit...');
     const product = await Product.findById(req.params.id);
     if (!product) {
+      console.log('Produit non trouvé avec ID:', req.params.id);
       return res.status(404).json({
         message: 'Produit non trouvé'
       });
     }
+    console.log('Produit trouvé:', product.name);
 
     const {
       name,
@@ -559,12 +591,14 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     }
 
     // Gestion des images existantes et nouvelles
+    console.log('=== GESTION DES IMAGES ===');
     let finalImages = [];
     
     // Récupérer les images existantes à conserver
     if (req.body.existingImages) {
       try {
         const existingImages = JSON.parse(req.body.existingImages);
+        console.log('Images existantes à conserver:', existingImages);
         finalImages = [...existingImages];
       } catch (error) {
         console.error('Erreur lors du parsing des images existantes:', error);
@@ -682,9 +716,15 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
       product.shipping.freeShipping = freeShipping === 'true';
     }
 
+    console.log('Sauvegarde du produit...');
     await product.save();
+    console.log('Produit sauvegardé avec succès');
+    
+    console.log('Population de la catégorie...');
     await product.populate('category', 'name slug');
+    console.log('Catégorie populée');
 
+    console.log('=== SUCCÈS MISE À JOUR ===');
     res.json({
       message: 'Produit mis à jour avec succès',
       product: {
@@ -694,9 +734,13 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     });
 
   } catch (error) {
-    console.error('Erreur lors de la mise à jour du produit:', error);
+    console.error('=== ERREUR MISE À JOUR ===');
+    console.error('Stack trace:', error.stack);
+    console.error('Message:', error.message);
+    console.error('Name:', error.name);
     res.status(500).json({
-      message: 'Erreur lors de la mise à jour du produit'
+      message: 'Erreur lors de la mise à jour du produit',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
