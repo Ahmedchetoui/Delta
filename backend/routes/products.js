@@ -539,6 +539,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
       isFeatured,
       isNew,
       isOnSale,
+      isActive,
       tags,
       weight,
       dimensions,
@@ -557,14 +558,48 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
       }
     }
 
-    // Traiter les nouvelles images si fournies
+    // Gestion des images existantes et nouvelles
+    let finalImages = [];
+    
+    // Récupérer les images existantes à conserver
+    if (req.body.existingImages) {
+      try {
+        const existingImages = JSON.parse(req.body.existingImages);
+        finalImages = [...existingImages];
+      } catch (error) {
+        console.error('Erreur lors du parsing des images existantes:', error);
+      }
+    }
+    
+    // Supprimer les images marquées pour suppression
+    if (req.body.imagesToDelete) {
+      try {
+        const imagesToDelete = JSON.parse(req.body.imagesToDelete);
+        // Supprimer physiquement les fichiers
+        await Promise.all(imagesToDelete.map((img) => deleteFile(img)));
+        // Retirer des images finales
+        finalImages = finalImages.filter(img => !imagesToDelete.includes(img));
+      } catch (error) {
+        console.error('Erreur lors de la suppression des images:', error);
+      }
+    }
+    
+    // Ajouter les nouvelles images
     if ((req.files && req.files.length > 0) || (req.uploadedImages && req.uploadedImages.length > 0)) {
-      // Supprimer les anciennes images (URL Cloudinary ou fichier local)
-      await Promise.all((product.images || []).map((img) => deleteFile(img)));
-      // Remplacer par les nouvelles images
-      product.images = req.uploadedImages
+      const newImages = req.uploadedImages
         ? req.uploadedImages.map(u => u.url)
         : (req.files ? req.files.map(file => file.filename) : []);
+      finalImages = [...finalImages, ...newImages];
+    }
+    
+    // Mettre à jour les images du produit
+    if (finalImages.length > 0) {
+      product.images = finalImages;
+    } else if (req.body.existingImages || req.body.imagesToDelete || req.files || req.uploadedImages) {
+      // Si des modifications d'images ont été tentées mais qu'il ne reste aucune image
+      return res.status(400).json({
+        message: 'Au moins une image est requise pour le produit'
+      });
     }
 
     // Mettre à jour les champs
@@ -581,6 +616,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     if (isFeatured !== undefined) product.isFeatured = isFeatured === 'true';
     if (isNew !== undefined) product.isNewProduct = isNew === 'true';
     if (isOnSale !== undefined) product.isOnSale = isOnSale === 'true';
+    if (isActive !== undefined) product.isActive = isActive === 'true' || isActive === true;
     if (weight !== undefined) product.weight = parseFloat(weight);
     if (metaTitle !== undefined) product.metaTitle = metaTitle;
     if (metaDescription !== undefined) product.metaDescription = metaDescription;

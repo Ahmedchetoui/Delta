@@ -128,6 +128,7 @@ const AdminProductEdit = () => {
       submitData.append('price', formData.price);
       submitData.append('originalPrice', formData.originalPrice);
       submitData.append('category', formData.category);
+      submitData.append('isActive', formData.isActive);
       
       // Images existantes à conserver
       submitData.append('existingImages', JSON.stringify(formData.images));
@@ -282,7 +283,7 @@ const AdminProductEdit = () => {
               {formData.images.map((image, index) => (
                 <div key={index} className="relative">
                   <img
-                    src={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/uploads/${image}`}
+                    src={image.startsWith('http') ? image : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/uploads/${image}`}
                     alt={`Produit ${index + 1}`}
                     className="w-full h-32 object-cover rounded-lg"
                   />
