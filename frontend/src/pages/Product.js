@@ -26,6 +26,7 @@ const Product = () => {
   const [phone, setPhone] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
   const [isOrdering, setIsOrdering] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   const deliveryCost = 7.0; // Coût de livraison affiché dans la maquette
   const subtotal = currentProduct ? (currentProduct.finalPrice * quantity) : 0;
@@ -83,7 +84,8 @@ const Product = () => {
       color: selectedColor
     }));
 
-    toast.success('Produit ajouté au panier !');
+    // Afficher la modal de confirmation au lieu du toast
+    setShowOrderModal(true);
   };
 
   const handleWishlist = () => {
@@ -398,181 +400,184 @@ const Product = () => {
               )}
             </div>
 
-            {/* Formulaire de commande rapide */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
-              <div className="flex items-center">
-                <svg className="h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <h3 className="text-sm font-semibold text-blue-900">Commande rapide - Remplissez vos informations:</h3>
+            {/* Informations de livraison selon le design */}
+            <div className="bg-white border rounded-lg p-4 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Informations de livraison:</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Nom complet</label>
+                  <input
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="nasrallah jomaa"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Téléphone</label>
+                  <input
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="72140620"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
               </div>
               
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Nom complet *</label>
+                <label className="block text-sm text-gray-700 mb-1">Adresse</label>
                 <input
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Votre nom complet"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="tbolba"
+                  value={streetAddress}
+                  onChange={(e) => setStreetAddress(e.target.value)}
                 />
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">Téléphone *</label>
-                  <input
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Ex: +216 XX XXX XXX"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">Adresse *</label>
-                  <input
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Votre adresse complète"
-                    value={streetAddress}
-                    onChange={(e) => setStreetAddress(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <p className="text-xs text-gray-600">
-                * Champs obligatoires pour la commande rapide
-              </p>
             </div>
 
-            {/* Carte récapitulatif prix (pleine largeur sous les champs) */}
-            <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
-              <div className="divide-y">
-                <div className="flex items-center justify-between px-4 py-3 text-sm">
-                  <span className="text-gray-700">Sous-total:</span>
-                  <span className="font-semibold text-gray-900">{subtotal.toFixed(2)} DT</span>
-                </div>
-                <div className="flex items-center justify-between px-4 py-3 text-sm">
-                  <span className="text-gray-700">Livraison:</span>
-                  <span className="font-semibold text-gray-900">{deliveryCost.toFixed(2)} DT</span>
-                </div>
-                <div className="flex items-center justify-between px-4 py-3 text-sm">
-                  <span className="text-gray-900 font-semibold">Total:</span>
-                  <span className="text-gray-900 font-bold">{total.toFixed(2)} DT</span>
-                </div>
+            {/* Récapitulatif prix selon le design */}
+            <div className="bg-white border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-700">Sous-total:</span>
+                <span className="font-semibold text-gray-900">{subtotal.toFixed(2)} DT</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-700">Livraison:</span>
+                <span className="font-semibold text-gray-900">{deliveryCost.toFixed(2)} DT</span>
+              </div>
+              <hr className="border-gray-200" />
+              <div className="flex items-center justify-between text-lg font-bold">
+                <span className="text-gray-900">Total:</span>
+                <span className="text-gray-900">{total.toFixed(2)} DT</span>
               </div>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <span className={`inline-flex items-center text-sm ${currentProduct.totalStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {currentProduct.totalStock > 0 ? '✓ En stock' : '✗ Rupture de stock'}
-              </span>
-            </div>
-
-            {/* Debug info */}
-            <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
-              Debug: Stock={currentProduct.totalStock}, isOrdering={isOrdering.toString()}, 
-              Nom="{fullName}", Tel="{phone}", Adresse="{streetAddress}"
-            </div>
-
+            {/* Quantité selon le design */}
+            <div className="bg-white border rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Quantité:</h3>
+              <div className="flex items-center space-x-3">
                 <button
-                  onClick={handleAddToCart}
-                  disabled={currentProduct.totalStock === 0}
-              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mb-3"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
                 >
-              <ShoppingCartIcon className="h-5 w-5 mr-2" />
-              Ajouter au Panier – {subtotal.toFixed(2)} DT
+                  -
                 </button>
-
+                <span className="w-16 text-center font-medium text-lg">{quantity}</span>
                 <button
-                  onClick={() => {
-                    console.log('Bouton commande rapide cliqué !');
-                    handleDirectOrder();
-                  }}
-                  disabled={currentProduct.totalStock === 0 || isOrdering}
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
                 >
-                  {isOrdering ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Commande en cours...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Commander maintenant – {total.toFixed(2)} DT
-                    </>
-                  )}
+                  +
                 </button>
-
-                {/* Bouton de test temporaire */}
-                <button
-                  onClick={async () => {
-                    toast.info('Test de l\'API en cours...');
-                    console.log('Test API avec données:', { fullName, phone, streetAddress });
-                    
-                    try {
-                      // Test simple de l'API
-                      const testData = {
-                        items: [{
-                          product: currentProduct._id,
-                          quantity: 1,
-                          size: selectedSize || null,
-                          color: selectedColor || null
-                        }],
-                        shippingAddress: {
-                          firstName: fullName || 'Test',
-                          lastName: 'User',
-                          email: `test_${Date.now()}@deltafashion.tn`,
-                          phone: phone || '12345678',
-                          street: streetAddress || 'Test Address',
-                          city: 'Tunis',
-                          postalCode: '',
-                          country: 'Tunisie'
-                        },
-                        paymentMethod: 'cash_on_delivery'
-                      };
-                      
-                      console.log('Données à envoyer:', testData);
-                      const response = await api.post('/orders', testData);
-                      console.log('Réponse API:', response.data);
-                      toast.success('Test API réussi !');
-                      
-                    } catch (error) {
-                      console.error('Erreur test API:', error);
-                      toast.error('Erreur test API: ' + (error.response?.data?.message || error.message));
-                    }
-                  }}
-                  className="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg mt-2 text-sm"
-                >
-                  🧪 Test API Commande
-                </button>
-                
-            <div className="flex space-x-3">
-                <button
-                  onClick={handleWishlist}
-                className="flex-1 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
-                >
-                  {isWishlisted ? (
-                    <HeartSolidIcon className="h-6 w-6 text-red-500" />
-                  ) : (
-                    <HeartIcon className="h-6 w-6 text-gray-600" />
-                  )}
-                </button>
-                <button
-                  onClick={handleShare}
-                className="flex-1 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
-                >
-                  <ShareIcon className="h-6 w-6 text-gray-600" />
-                </button>
+                <span className="ml-4 text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                  {currentProduct.totalStock} en stock
+                </span>
               </div>
+            </div>
+
+            {/* Bouton Ajouter au Panier selon le design */}
+            <button
+              onClick={handleAddToCart}
+              disabled={currentProduct.totalStock === 0}
+              className="w-full bg-green-700 text-white py-4 px-6 rounded-lg hover:bg-green-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
+            >
+              <ShoppingCartIcon className="h-6 w-6 mr-2" />
+              Ajouter au Panier - {subtotal.toFixed(2)} DT
+            </button>
+
               
             
           </div>
         </div>
+
+        {/* Modal de confirmation de commande */}
+        {showOrderModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6 relative">
+              {/* Bouton fermer */}
+              <button
+                onClick={() => setShowOrderModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+
+              {/* Titre */}
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Confirmation de commande</h2>
+
+              {/* Boutons d'action */}
+              <div className="flex space-x-3 mb-6">
+                <button
+                  onClick={() => {
+                    setShowOrderModal(false);
+                    navigate('/cart');
+                  }}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded hover:bg-gray-200 transition-colors"
+                >
+                  Continuer mes achats
+                </button>
+                <button
+                  onClick={() => {
+                    setShowOrderModal(false);
+                    handleDirectOrder();
+                  }}
+                  className="flex-1 bg-green-700 text-white py-2 px-4 rounded hover:bg-green-800 transition-colors"
+                >
+                  Acheter Maintenant
+                </button>
+              </div>
+
+              {/* Détails du produit */}
+              <div className="flex items-start space-x-4 mb-4">
+                <img
+                  src={currentProduct.images[0]}
+                  alt={currentProduct.name}
+                  className="w-16 h-16 object-cover rounded"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">{currentProduct.name}</h3>
+                  <p className="text-sm text-gray-600">
+                    Découvrez l'élégance intemporelle de la Gandoura Marocaine, un vêtement traditionnel qui allie confort et raffinement.
+                  </p>
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                    <span>Taille: {selectedSize || 'L (M)'}</span>
+                    <span>Couleur: {selectedColor || 'Blanc/Gris'}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-gray-900">{subtotal.toFixed(2)} DT</div>
+                </div>
+              </div>
+
+              {/* Récapitulatif prix */}
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Prix unitaire:</span>
+                  <span>{currentProduct.finalPrice.toFixed(2)} DT</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Quantité:</span>
+                  <span>{quantity}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span>{total.toFixed(2)} DT</span>
+                </div>
+              </div>
+
+              {/* Informations de livraison */}
+              <div className="mt-4 p-3 bg-gray-50 rounded">
+                <h4 className="font-semibold text-gray-900 mb-2">Informations de livraison</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div><strong>Nom:</strong> {fullName || 'nasrallah jomaa'}</div>
+                  <div><strong>Téléphone:</strong> {phone || '72140620'}</div>
+                  <div><strong>Adresse:</strong> {streetAddress || 'tbolba'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Reviews Section */}
         <div className="mt-16">

@@ -1,15 +1,26 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeFromCart, updateCartItemQuantity, clearCart, selectCartItems, selectCartItemCount, selectCartTotal } from '../store/slices/cartSlice';
 import { ShoppingCartIcon, TrashIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 
 const Cart = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const items = useSelector(selectCartItems);
   const totalItems = useSelector(selectCartItemCount);
   const totalAmount = useSelector(selectCartTotal);
+  
+  // États pour les informations de livraison
+  const [fullName, setFullName] = useState('nasrallah jomaa');
+  const [phone, setPhone] = useState('72140620');
+  const [address, setAddress] = useState('tbolba');
+  const [isOrdering, setIsOrdering] = useState(false);
+  
+  const deliveryCost = 7.0;
+  const total = totalAmount + deliveryCost;
 
   const handleQuantityChange = (itemId, newQuantity) => {
     if (newQuantity < 1) {
@@ -28,6 +39,59 @@ const Cart = () => {
   const handleClearCart = () => {
     dispatch(clearCart());
     toast.success('Panier vidé');
+  };
+
+  const handleDirectOrder = async () => {
+    if (!fullName.trim() || !phone.trim() || !address.trim()) {
+      toast.error('Veuillez remplir toutes les informations de livraison');
+      return;
+    }
+
+    setIsOrdering(true);
+
+    try {
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || firstName;
+
+      const orderData = {
+        items: items.map(item => ({
+          product: item.product._id,
+          quantity: item.quantity,
+          size: item.size || null,
+          color: item.color || null
+        })),
+        shippingAddress: {
+          firstName: firstName,
+          lastName: lastName,
+          email: `guest_${Date.now()}@deltafashion.tn`,
+          phone: phone,
+          street: address,
+          city: 'Tunisie',
+          postalCode: '',
+          country: 'Tunisie'
+        },
+        paymentMethod: 'cash_on_delivery'
+      };
+
+      const response = await api.post('/orders', orderData);
+      
+      toast.success('Commande passée avec succès !');
+      dispatch(clearCart());
+      
+      navigate('/order-confirmation', { 
+        state: { 
+          orderId: response.data.order._id,
+          orderNumber: response.data.order.orderNumber 
+        } 
+      });
+
+    } catch (error) {
+      console.error('Erreur lors de la commande:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+    } finally {
+      setIsOrdering(false);
+    }
   };
 
   if (items.length === 0) {
@@ -56,185 +120,149 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Mon Panier</h1>
-          <p className="text-gray-600 mt-2">
-            {totalItems} article{totalItems > 1 ? 's' : ''} dans votre panier
-          </p>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Informations de livraison selon l'image 3 */}
+        <div className="bg-green-100 border border-green-300 rounded-lg p-4 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations de livraison:</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nom:</label>
+              <div className="text-right text-gray-900 font-medium">{fullName}</div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone:</label>
+              <div className="text-right text-gray-900 font-medium">{phone}</div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Adresse:</label>
+              <div className="text-right text-gray-900 font-medium">{address}</div>
+            </div>
+          </div>
+          
+          <div className="flex space-x-3">
+            <button
+              onClick={() => {
+                // Permettre la modification des informations
+                const newName = prompt('Modifier le nom:', fullName);
+                if (newName) setFullName(newName);
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-sm"
+            >
+              📝 Modifier
+            </button>
+            <button
+              onClick={handleClearCart}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors text-sm"
+            >
+              🗑️ Effacer
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Articles ({totalItems})
-                  </h2>
-                  <button
-                    onClick={handleClearCart}
-                    className="text-red-600 hover:text-red-700 text-sm font-medium"
-                  >
-                    Vider le panier
-                  </button>
-                </div>
-              </div>
+        {/* Récapitulatif des prix selon l'image 3 */}
+        <div className="bg-white border rounded-lg p-4 mb-6">
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700">Sous-total:</span>
+              <span className="font-semibold text-gray-900">{totalAmount.toFixed(2)} DT</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700">Livraison:</span>
+              <span className="font-semibold text-gray-900">{deliveryCost.toFixed(2)} DT</span>
+            </div>
+            <hr className="border-gray-200" />
+            <div className="flex justify-between text-lg font-bold">
+              <span className="text-gray-900">Total:</span>
+              <span className="text-gray-900">{total.toFixed(2)} DT</span>
+            </div>
+          </div>
+        </div>
 
-              <div className="divide-y divide-gray-200">
-                {items.map((item) => (
-                  <div key={item.id} className="p-6">
-                    <div className="flex items-center space-x-4">
-                      {/* Product Image */}
-                      <div className="flex-shrink-0">
-                        <img
-                          src={(item.product?.images?.[0]) || '/api/placeholder/100/100'}
-                          alt={item.product?.name}
-                          className="h-20 w-20 object-cover rounded-lg"
-                        />
+        {/* Quantité selon l'image 3 */}
+        <div className="bg-white border rounded-lg p-4 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Quantité:</h3>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => {
+                if (items.length > 0) {
+                  handleQuantityChange(items[0].id, Math.max(1, items[0].quantity - 1));
+                }
+              }}
+              className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
+            >
+              -
+            </button>
+            <span className="w-16 text-center font-medium text-lg">
+              {items.reduce((sum, item) => sum + item.quantity, 0)}
+            </span>
+            <button
+              onClick={() => {
+                if (items.length > 0) {
+                  handleQuantityChange(items[0].id, items[0].quantity + 1);
+                }
+              }}
+              className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
+            >
+              +
+            </button>
+            <span className="ml-4 text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
+              {totalItems} en stock
+            </span>
+          </div>
+        </div>
+
+        {/* Bouton Ajouter au Panier selon l'image 3 */}
+        <button
+          onClick={handleDirectOrder}
+          disabled={isOrdering || items.length === 0}
+          className="w-full bg-green-700 text-white py-4 px-6 rounded-lg hover:bg-green-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg mb-4"
+        >
+          {isOrdering ? (
+            <>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
+              Commande en cours...
+            </>
+          ) : (
+            <>
+              <ShoppingCartIcon className="h-6 w-6 mr-2" />
+              Ajouter au Panier - {totalAmount.toFixed(2)} DT
+            </>
+          )}
+        </button>
+
+        {/* Articles du panier (version simplifiée) */}
+        {items.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Articles dans votre panier:</h3>
+            <div className="space-y-3">
+              {items.map((item) => (
+                <div key={item.id} className="flex items-center justify-between border-b pb-2">
+                  <div className="flex items-center space-x-3">
+                    <img
+                      src={(item.product?.images?.[0]) || '/api/placeholder/50/50'}
+                      alt={item.product?.name}
+                      className="h-12 w-12 object-cover rounded"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">{item.product?.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {item.size && `Taille: ${item.size}`} {item.color && `Couleur: ${item.color}`}
                       </div>
-
-                      {/* Product Details */}
-                      <div className="flex-1 min-w-0">
-                        <Link
-                          to={`/product/${item.product?._id}`}
-                          className="text-lg font-medium text-gray-900 hover:text-blue-600"
-                        >
-                          {item.product?.name}
-                        </Link>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Prix unitaire: {item.price} DT
-                        </p>
-                        {item.size && (
-                          <p className="text-sm text-gray-500">
-                            Taille: {item.size}
-                          </p>
-                        )}
-                        {item.color && (
-                          <p className="text-sm text-gray-500">
-                            Couleur: {item.color}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Quantity Controls */}
-                      <div className="flex items-center space-x-3">
-                        <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                          className="p-1 rounded-full hover:bg-gray-100"
-                        >
-                          <MinusIcon className="h-4 w-4 text-gray-600" />
-                        </button>
-                        
-                        <span className="w-8 text-center font-medium">
-                          {item.quantity}
-                        </span>
-                        
-                        <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                          className="p-1 rounded-full hover:bg-gray-100"
-                        >
-                          <PlusIcon className="h-4 w-4 text-gray-600" />
-                        </button>
-                      </div>
-
-                      {/* Price */}
-                      <div className="text-right">
-                        <p className="text-lg font-semibold text-gray-900">
-                          {(item.price * item.quantity).toFixed(2)} DT
-                        </p>
-                      </div>
-
-                      {/* Remove Button */}
-                      <button
-                        onClick={() => handleRemoveItem(item.id)}
-                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Résumé de la commande
-              </h2>
-
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Sous-total</span>
-                  <span className="font-medium">{totalAmount.toFixed(2)} DT</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Livraison</span>
-                  <span className="font-medium">
-                    {totalAmount >= 100 ? 'Gratuite' : '10.00 DT'}
-                  </span>
-                </div>
-                
-                {totalAmount < 100 && (
-                  <div className="text-sm text-blue-600">
-                    Ajoutez {(100 - totalAmount).toFixed(2)} DT pour la livraison gratuite
-                  </div>
-                )}
-                
-                <div className="border-t border-gray-200 pt-3">
-                  <div className="flex justify-between">
-                    <span className="text-lg font-semibold text-gray-900">Total</span>
-                    <span className="text-lg font-semibold text-gray-900">
-                      {(totalAmount + (totalAmount >= 100 ? 0 : 10)).toFixed(2)} DT
-                    </span>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">
+                      {(item.price * item.quantity).toFixed(2)} DT
+                    </div>
+                    <div className="text-sm text-gray-500">Qté: {item.quantity}</div>
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <Link
-                  to="/checkout"
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-center block font-medium"
-                >
-                  Passer la commande
-                </Link>
-                
-                <Link
-                  to="/shop"
-                  className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors text-center block font-medium"
-                >
-                  Continuer mes achats
-                </Link>
-              </div>
-
-              {/* Security Badge */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-                  <span>🔒</span>
-                  <span>Paiement sécurisé</span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-
-        {/* Recommended Products */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">
-            Vous pourriez aussi aimer
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Ici on pourrait ajouter des produits recommandés */}
-            <div className="text-center py-8 text-gray-500">
-              <p>Produits recommandés à venir...</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
