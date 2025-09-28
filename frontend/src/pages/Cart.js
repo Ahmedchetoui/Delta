@@ -14,9 +14,9 @@ const Cart = () => {
   const totalAmount = useSelector(selectCartTotal);
   
   // États pour les informations de livraison
-  const [fullName, setFullName] = useState('nasrallah jomaa');
-  const [phone, setPhone] = useState('72140620');
-  const [address, setAddress] = useState('tbolba');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [isOrdering, setIsOrdering] = useState(false);
   
   const deliveryCost = 7.0;

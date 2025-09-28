@@ -409,7 +409,7 @@ const Product = () => {
                   <label className="block text-sm text-gray-700 mb-1">Nom complet</label>
                   <input
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="nasrallah jomaa"
+                    placeholder=""
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
@@ -429,7 +429,7 @@ const Product = () => {
                 <label className="block text-sm text-gray-700 mb-1">Adresse</label>
                 <input
                   className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="tbolba"
+                  placeholder=""
                   value={streetAddress}
                   onChange={(e) => setStreetAddress(e.target.value)}
                 />
