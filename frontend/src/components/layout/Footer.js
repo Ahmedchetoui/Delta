@@ -99,8 +99,7 @@ const Footer = () => {
               <div className="flex items-start space-x-3">
                 <MapPinIcon className="h-5 w-5 text-blue-400 mt-1" />
                 <span className="text-gray-300">
-                  Tunis, Tunisie<br />
-                  Avenue Habib Bourguiba
+                  Manzel ennour
                 </span>
               </div>
             </div>
@@ -129,7 +128,7 @@ const Footer = () => {
         <div className="border-t border-gray-800 mt-3 py-2">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2024 Delta Fashion. Tous droits réservés.
+              © 2025 Delta Fashion. Tous droits réservés.
             </p>
             <div className="flex space-x-6 mt-0 md:mt-0 text-gray-400 text-sm">
               <span>Politique de confidentialité</span>

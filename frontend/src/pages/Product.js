@@ -418,7 +418,7 @@ const Product = () => {
                   <label className="block text-sm text-gray-700 mb-1">Téléphone</label>
                   <input
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="72140620"
+                    placeholder=""
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
@@ -570,9 +570,9 @@ const Product = () => {
               <div className="mt-4 p-3 bg-gray-50 rounded">
                 <h4 className="font-semibold text-gray-900 mb-2">Informations de livraison</h4>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <div><strong>Nom:</strong> {fullName || 'nasrallah jomaa'}</div>
-                  <div><strong>Téléphone:</strong> {phone || '72140620'}</div>
-                  <div><strong>Adresse:</strong> {streetAddress || 'tbolba'}</div>
+                  <div><strong>Nom:</strong> {fullName || 'Non renseigné'}</div>
+                  <div><strong>Téléphone:</strong> {phone || 'Non renseigné'}</div>
+                  <div><strong>Adresse:</strong> {streetAddress || 'Non renseigné'}</div>
                 </div>
               </div>
             </div>
