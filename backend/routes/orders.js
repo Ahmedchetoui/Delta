@@ -20,11 +20,11 @@ const orderValidation = [
     .withMessage('La quantité doit être un nombre entier positif'),
   body('shippingAddress.firstName')
     .trim()
-    .isLength({ min: 2, max: 50 })
+    .isLength({ min: 1, max: 50 })
     .withMessage('Le prénom est requis'),
   body('shippingAddress.lastName')
     .trim()
-    .isLength({ min: 2, max: 50 })
+    .isLength({ min: 1, max: 50 })
     .withMessage('Le nom est requis'),
   body('shippingAddress.email')
     .isEmail()
@@ -34,9 +34,10 @@ const orderValidation = [
     .withMessage('Numéro de téléphone invalide'),
   body('shippingAddress.street')
     .trim()
-    .isLength({ min: 5, max: 200 })
+    .isLength({ min: 3, max: 200 })
     .withMessage('L\'adresse est requise'),
   body('shippingAddress.city')
+    .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('La ville est requise'),
@@ -331,9 +332,9 @@ router.post('/', optionalAuth, orderValidation, async (req, res) => {
       });
     }
 
-    // Calculer les frais de livraison (exemple: gratuit au-dessus de 100 TND)
-    const shippingCost = subtotal >= 100 ? 0 : 10;
-    const tax = subtotal * 0.19; // TVA 19%
+    // Calculer les frais de livraison (fixe à 7 DT comme dans le frontend)
+    const shippingCost = 7.0;
+    const tax = 0; // Pas de TVA pour simplifier
     const total = subtotal + shippingCost + tax;
 
     // Créer la commande (avec ou sans utilisateur connecté)

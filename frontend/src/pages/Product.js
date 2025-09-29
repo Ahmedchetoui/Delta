@@ -29,7 +29,7 @@ const Product = () => {
   const [showOrderModal, setShowOrderModal] = useState(false);
 
   const deliveryCost = 7.0; // Coût de livraison affiché dans la maquette
-  const subtotal = currentProduct ? (currentProduct.finalPrice * quantity) : 0;
+  const subtotal = currentProduct ? (currentProduct.currentPrice * quantity) : 0;
   const total = subtotal + deliveryCost;
 
   // Helpers d'affichage couleurs (approximation pour swatches)
@@ -77,7 +77,7 @@ const Product = () => {
     dispatch(addToCart({
       product: currentProduct._id,
       name: currentProduct.name,
-      price: currentProduct.finalPrice,
+      price: currentProduct.currentPrice,
       image: currentProduct.images[0],
       quantity,
       size: selectedSize,
