@@ -29,7 +29,8 @@ const Product = () => {
   const [showOrderModal, setShowOrderModal] = useState(false);
 
   const deliveryCost = 7.0; // Coût de livraison affiché dans la maquette
-  const subtotal = currentProduct ? (currentProduct.currentPrice * quantity) : 0;
+  const productPrice = currentProduct ? (currentProduct.price || 0) : 0;
+  const subtotal = productPrice * quantity;
   const total = subtotal + deliveryCost;
 
   // Helpers d'affichage couleurs (approximation pour swatches)
@@ -77,7 +78,7 @@ const Product = () => {
     dispatch(addToCart({
       product: currentProduct._id,
       name: currentProduct.name,
-      price: currentProduct.currentPrice,
+      price: productPrice,
       image: currentProduct.images[0],
       quantity,
       size: selectedSize,
@@ -292,21 +293,21 @@ const Product = () => {
 
               {/* Price */}
               <div className="mb-6">
-                {currentProduct.isOnSale && currentProduct.price !== currentProduct.finalPrice ? (
+                {currentProduct.discount > 0 && currentProduct.originalPrice ? (
                   <div className="flex items-center space-x-3">
                     <span className="text-3xl font-bold text-gray-900">
-                      {currentProduct.finalPrice} DT
+                      {productPrice} DT
                     </span>
                     <span className="text-xl text-gray-500 line-through">
-                      {currentProduct.price} DT
+                      {currentProduct.originalPrice} DT
                     </span>
                     <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
-                      -{Math.round((1 - currentProduct.finalPrice / currentProduct.price) * 100)}%
+                      -{currentProduct.discount}%
                     </span>
                   </div>
                 ) : (
                   <span className="text-3xl font-bold text-gray-900">
-                    {currentProduct.finalPrice} DT
+                    {productPrice} DT
                   </span>
                 )}
               </div>
@@ -483,10 +484,83 @@ const Product = () => {
               className="w-full bg-green-700 text-white py-4 px-6 rounded-lg hover:bg-green-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
             >
               <ShoppingCartIcon className="h-6 w-6 mr-2" />
-              Ajouter au Panier - {subtotal.toFixed(2)} DT
+              Ajouter au Panier - {total.toFixed(2)} DT
             </button>
 
+            {/* Formulaire de commande rapide */}
+            <div className="mt-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+              <div className="flex items-center mb-4">
+                <svg className="h-6 w-6 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-blue-900">Commande rapide</h3>
+              </div>
               
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nom complet <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Votre nom complet"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Téléphone <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="+216 XX XXX XXX"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Adresse de livraison <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={streetAddress}
+                    onChange={(e) => setStreetAddress(e.target.value)}
+                    rows={2}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Votre adresse complète"
+                  />
+                </div>
+
+                <button
+                  onClick={handleDirectOrder}
+                  disabled={isOrdering || currentProduct.totalStock === 0}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {isOrdering ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Commande en cours...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Commander maintenant - {total.toFixed(2)} DT
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
             
           </div>
         </div>
@@ -554,7 +628,7 @@ const Product = () => {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Prix unitaire:</span>
-                  <span>{currentProduct.finalPrice.toFixed(2)} DT</span>
+                  <span>{productPrice.toFixed(2)} DT</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Quantité:</span>
