@@ -21,12 +21,12 @@ const Product = () => {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  // Champs de commande rapide (interface client comme la capture)
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
-  const [isOrdering, setIsOrdering] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  
+  // Variables pour la modal (valeurs par défaut)
+  const fullName = '';
+  const phone = '';
+  const streetAddress = '';
 
   const deliveryCost = 7.0; // Coût de livraison affiché dans la maquette
   const productPrice = currentProduct ? (currentProduct.price || 0) : 0;
@@ -76,10 +76,7 @@ const Product = () => {
     }
 
     dispatch(addToCart({
-      product: currentProduct._id,
-      name: currentProduct.name,
-      price: productPrice,
-      image: currentProduct.images[0],
+      product: currentProduct,
       quantity,
       size: selectedSize,
       color: selectedColor
@@ -107,84 +104,6 @@ const Product = () => {
     }
   };
 
-  const handleDirectOrder = async () => {
-    console.log('Tentative de commande rapide...', { fullName, phone, streetAddress });
-    
-    // Validation des champs obligatoires
-    if (!fullName.trim()) {
-      toast.error('Veuillez saisir votre nom complet');
-      return;
-    }
-    if (!phone.trim()) {
-      toast.error('Veuillez saisir votre numéro de téléphone');
-      return;
-    }
-    if (!streetAddress.trim()) {
-      toast.error('Veuillez saisir votre adresse');
-      return;
-    }
-
-    // Validation du stock
-    if (currentProduct.totalStock === 0) {
-      toast.error('Ce produit n\'est plus en stock');
-      return;
-    }
-
-    // Validation de la taille si nécessaire
-    if (!selectedSize && currentProduct.variants?.length > 0) {
-      toast.error('Veuillez sélectionner une taille');
-      return;
-    }
-
-    setIsOrdering(true);
-
-    try {
-      // Séparer le nom complet en prénom et nom
-      const nameParts = fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || firstName;
-
-      // Préparer les données de commande
-      const orderData = {
-        items: [{
-          product: currentProduct._id,
-          quantity: quantity,
-          size: selectedSize || null,
-          color: selectedColor || null
-        }],
-        shippingAddress: {
-          firstName: firstName,
-          lastName: lastName,
-          email: `guest_${Date.now()}@deltafashion.tn`, // Email temporaire pour les invités
-          phone: phone,
-          street: streetAddress,
-          city: 'Tunisie', // Valeur par défaut
-          postalCode: '',
-          country: 'Tunisie'
-        },
-        paymentMethod: 'cash_on_delivery'
-      };
-
-      // Envoyer la commande
-      const response = await api.post('/orders', orderData);
-      
-      toast.success('Commande passée avec succès !');
-      
-      // Rediriger vers une page de confirmation
-      navigate('/order-confirmation', { 
-        state: { 
-          orderId: response.data.order._id,
-          orderNumber: response.data.order.orderNumber 
-        } 
-      });
-
-    } catch (error) {
-      console.error('Erreur lors de la commande:', error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
-    } finally {
-      setIsOrdering(false);
-    }
-  };
 
   if (loading) {
     return <Loading size="large" text="Chargement du produit..." />;
@@ -401,41 +320,6 @@ const Product = () => {
               )}
             </div>
 
-            {/* Informations de livraison selon le design */}
-            <div className="bg-white border rounded-lg p-4 space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Informations de livraison:</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">Nom complet</label>
-                  <input
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder=""
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">Téléphone</label>
-                  <input
-                    className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder=""
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm text-gray-700 mb-1">Adresse</label>
-                <input
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder=""
-                  value={streetAddress}
-                  onChange={(e) => setStreetAddress(e.target.value)}
-                />
-              </div>
-            </div>
 
             {/* Récapitulatif prix selon le design */}
             <div className="bg-white border rounded-lg p-4 space-y-3">
@@ -486,81 +370,6 @@ const Product = () => {
               <ShoppingCartIcon className="h-6 w-6 mr-2" />
               Ajouter au Panier - {total.toFixed(2)} DT
             </button>
-
-            {/* Formulaire de commande rapide */}
-            <div className="mt-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
-              <div className="flex items-center mb-4">
-                <svg className="h-6 w-6 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <h3 className="text-lg font-semibold text-blue-900">Commande rapide</h3>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nom complet <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Votre nom complet"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Téléphone <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="+216 XX XXX XXX"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Adresse de livraison <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={streetAddress}
-                    onChange={(e) => setStreetAddress(e.target.value)}
-                    rows={2}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Votre adresse complète"
-                  />
-                </div>
-
-                <button
-                  onClick={handleDirectOrder}
-                  disabled={isOrdering || currentProduct.totalStock === 0}
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {isOrdering ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Commande en cours...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Commander maintenant - {total.toFixed(2)} DT
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
             
           </div>
         </div>
@@ -594,7 +403,7 @@ const Product = () => {
                 <button
                   onClick={() => {
                     setShowOrderModal(false);
-                    handleDirectOrder();
+                    navigate('/checkout');
                   }}
                   className="flex-1 bg-green-700 text-white py-2 px-4 rounded hover:bg-green-800 transition-colors"
                 >

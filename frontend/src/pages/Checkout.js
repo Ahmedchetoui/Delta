@@ -52,10 +52,10 @@ const Checkout = () => {
       // Préparer les données de commande
       const orderData = {
         items: items.map(item => ({
-          product: item._id,
+          product: item.product._id,
           quantity: item.quantity,
-          size: item.selectedSize || null,
-          color: formData.color || item.selectedColor || null
+          size: item.size || null,
+          color: formData.color || item.color || null
         })),
         shippingAddress: {
           firstName: firstName,
