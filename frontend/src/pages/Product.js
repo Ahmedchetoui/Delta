@@ -126,43 +126,45 @@ const Product = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb */}
+        {/* Breadcrumb amélioré */}
         <nav className="mb-8">
-          <ol className="flex items-center space-x-2 text-sm text-gray-500">
-            <li><a href="/" className="hover:text-blue-600">Accueil</a></li>
-            <li>/</li>
-            <li><a href="/shop" className="hover:text-blue-600">Boutique</a></li>
-            <li>/</li>
-            <li><a href={`/shop?category=${currentProduct.category?._id}`} className="hover:text-blue-600">
+          <ol className="flex items-center space-x-2 text-sm">
+            <li><a href="/" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">Accueil</a></li>
+            <li><span className="text-gray-400">•</span></li>
+            <li><a href="/shop" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">Boutique</a></li>
+            <li><span className="text-gray-400">•</span></li>
+            <li><a href={`/shop?category=${currentProduct.category?._id}`} className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
               {currentProduct.category?.name}
             </a></li>
-            <li>/</li>
-            <li className="text-gray-900">{currentProduct.name}</li>
+            <li><span className="text-gray-400">•</span></li>
+            <li className="text-gray-700 font-semibold">{currentProduct.name}</li>
           </ol>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Colonne gauche: Images + Description */}
           <div>
-            <div className="aspect-square bg-white rounded-lg shadow-md overflow-hidden mb-4">
+            <div className="aspect-square bg-white rounded-2xl shadow-xl overflow-hidden mb-6 group">
               <img
                 src={currentProduct.images[selectedImage] || '/api/placeholder/600/600'}
                 alt={currentProduct.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
             
-            {/* Thumbnail Images */}
+            {/* Thumbnail Images améliorées */}
             {currentProduct.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-3">
                 {currentProduct.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`aspect-square bg-white rounded-lg shadow-sm overflow-hidden border-2 ${
-                      selectedImage === index ? 'border-blue-600' : 'border-gray-200'
+                    className={`aspect-square bg-white rounded-xl shadow-md overflow-hidden border-2 transition-all duration-200 hover:shadow-lg ${
+                      selectedImage === index 
+                        ? 'border-blue-600 ring-2 ring-blue-200 scale-105' 
+                        : 'border-gray-200 hover:border-blue-300'
                     }`}
                   >
                     <img
@@ -209,23 +211,22 @@ const Product = () => {
                   ({currentProduct.reviews?.length || 0} avis)
                 </span>
               </div>
-
               {/* Price */}
               <div className="mb-6">
                 {currentProduct.discount > 0 && currentProduct.originalPrice ? (
                   <div className="flex items-center space-x-3">
-                    <span className="text-3xl font-bold text-gray-900">
+                    <span className="text-4xl font-bold text-blue-600">
                       {productPrice} DT
                     </span>
                     <span className="text-xl text-gray-500 line-through">
                       {currentProduct.originalPrice} DT
                     </span>
-                    <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
+                    <span className="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-md">
                       -{currentProduct.discount}%
                     </span>
                   </div>
                 ) : (
-                  <span className="text-3xl font-bold text-gray-900">
+                  <span className="text-4xl font-bold text-blue-600">
                     {productPrice} DT
                   </span>
                 )}
@@ -361,11 +362,11 @@ const Product = () => {
               </div>
             </div>
 
-            {/* Bouton Ajouter au Panier selon le design */}
+            {/* Bouton Ajouter au Panier amélioré */}
             <button
               onClick={handleAddToCart}
               disabled={currentProduct.totalStock === 0}
-              className="w-full bg-green-700 text-white py-4 px-6 rounded-lg hover:bg-green-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
+              className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               <ShoppingCartIcon className="h-6 w-6 mr-2" />
               Ajouter au Panier - {total.toFixed(2)} DT
@@ -462,18 +463,14 @@ const Product = () => {
           </div>
         )}
 
-        {/* Reviews Section */}
+        {/* Avis clients */}
         <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">Avis clients</h2>
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <p className="text-gray-600 text-center">
-              Section des avis à implémenter...
-            </p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Avis clients</h2>
+          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <p className="text-gray-500 italic">Section des avis à implémenter...</p>
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-export default Product;
