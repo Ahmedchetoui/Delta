@@ -99,22 +99,24 @@ const Product = () => {
       const orderData = {
         items: [{
           product: currentProduct._id,
-          quantity: quantity,
+          quantity: parseInt(quantity),
           size: selectedSize || null,
-          color: selectedColor || preferredColor || null
+          color: selectedColor || null
         }],
         shippingAddress: {
-          firstName: firstName,
-          lastName: lastName,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
           email: `guest_${Date.now()}@deltafashion.tn`,
-          phone: phone,
-          street: streetAddress,
+          phone: phone.trim(),
+          street: streetAddress.trim(),
           city: 'Tunisie',
-          postalCode: '',
+          postalCode: '1000',
           country: 'Tunisie'
         },
         paymentMethod: 'cash_on_delivery'
       };
+
+      console.log('Données de commande:', orderData);
 
       // Envoyer la commande
       const response = await api.post('/orders', orderData);
@@ -238,7 +240,7 @@ const Product = () => {
                 {currentProduct.name}
               </h1>
               
-              <div className="text-3xl font-bold text-orange-500 mb-6">
+              <div className="text-3xl font-bold mb-6" style={{color: '#B8860B'}}>
                 {productPrice.toFixed(2)} DT
               </div>
             </div>
@@ -273,21 +275,25 @@ const Product = () => {
             {/* Couleur */}
             {currentProduct.variants && currentProduct.variants.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Couleur</h3>
-                <div className="flex gap-3">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Couleur:</h3>
+                <div className="flex gap-4">
                   {[...new Set(currentProduct.variants.map(v => v.color))].map((color) => {
                     const isSelected = selectedColor === color;
                     const hex = colorNameToHex(color);
                     return (
-                      <button
-                        key={color}
-                        onClick={() => setSelectedColor(color)}
-                        className={`w-8 h-8 rounded-full border-2 ${
-                          isSelected ? 'border-gray-800' : 'border-gray-300'
-                        }`}
-                        style={{ backgroundColor: hex }}
-                        title={color}
-                      />
+                      <div key={color} className="flex flex-col items-center">
+                        <button
+                          onClick={() => setSelectedColor(color)}
+                          className={`w-8 h-8 rounded-full border-2 ${
+                            isSelected ? 'border-gray-800' : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: hex }}
+                          title={color}
+                        />
+                        <span className="text-xs text-gray-600 mt-1 text-center">
+                          {color}
+                        </span>
+                      </div>
                     );
                   })}
                 </div>
@@ -296,84 +302,86 @@ const Product = () => {
 
             {/* Informations de livraison */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4">Informations de livraison:</h3>
+              <h3 className="text-sm font-medium text-blue-900 mb-3">Informations de livraison:</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nom complet
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Nom complet:
                   </label>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
                     placeholder="Votre nom complet"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Téléphone
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Téléphone:
                   </label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
                     placeholder="Ex: 22000000"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Adresse
+                <label className="block text-xs text-gray-600 mb-1">
+                  Adresse:
                 </label>
                 <textarea
                   value={streetAddress}
                   onChange={(e) => setStreetAddress(e.target.value)}
                   rows={2}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
                   placeholder="Votre adresse complète"
                 />
               </div>
             </div>
 
             {/* Récapitulatif prix */}
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="bg-gray-100 rounded-lg p-3 space-y-1">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Sous-total:</span>
-                <span className="font-semibold">{subtotal.toFixed(2)} DT</span>
+                <span className="text-gray-700">Sous-total:</span>
+                <span className="font-semibold text-gray-900">{subtotal.toFixed(2)} DT</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Livraison:</span>
-                <span className="font-semibold">{deliveryCost.toFixed(2)} DT</span>
+                <span className="text-gray-700">Livraison:</span>
+                <span className="font-semibold text-gray-900">{deliveryCost.toFixed(2)} DT</span>
               </div>
-              <hr className="border-gray-300" />
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total:</span>
-                <span>{total.toFixed(2)} DT</span>
+              <hr className="border-gray-400 my-2" />
+              <div className="flex justify-between text-base font-bold">
+                <span className="text-gray-900">Total:</span>
+                <span className="text-gray-900">{total.toFixed(2)} DT</span>
               </div>
             </div>
 
             {/* Quantité */}
-            <div className="bg-white border rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Quantité:</h3>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
-                >
-                  -
-                </button>
-                <span className="w-12 text-center font-medium">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
-                >
-                  +
-                </button>
-                <span className="ml-4 text-sm text-gray-600">
+            <div className="bg-white border border-gray-300 rounded-lg p-3">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Quantité:</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center font-medium text-sm">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+                <span className="text-xs text-gray-600">
                   {currentProduct.totalStock} en stock
                 </span>
               </div>
