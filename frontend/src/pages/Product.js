@@ -23,10 +23,11 @@ const Product = () => {
 
   const [showOrderModal, setShowOrderModal] = useState(false);
   
-  // Variables pour la modal (valeurs par défaut)
-  const fullName = '';
-  const phone = '';
-  const streetAddress = '';
+  // Champs d'informations de livraison
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [preferredColor, setPreferredColor] = useState('');
 
   const deliveryCost = 7.0; // Coût de livraison affiché dans la maquette
   const productPrice = currentProduct ? (currentProduct.price || 0) : 0;
@@ -69,21 +70,64 @@ const Product = () => {
     }
   }, [dispatch, id]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    // Validation des champs obligatoires
+    if (!fullName.trim()) {
+      toast.error('Veuillez saisir votre nom complet');
+      return;
+    }
+    if (!phone.trim()) {
+      toast.error('Veuillez saisir votre numéro de téléphone');
+      return;
+    }
+    if (!streetAddress.trim()) {
+      toast.error('Veuillez saisir votre adresse');
+      return;
+    }
     if (!selectedSize && currentProduct.variants?.length > 0) {
       toast.error('Veuillez sélectionner une taille');
       return;
     }
 
-    dispatch(addToCart({
-      product: currentProduct,
-      quantity,
-      size: selectedSize,
-      color: selectedColor
-    }));
+    try {
+      // Séparer le nom complet en prénom et nom
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || firstName;
 
-    // Afficher la modal de confirmation au lieu du toast
-    setShowOrderModal(true);
+      // Préparer les données de commande
+      const orderData = {
+        items: [{
+          product: currentProduct._id,
+          quantity: quantity,
+          size: selectedSize || null,
+          color: selectedColor || preferredColor || null
+        }],
+        shippingAddress: {
+          firstName: firstName,
+          lastName: lastName,
+          email: `guest_${Date.now()}@deltafashion.tn`,
+          phone: phone,
+          street: streetAddress,
+          city: 'Tunisie',
+          postalCode: '',
+          country: 'Tunisie'
+        },
+        paymentMethod: 'cash_on_delivery'
+      };
+
+      // Envoyer la commande
+      const response = await api.post('/orders', orderData);
+      
+      toast.success('Commande passée avec succès !');
+      
+      // Afficher la modal de confirmation
+      setShowOrderModal(true);
+
+    } catch (error) {
+      console.error('Erreur lors de la commande:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+    }
   };
 
   const handleWishlist = () => {
@@ -143,28 +187,28 @@ const Product = () => {
           </ol>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Colonne gauche: Images + Description */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Colonne gauche: Image principale */}
           <div>
-            <div className="aspect-square bg-white rounded-2xl shadow-xl overflow-hidden mb-6 group">
+            <div className="aspect-square bg-white rounded-lg shadow-md overflow-hidden">
               <img
                 src={currentProduct.images[selectedImage] || '/api/placeholder/600/600'}
                 alt={currentProduct.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover"
               />
             </div>
             
-            {/* Thumbnail Images améliorées */}
+            {/* Thumbnail Images */}
             {currentProduct.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 gap-2 mt-4">
                 {currentProduct.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`aspect-square bg-white rounded-xl shadow-md overflow-hidden border-2 transition-all duration-200 hover:shadow-lg ${
+                    className={`aspect-square bg-white rounded-lg shadow-sm overflow-hidden border-2 ${
                       selectedImage === index 
-                        ? 'border-blue-600 ring-2 ring-blue-200 scale-105' 
-                        : 'border-gray-200 hover:border-blue-300'
+                        ? 'border-blue-500' 
+                        : 'border-gray-200'
                     }`}
                   >
                     <img
@@ -177,9 +221,9 @@ const Product = () => {
               </div>
             )}
 
-            {/* Description (en bas, comme la maquette) */}
-            <div className="mt-6 bg-white rounded-lg shadow-md p-5">
-              <h3 className="text-base font-semibold text-gray-900 mb-2">Description</h3>
+            {/* Description */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
               <p className="text-gray-600 leading-relaxed">
                 {currentProduct.description}
               </p>
@@ -188,187 +232,160 @@ const Product = () => {
 
           {/* Colonne droite: Détails + Commande */}
           <div className="space-y-6">
+            {/* Titre et Prix */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">
                 {currentProduct.name}
               </h1>
               
-              {/* Rating */}
-              <div className="flex items-center mb-4">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <StarIcon
-                      key={i}
-                      className={`h-5 w-5 ${
-                        i < Math.floor(currentProduct.rating || 0)
-                          ? 'text-yellow-400 fill-current'
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="ml-2 text-sm text-gray-600">
-                  ({currentProduct.reviews?.length || 0} avis)
-                </span>
-              </div>
-              {/* Price */}
-              <div className="mb-6">
-                {currentProduct.discount > 0 && currentProduct.originalPrice ? (
-                  <div className="flex items-center space-x-3">
-                    <span className="text-4xl font-bold text-blue-600">
-                      {productPrice} DT
-                    </span>
-                    <span className="text-xl text-gray-500 line-through">
-                      {currentProduct.originalPrice} DT
-                    </span>
-                    <span className="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-md">
-                      -{currentProduct.discount}%
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-4xl font-bold text-blue-600">
-                    {productPrice} DT
-                  </span>
-                )}
+              <div className="text-3xl font-bold text-orange-500 mb-6">
+                {productPrice.toFixed(2)} DT
               </div>
             </div>
 
-            {/* Variants */}
+            {/* Taille */}
             {currentProduct.variants && currentProduct.variants.length > 0 && (
-              <div className="space-y-4">
-                {/* Sizes */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Taille</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {[...new Set(currentProduct.variants.map(v => v.size))].map((size) => {
-                      const available = currentProduct.variants.some(v => v.size === size && (v.stock ?? 0) > 0);
-                      const isSelected = selectedSize === size;
-                      return (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Taille</h3>
+                <div className="flex gap-2">
+                  {[...new Set(currentProduct.variants.map(v => v.size))].map((size) => {
+                    const available = currentProduct.variants.some(v => v.size === size && (v.stock ?? 0) > 0);
+                    const isSelected = selectedSize === size;
+                    return (
                       <button
                         key={size}
                         onClick={() => setSelectedSize(size)}
-                          disabled={!available}
-                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
-                            isSelected
-                              ? 'bg-green-600 text-white border-green-600'
-                              : 'bg-white text-gray-800 border-gray-300 hover:border-green-500'
-                          } ${!available ? 'opacity-50 cursor-not-allowed line-through' : ''}`}
+                        disabled={!available}
+                        className={`w-10 h-10 border rounded text-sm font-medium ${
+                          isSelected
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                        } ${!available ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {size}
                       </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Colors */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Couleur</h3>
-                  <div className="flex flex-wrap items-start gap-4">
-                    {[...new Set(currentProduct.variants.map(v => v.color))].map((color) => {
-                      const isSelected = selectedColor === color;
-                      const hex = colorNameToHex(color);
-                      return (
-                        <div key={color} className="flex flex-col items-center">
-                      <button
-                        onClick={() => setSelectedColor(color)}
-                            className={`w-8 h-8 rounded-full border-2 ${isSelected ? 'border-green-600 ring-2 ring-green-600/20' : 'border-gray-300'} transition-shadow`}
-                            style={{ backgroundColor: hex }}
-                            aria-label={color}
-                            title={color}
-                          />
-                          <span className="text-xs text-gray-600 mt-1 max-w-[72px] text-center leading-tight">
-                        {color}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
+            {/* Couleur */}
+            {currentProduct.variants && currentProduct.variants.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Couleur</h3>
+                <div className="flex gap-3">
+                  {[...new Set(currentProduct.variants.map(v => v.color))].map((color) => {
+                    const isSelected = selectedColor === color;
+                    const hex = colorNameToHex(color);
+                    return (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`w-8 h-8 rounded-full border-2 ${
+                          isSelected ? 'border-gray-800' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: hex }}
+                        title={color}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Informations de livraison */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+              <h3 className="text-lg font-semibold text-blue-900 mb-4">Informations de livraison:</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nom complet
+                  </label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Votre nom complet"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Téléphone
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: 22000000"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Adresse
+                </label>
+                <textarea
+                  value={streetAddress}
+                  onChange={(e) => setStreetAddress(e.target.value)}
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Votre adresse complète"
+                />
+              </div>
+            </div>
+
+            {/* Récapitulatif prix */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Sous-total:</span>
+                <span className="font-semibold">{subtotal.toFixed(2)} DT</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Livraison:</span>
+                <span className="font-semibold">{deliveryCost.toFixed(2)} DT</span>
+              </div>
+              <hr className="border-gray-300" />
+              <div className="flex justify-between text-lg font-bold">
+                <span>Total:</span>
+                <span>{total.toFixed(2)} DT</span>
+              </div>
+            </div>
+
             {/* Quantité */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Quantité</h3>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
-                >
-                  -
-                </button>
-                <span className="w-16 text-center font-medium">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Stock Status */}
-            <div>
-              {currentProduct.totalStock > 0 ? (
-                <p className="text-green-600 font-medium">
-                  ✓ En stock ({currentProduct.totalStock} disponibles)
-                </p>
-              ) : (
-                <p className="text-red-600 font-medium">
-                  ✗ Rupture de stock
-                </p>
-              )}
-            </div>
-
-
-            {/* Récapitulatif prix selon le design */}
-            <div className="bg-white border rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">Sous-total:</span>
-                <span className="font-semibold text-gray-900">{subtotal.toFixed(2)} DT</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">Livraison:</span>
-                <span className="font-semibold text-gray-900">{deliveryCost.toFixed(2)} DT</span>
-              </div>
-              <hr className="border-gray-200" />
-              <div className="flex items-center justify-between text-lg font-bold">
-                <span className="text-gray-900">Total:</span>
-                <span className="text-gray-900">{total.toFixed(2)} DT</span>
-              </div>
-            </div>
-
-            {/* Quantité selon le design */}
             <div className="bg-white border rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Quantité:</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Quantité:</h3>
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
+                  className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
                 >
                   -
                 </button>
-                <span className="w-16 text-center font-medium text-lg">{quantity}</span>
+                <span className="w-12 text-center font-medium">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
+                  className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 text-lg font-semibold"
                 >
                   +
                 </button>
-                <span className="ml-4 text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                <span className="ml-4 text-sm text-gray-600">
                   {currentProduct.totalStock} en stock
                 </span>
               </div>
             </div>
 
-            {/* Bouton Ajouter au Panier amélioré */}
+            {/* Bouton Ajouter au Panier */}
             <button
               onClick={handleAddToCart}
               disabled={currentProduct.totalStock === 0}
-              className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              <ShoppingCartIcon className="h-6 w-6 mr-2" />
+              <ShoppingCartIcon className="h-5 w-5 mr-2" />
               Ajouter au Panier - {total.toFixed(2)} DT
             </button>
             
@@ -388,77 +405,35 @@ const Product = () => {
               </button>
 
               {/* Titre */}
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Confirmation de commande</h2>
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Commande confirmée !</h2>
+                <p className="text-gray-600">Votre commande a été passée avec succès.</p>
+              </div>
 
-              {/* Boutons d'action */}
-              <div className="flex space-x-3 mb-6">
+              {/* Bouton fermer */}
+              <div className="text-center">
                 <button
                   onClick={() => {
                     setShowOrderModal(false);
-                    navigate('/cart');
+                    // Réinitialiser le formulaire
+                    setFullName('');
+                    setPhone('');
+                    setStreetAddress('');
+                    setSelectedSize('');
+                    setSelectedColor('');
+                    setQuantity(1);
                   }}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded hover:bg-gray-200 transition-colors"
+                  className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Continuer mes achats
                 </button>
-                <button
-                  onClick={() => {
-                    setShowOrderModal(false);
-                    navigate('/checkout');
-                  }}
-                  className="flex-1 bg-green-700 text-white py-2 px-4 rounded hover:bg-green-800 transition-colors"
-                >
-                  Acheter Maintenant
-                </button>
               </div>
 
-              {/* Détails du produit */}
-              <div className="flex items-start space-x-4 mb-4">
-                <img
-                  src={currentProduct.images[0]}
-                  alt={currentProduct.name}
-                  className="w-16 h-16 object-cover rounded"
-                />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{currentProduct.name}</h3>
-                  <p className="text-sm text-gray-600">
-                    Découvrez l'élégance intemporelle de la Gandoura Marocaine, un vêtement traditionnel qui allie confort et raffinement.
-                  </p>
-                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
-                    <span>Taille: {selectedSize || 'L (M)'}</span>
-                    <span>Couleur: {selectedColor || 'Blanc/Gris'}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-gray-900">{subtotal.toFixed(2)} DT</div>
-                </div>
-              </div>
-
-              {/* Récapitulatif prix */}
-              <div className="border-t pt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Prix unitaire:</span>
-                  <span>{productPrice.toFixed(2)} DT</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Quantité:</span>
-                  <span>{quantity}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total:</span>
-                  <span>{total.toFixed(2)} DT</span>
-                </div>
-              </div>
-
-              {/* Informations de livraison */}
-              <div className="mt-4 p-3 bg-gray-50 rounded">
-                <h4 className="font-semibold text-gray-900 mb-2">Informations de livraison</h4>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <div><strong>Nom:</strong> {fullName || 'Non renseigné'}</div>
-                  <div><strong>Téléphone:</strong> {phone || 'Non renseigné'}</div>
-                  <div><strong>Adresse:</strong> {streetAddress || 'Non renseigné'}</div>
-                </div>
-              </div>
             </div>
           </div>
         )}
