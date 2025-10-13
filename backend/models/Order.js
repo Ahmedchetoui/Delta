@@ -128,23 +128,9 @@ const orderSchema = new mongoose.Schema({
   },
   notes: {
     customer: String,
-    admin: String
+    admin: String,
+    internal: String
   },
-  trackingNumber: String,
-  estimatedDelivery: Date,
-  deliveredAt: Date,
-  cancelledAt: Date,
-  cancelledBy: {
-    type: String,
-    enum: ['customer', 'admin'],
-    default: null
-  },
-  cancellationReason: String,
-  refundAmount: {
-    type: Number,
-    default: 0
-  },
-  refundReason: String,
   isGift: {
     type: Boolean,
     default: false
@@ -154,19 +140,30 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index pour améliorer les performances
-orderSchema.index({ user: 1 });
-orderSchema.index({ orderStatus: 1 });
-orderSchema.index({ paymentStatus: 1 });
-orderSchema.index({ createdAt: -1 });
+// Générer un numéro de commande unique avant de sauvegarder
+orderSchema.pre('save', async function(next) {
+  if (this.isNew) {
+    // Génère un numéro basé sur la date et un nombre aléatoire
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    
+    let isUnique = false;
+    let randomPart;
+    let newOrderNumber;
 
-// Méthode pour générer le numéro de commande
-orderSchema.pre('save', function(next) {
-  if (!this.isModified('orderNumber')) {
-    // Générer un numéro de commande unique
-    const timestamp = Date.now().toString().slice(-8);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    this.orderNumber = `DF${timestamp}${random}`;
+    while (!isUnique) {
+      randomPart = Math.floor(1000 + Math.random() * 9000).toString();
+      newOrderNumber = `CMD-${year}${month}${day}-${randomPart}`;
+      
+      const existingOrder = await this.constructor.findOne({ orderNumber: newOrderNumber });
+      if (!existingOrder) {
+        isUnique = true;
+      }
+    }
+    
+    this.orderNumber = newOrderNumber;
   }
   next();
 });
@@ -258,4 +255,6 @@ orderSchema.statics.getStats = async function() {
   return stats[0] || { totalOrders: 0, totalRevenue: 0, averageOrderValue: 0 };
 };
 
-module.exports = mongoose.model('Order', orderSchema);
+const Order = mongoose.model('Order', orderSchema);
+
+module.exports = Order;
