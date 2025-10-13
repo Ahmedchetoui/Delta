@@ -140,32 +140,25 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Générer un numéro de commande unique avant de sauvegarder
-orderSchema.pre('save', async function(next) {
-  if (this.isNew) {
-    // Génère un numéro basé sur la date et un nombre aléatoire
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    
-    let isUnique = false;
-    let randomPart;
-    let newOrderNumber;
-
-    while (!isUnique) {
-      randomPart = Math.floor(1000 + Math.random() * 9000).toString();
-      newOrderNumber = `CMD-${year}${month}${day}-${randomPart}`;
-      
-      const existingOrder = await this.constructor.findOne({ orderNumber: newOrderNumber });
-      if (!existingOrder) {
-        isUnique = true;
-      }
+// Générer un numéro de commande unique avant la validation
+orderSchema.pre('validate', async function(next) {
+  try {
+    if (this.isNew && !this.orderNumber) {
+      this.orderNumber = await this.constructor.generateUniqueOrderNumber();
     }
-    
-    this.orderNumber = newOrderNumber;
+    next();
+  } catch (error) {
+    next(error);
   }
-  next();
+});
+
+// Validation personnalisée : soit un utilisateur connecté, soit un email invité
+orderSchema.pre('validate', function(next) {
+  if (!this.user && !this.guestEmail) {
+    next(new Error('Une commande doit avoir soit un utilisateur connecté, soit un email invité'));
+  } else {
+    next();
+  }
 });
 
 // Méthode pour calculer le total
@@ -239,6 +232,48 @@ orderSchema.pre('validate', function(next) {
   }
 });
 
+// Méthode statique pour générer un numéro de commande unique
+orderSchema.statics.generateUniqueOrderNumber = async function() {
+  const date = new Date();
+  const year = date.getFullYear().toString().slice(-2);
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+
+  let isUnique = false;
+  let randomPart;
+  let newOrderNumber;
+  let attempts = 0;
+  const maxAttempts = 100;
+
+  while (!isUnique && attempts < maxAttempts) {
+    // Utilise crypto.randomInt pour une meilleure randomisation si disponible
+    if (typeof require !== 'undefined') {
+      try {
+        const crypto = require('crypto');
+        randomPart = crypto.randomInt(1000, 10000).toString();
+      } catch (e) {
+        randomPart = Math.floor(1000 + Math.random() * 9000).toString();
+      }
+    } else {
+      randomPart = Math.floor(1000 + Math.random() * 9000).toString();
+    }
+
+    newOrderNumber = `CMD-${year}${month}${day}-${randomPart}`;
+
+    const existingOrder = await this.findOne({ orderNumber: newOrderNumber });
+    if (!existingOrder) {
+      isUnique = true;
+    }
+    attempts++;
+  }
+
+  if (!isUnique) {
+    throw new Error('Impossible de générer un numéro de commande unique après plusieurs tentatives');
+  }
+
+  return newOrderNumber;
+};
+
 // Méthode statique pour obtenir les statistiques
 orderSchema.statics.getStats = async function() {
   const stats = await this.aggregate([
@@ -251,7 +286,7 @@ orderSchema.statics.getStats = async function() {
       }
     }
   ]);
-  
+
   return stats[0] || { totalOrders: 0, totalRevenue: 0, averageOrderValue: 0 };
 };
 
