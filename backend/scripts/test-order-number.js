@@ -13,10 +13,16 @@ async function testOrderNumberGeneration() {
     console.log('\n📝 Test de génération de numéro de commande...');
 
     // Test 1: Génération via méthode statique
-    console.log('\n1. Test de la méthode statique generateUniqueOrderNumber:');
+    console.log('\n1. Test de la méthode statique generateOrderNumber:');
     for (let i = 0; i < 5; i++) {
-      const orderNumber = await Order.generateUniqueOrderNumber();
+      const orderNumber = Order.generateOrderNumber();
       console.log(`   Numéro généré ${i + 1}: ${orderNumber}`);
+    }
+
+    console.log('\n1b. Test de la méthode statique generateUniqueOrderNumber (avec vérification DB):');
+    for (let i = 0; i < 3; i++) {
+      const orderNumber = await Order.generateUniqueOrderNumber();
+      console.log(`   Numéro unique généré ${i + 1}: ${orderNumber}`);
     }
 
     // Test 2: Génération via création de commande
@@ -88,8 +94,8 @@ async function testOrderNumberGeneration() {
 
     // Test 4: Vérification du format
     console.log('\n4. Vérification du format des numéros:');
-    const testNumber = await Order.generateUniqueOrderNumber();
-    const regex = /^CMD-\d{6}-\d{4}$/;
+    const testNumber = Order.generateOrderNumber();
+    const regex = /^CMD-\d{6}-\d{5}$/;
     
     if (regex.test(testNumber)) {
       console.log(`   ✅ Format correct: ${testNumber}`);
@@ -111,8 +117,8 @@ async function testOrderNumberGeneration() {
         console.log(`   ❌ Date incorrecte: ${datePart}, attendu: ${expectedDatePart}`);
       }
       
-      if (randomPart.length === 4 && /^\d{4}$/.test(randomPart)) {
-        console.log(`   ✅ Partie aléatoire correcte: ${randomPart}`);
+      if (randomPart.length === 5 && /^\d{5}$/.test(randomPart)) {
+        console.log(`   ✅ Partie aléatoire correcte: ${randomPart} (5 chiffres = 90000 combinaisons/jour)`);
       } else {
         console.log(`   ❌ Partie aléatoire incorrecte: ${randomPart}`);
       }

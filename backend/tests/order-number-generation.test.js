@@ -43,7 +43,7 @@ describe('Order Number Generation', () => {
     await order.save();
 
     expect(order.orderNumber).toBeDefined();
-    expect(order.orderNumber).toMatch(/^CMD-\d{6}-\d{4}$/);
+    expect(order.orderNumber).toMatch(/^CMD-\d{6}-\d{5}$/);
   });
 
   test('should generate different order numbers for multiple orders', async () => {
@@ -82,7 +82,7 @@ describe('Order Number Generation', () => {
     const orderNumber = await Order.generateUniqueOrderNumber();
     
     expect(orderNumber).toBeDefined();
-    expect(orderNumber).toMatch(/^CMD-\d{6}-\d{4}$/);
+    expect(orderNumber).toMatch(/^CMD-\d{6}-\d{5}$/);
     
     // Vérifier le format de la date
     const today = new Date();
