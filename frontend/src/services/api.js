@@ -127,8 +127,14 @@ export const adminService = {
   getDashboard: () => api.get('/admin/dashboard'),
   getStats: () => api.get('/admin/stats'),
   getAnalytics: (period) => api.get(`/admin/analytics?period=${period}`),
+
+  // Gestion des commandes
   getOrders: (params) => api.get('/admin/orders', { params }),
-  updateOrderStatus: (id, status) => api.put(`/admin/orders/${id}/status`, { status }),
+  getOrder: (id) => api.get(`/admin/orders/${id}`),
+  updateOrderStatus: (id, data) => api.put(`/admin/orders/${id}/status`, data),
+  cancelOrder: (id, reason) => api.post(`/admin/orders/${id}/cancel`, { reason }),
+
+  // Autres services
   getCustomers: (params) => api.get('/admin/customers', { params }),
   getProducts: (params) => api.get('/admin/products', { params }),
   getCategories: () => api.get('/admin/categories'),

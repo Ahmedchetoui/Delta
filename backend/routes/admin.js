@@ -640,6 +640,347 @@ router.get('/analytics/customers', async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/orders
+// @desc    Obtenir toutes les commandes avec filtres et pagination
+// @access  Private (Admin)
+router.get('/orders', [
+  query('page').optional().isInt({ min: 1 }).withMessage('Page invalide'),
+  query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limite invalide'),
+  query('status').optional().isIn(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']).withMessage('Statut invalide'),
+  query('paymentStatus').optional().isIn(['pending', 'paid', 'failed', 'refunded']).withMessage('Statut de paiement invalide'),
+  query('search').optional().isLength({ max: 100 }).withMessage('Recherche trop longue'),
+  query('startDate').optional().isISO8601().withMessage('Date de début invalide'),
+  query('endDate').optional().isISO8601().withMessage('Date de fin invalide')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Paramètres invalides',
+        errors: errors.array()
+      });
+    }
+
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      paymentStatus,
+      search,
+      startDate,
+      endDate
+    } = req.query;
+
+    // Construire le filtre
+    const filter = {};
+
+    if (status) {
+      filter.orderStatus = status;
+    }
+
+    if (paymentStatus) {
+      filter.paymentStatus = paymentStatus;
+    }
+
+    if (search) {
+      filter.$or = [
+        { orderNumber: { $regex: search, $options: 'i' } },
+        { guestEmail: { $regex: search, $options: 'i' } },
+        { 'shippingAddress.firstName': { $regex: search, $options: 'i' } },
+        { 'shippingAddress.lastName': { $regex: search, $options: 'i' } },
+        { 'shippingAddress.email': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        filter.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    const orders = await Order.find(filter)
+      .populate('user', 'firstName lastName email')
+      .populate('items.product', 'name images')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .lean();
+
+    const total = await Order.countDocuments(filter);
+
+    // Formater les données pour l'affichage
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      customerName: order.user
+        ? `${order.user.firstName} ${order.user.lastName}`
+        : `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`,
+      customerEmail: order.user ? order.user.email : order.guestEmail,
+      statusInFrench: getStatusInFrench(order.orderStatus),
+      paymentStatusInFrench: getPaymentStatusInFrench(order.paymentStatus),
+      totalItems: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      items: order.items.map(item => ({
+        ...item,
+        product: {
+          ...item.product,
+          images: item.product?.images?.map(img => `http://localhost:5000/uploads/${img}`) || []
+        }
+      }))
+    }));
+
+    res.json({
+      orders: formattedOrders,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalOrders: total,
+        hasNext: page * limit < total,
+        hasPrev: page > 1
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de la récupération des commandes:', error);
+    res.status(500).json({
+      message: 'Erreur lors de la récupération des commandes'
+    });
+  }
+});
+
+// @route   GET /api/admin/orders/:id
+// @desc    Obtenir les détails d'une commande
+// @access  Private (Admin)
+router.get('/orders/:id', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'firstName lastName email phone')
+      .populate('items.product', 'name images sku')
+      .lean();
+
+    if (!order) {
+      return res.status(404).json({
+        message: 'Commande non trouvée'
+      });
+    }
+
+    // Formater les données
+    const formattedOrder = {
+      ...order,
+      customerName: order.user
+        ? `${order.user.firstName} ${order.user.lastName}`
+        : `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`,
+      customerEmail: order.user ? order.user.email : order.guestEmail,
+      statusInFrench: getStatusInFrench(order.orderStatus),
+      paymentStatusInFrench: getPaymentStatusInFrench(order.paymentStatus),
+      paymentMethodInFrench: getPaymentMethodInFrench(order.paymentMethod),
+      totalItems: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      items: order.items.map(item => ({
+        ...item,
+        product: {
+          ...item.product,
+          images: item.product?.images?.map(img => `http://localhost:5000/uploads/${img}`) || []
+        }
+      }))
+    };
+
+    res.json(formattedOrder);
+
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la commande:', error);
+    res.status(500).json({
+      message: 'Erreur lors de la récupération de la commande'
+    });
+  }
+});
+
+// @route   PUT /api/admin/orders/:id/status
+// @desc    Mettre à jour le statut d'une commande
+// @access  Private (Admin)
+router.put('/orders/:id/status', [
+  body('orderStatus')
+    .isIn(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'])
+    .withMessage('Statut de commande invalide'),
+  body('paymentStatus')
+    .optional()
+    .isIn(['pending', 'paid', 'failed', 'refunded'])
+    .withMessage('Statut de paiement invalide'),
+  body('trackingNumber')
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage('Numéro de suivi invalide'),
+  body('adminNotes')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Notes trop longues')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Données invalides',
+        errors: errors.array()
+      });
+    }
+
+    const { orderStatus, paymentStatus, trackingNumber, adminNotes } = req.body;
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        message: 'Commande non trouvée'
+      });
+    }
+
+    // Mettre à jour les champs
+    order.orderStatus = orderStatus;
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus;
+    }
+    if (trackingNumber) {
+      order.trackingNumber = trackingNumber;
+    }
+    if (adminNotes) {
+      order.notes.admin = adminNotes;
+    }
+
+    // Ajouter des timestamps spécifiques selon le statut
+    const now = new Date();
+    switch (orderStatus) {
+      case 'confirmed':
+        order.confirmedAt = now;
+        break;
+      case 'processing':
+        order.processingAt = now;
+        break;
+      case 'shipped':
+        order.shippedAt = now;
+        break;
+      case 'delivered':
+        order.deliveredAt = now;
+        break;
+      case 'cancelled':
+        order.cancelledAt = now;
+        order.cancelledBy = req.user.id;
+        break;
+    }
+
+    await order.save();
+
+    res.json({
+      message: 'Statut de la commande mis à jour avec succès',
+      order: {
+        _id: order._id,
+        orderNumber: order.orderNumber,
+        orderStatus: order.orderStatus,
+        paymentStatus: order.paymentStatus,
+        trackingNumber: order.trackingNumber,
+        statusInFrench: getStatusInFrench(order.orderStatus)
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du statut:', error);
+    res.status(500).json({
+      message: 'Erreur lors de la mise à jour du statut'
+    });
+  }
+});
+
+// @route   POST /api/admin/orders/:id/cancel
+// @desc    Annuler une commande
+// @access  Private (Admin)
+router.post('/orders/:id/cancel', [
+  body('reason')
+    .notEmpty()
+    .withMessage('Raison d\'annulation requise')
+    .isLength({ max: 500 })
+    .withMessage('Raison trop longue')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Données invalides',
+        errors: errors.array()
+      });
+    }
+
+    const { reason } = req.body;
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        message: 'Commande non trouvée'
+      });
+    }
+
+    // Vérifier si la commande peut être annulée
+    if (['delivered', 'cancelled', 'refunded'].includes(order.orderStatus)) {
+      return res.status(400).json({
+        message: 'Cette commande ne peut pas être annulée'
+      });
+    }
+
+    // Utiliser la méthode du modèle pour annuler
+    order.cancelOrder(reason, req.user.id);
+    await order.save();
+
+    res.json({
+      message: 'Commande annulée avec succès',
+      order: {
+        _id: order._id,
+        orderNumber: order.orderNumber,
+        orderStatus: order.orderStatus,
+        cancelledAt: order.cancelledAt,
+        cancellationReason: order.cancellationReason
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de l\'annulation de la commande:', error);
+    res.status(500).json({
+      message: 'Erreur lors de l\'annulation de la commande'
+    });
+  }
+});
+
+// Fonctions utilitaires pour la traduction des statuts
+function getStatusInFrench(status) {
+  const statusMap = {
+    'pending': 'En attente',
+    'confirmed': 'Confirmée',
+    'processing': 'En cours de traitement',
+    'shipped': 'Expédiée',
+    'delivered': 'Livrée',
+    'cancelled': 'Annulée',
+    'refunded': 'Remboursée'
+  };
+  return statusMap[status] || status;
+}
+
+function getPaymentStatusInFrench(status) {
+  const statusMap = {
+    'pending': 'En attente',
+    'paid': 'Payé',
+    'failed': 'Échoué',
+    'refunded': 'Remboursé'
+  };
+  return statusMap[status] || status;
+}
+
+function getPaymentMethodInFrench(method) {
+  const methodMap = {
+    'cash_on_delivery': 'Paiement à la livraison',
+    'bank_transfer': 'Virement bancaire',
+    'paypal': 'PayPal',
+    'stripe': 'Carte bancaire'
+  };
+  return methodMap[method] || method;
+}
+
 // @route   POST /api/admin/backup
 // @desc    Créer une sauvegarde des données
 // @access  Private (Admin)
