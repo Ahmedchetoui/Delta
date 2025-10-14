@@ -151,12 +151,13 @@ describe('Navbar Component', () => {
 
     test('affiche le lien d\'administration pour les admins', async () => {
       renderWithProviders(<Navbar />, { store: adminStore });
-      
+
       const userButton = screen.getByText('Admin');
       fireEvent.mouseEnter(userButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Administration')).toBeInTheDocument();
+        expect(screen.queryByText('Mes Commandes')).not.toBeInTheDocument();
       });
     });
   });

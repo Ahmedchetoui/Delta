@@ -112,9 +112,11 @@ const Navbar = () => {
                   <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     Mon Profil
                   </Link>
-                  <Link to="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Mes Commandes
-                  </Link>
+                  {user?.role !== 'admin' && (
+                    <Link to="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      Mes Commandes
+                    </Link>
+                  )}
                   {user?.role !== 'admin' && (
                     <Link to="/request-admin" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                       Demander Admin
