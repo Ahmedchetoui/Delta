@@ -90,45 +90,35 @@ const Product = () => {
     }
 
     try {
-      // Séparer le nom complet en prénom et nom
-      const nameParts = fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || firstName;
-
-      // Préparer les données de commande
-      const orderData = {
-        items: [{
-          product: currentProduct._id,
-          quantity: parseInt(quantity),
-          size: selectedSize || null,
-          color: selectedColor || null
-        }],
-        shippingAddress: {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: `guest_${Date.now()}@deltafashion.tn`,
-          phone: phone.trim(),
-          street: streetAddress.trim(),
-          city: 'Tunisie',
-          postalCode: '1000',
-          country: 'Tunisie'
-        },
-        paymentMethod: 'cash_on_delivery'
+      // Ajouter au panier au lieu de créer directement la commande
+      const cartItem = {
+        product: currentProduct,
+        quantity: parseInt(quantity),
+        size: selectedSize || null,
+        color: selectedColor || null
       };
 
-      console.log('Données de commande:', orderData);
+      // Stocker les informations de livraison pour la confirmation finale
+      const guestInfo = {
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        streetAddress: streetAddress.trim()
+      };
 
-      // Envoyer la commande
-      const response = await api.post('/orders', orderData);
-      
-      toast.success('Commande passée avec succès !');
-      
+      // Sauvegarder les infos invité dans le localStorage
+      localStorage.setItem('guestOrderInfo', JSON.stringify(guestInfo));
+
+      // Ajouter au panier
+      dispatch(addToCart(cartItem));
+
+      toast.success('Produit ajouté au panier !');
+
       // Afficher la modal de confirmation
       setShowOrderModal(true);
 
     } catch (error) {
-      console.error('Erreur lors de la commande:', error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+      console.error('Erreur lors de l\'ajout au panier:', error);
+      toast.error('Erreur lors de l\'ajout au panier');
     }
   };
 
@@ -419,12 +409,21 @@ const Product = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Commande confirmée !</h2>
-                <p className="text-gray-600">Votre commande a été passée avec succès.</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Produit ajouté au panier !</h2>
+                <p className="text-gray-600">Votre produit a été ajouté au panier pour confirmation finale.</p>
               </div>
 
-              {/* Bouton fermer */}
-              <div className="text-center">
+              {/* Boutons d'action */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => {
+                    setShowOrderModal(false);
+                    navigate('/cart');
+                  }}
+                  className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Voir le panier
+                </button>
                 <button
                   onClick={() => {
                     setShowOrderModal(false);

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeFromCart, updateCartItemQuantity, clearCart, selectCartItems, selectCartItemCount, selectCartTotal } from '../store/slices/cartSlice';
-import { ShoppingCartIcon, TrashIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
+import { ShoppingCartIcon, TrashIcon, PlusIcon, MinusIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 
@@ -18,6 +18,22 @@ const Cart = () => {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [isOrdering, setIsOrdering] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  // Charger les informations invité au chargement de la page
+  useEffect(() => {
+    const guestInfo = localStorage.getItem('guestOrderInfo');
+    if (guestInfo) {
+      try {
+        const parsedInfo = JSON.parse(guestInfo);
+        setFullName(parsedInfo.fullName || '');
+        setPhone(parsedInfo.phone || '');
+        setAddress(parsedInfo.streetAddress || '');
+      } catch (error) {
+        console.error('Erreur lors du chargement des informations invité:', error);
+      }
+    }
+  }, []);
   
   const deliveryCost = 7.0;
   const total = totalAmount + deliveryCost;
@@ -39,6 +55,13 @@ const Cart = () => {
   const handleClearCart = () => {
     dispatch(clearCart());
     toast.success('Panier vidé');
+  };
+
+  const handleCancelOrder = () => {
+    dispatch(clearCart());
+    localStorage.removeItem('guestOrderInfo');
+    toast.success('Commande annulée');
+    setShowCancelModal(false);
   };
 
   const handleDirectOrder = async () => {
@@ -213,24 +236,49 @@ const Cart = () => {
           </div>
         </div>
 
-        {/* Bouton Ajouter au Panier selon l'image 3 */}
-        <button
-          onClick={handleDirectOrder}
-          disabled={isOrdering || items.length === 0}
-          className="w-full bg-green-700 text-white py-4 px-6 rounded-lg hover:bg-green-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg mb-4"
-        >
-          {isOrdering ? (
-            <>
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
-              Commande en cours...
-            </>
-          ) : (
-            <>
-              <ShoppingCartIcon className="h-6 w-6 mr-2" />
-              Ajouter au Panier - {totalAmount.toFixed(2)} DT
-            </>
-          )}
-        </button>
+        {/* Section de confirmation finale */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start">
+            <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600 mr-3 mt-0.5" />
+            <div>
+              <h3 className="text-lg font-semibold text-yellow-800 mb-2">Confirmation finale</h3>
+              <p className="text-yellow-700 text-sm mb-3">
+                Vérifiez vos informations avant de confirmer votre commande.
+                Vous pouvez encore modifier ou annuler votre commande.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Boutons d'action */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <button
+            onClick={handleDirectOrder}
+            disabled={isOrdering || items.length === 0}
+            className="flex-1 bg-green-700 text-white py-4 px-6 rounded-lg hover:bg-green-800 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
+          >
+            {isOrdering ? (
+              <>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
+                Commande en cours...
+              </>
+            ) : (
+              <>
+                <ShoppingCartIcon className="h-6 w-6 mr-2" />
+                Confirmer la commande - {total.toFixed(2)} DT
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={() => setShowCancelModal(true)}
+            disabled={isOrdering}
+            className="flex-1 bg-red-600 text-white py-4 px-6 rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
+          >
+            <TrashIcon className="h-6 w-6 mr-2" />
+            Annuler la commande
+          </button>
+        </div>
 
         {/* Articles du panier (version simplifiée) */}
         {items.length > 0 && (
@@ -260,6 +308,37 @@ const Cart = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Modal de confirmation d'annulation */}
+        {showCancelModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <div className="text-center mb-6">
+                <ExclamationTriangleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Annuler la commande ?</h2>
+                <p className="text-gray-600">
+                  Êtes-vous sûr de vouloir annuler votre commande ?
+                  Tous les articles seront supprimés du panier et vos informations seront effacées.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Garder ma commande
+                </button>
+                <button
+                  onClick={handleCancelOrder}
+                  className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Oui, annuler
+                </button>
+              </div>
             </div>
           </div>
         )}

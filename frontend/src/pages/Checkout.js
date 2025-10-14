@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { selectCartItems, selectCartTotal } from '../store/slices/cartSlice';
 import { useNavigate, Link } from 'react-router-dom';
@@ -16,10 +16,28 @@ const Checkout = () => {
     phone: '',
     address: '',
     color: '',
-    
+
     // Payment
     paymentMethod: 'cash_on_delivery'
   });
+
+  // Charger les informations invité au chargement de la page
+  useEffect(() => {
+    const guestInfo = localStorage.getItem('guestOrderInfo');
+    if (guestInfo) {
+      try {
+        const parsedInfo = JSON.parse(guestInfo);
+        setFormData(prev => ({
+          ...prev,
+          fullName: parsedInfo.fullName || '',
+          phone: parsedInfo.phone || '',
+          address: parsedInfo.streetAddress || ''
+        }));
+      } catch (error) {
+        console.error('Erreur lors du chargement des informations invité:', error);
+      }
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
