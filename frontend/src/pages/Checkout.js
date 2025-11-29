@@ -13,6 +13,7 @@ const Checkout = () => {
   const [formData, setFormData] = useState({
     // Informations essentielles
     fullName: '',
+    email: '',
     phone: '',
     address: '',
     color: '',
@@ -30,6 +31,7 @@ const Checkout = () => {
         setFormData(prev => ({
           ...prev,
           fullName: parsedInfo.fullName || '',
+          email: parsedInfo.email || '',
           phone: parsedInfo.phone || '',
           address: parsedInfo.streetAddress || ''
         }));
@@ -51,13 +53,20 @@ const Checkout = () => {
     e.preventDefault();
     
     // Validation
-    if (!formData.fullName || !formData.phone || !formData.address) {
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
     if (items.length === 0) {
       toast.error('Votre panier est vide');
+      return;
+    }
+
+    // Validation email basique
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Veuillez entrer une adresse email valide');
       return;
     }
 
@@ -78,7 +87,7 @@ const Checkout = () => {
         shippingAddress: {
           firstName: firstName,
           lastName: lastName,
-          email: `guest_${Date.now()}@deltafashion.tn`, // Email temporaire pour les invités
+          email: formData.email, // Utiliser l'email réel de l'invité
           phone: formData.phone,
           street: formData.address,
           city: 'Tunisie', // Valeur par défaut
@@ -93,11 +102,27 @@ const Checkout = () => {
       
       toast.success('Commande passée avec succès !');
       
+      // Sauvegarder les informations de commande en localStorage pour suivi
+      const orderInfo = {
+        orderNumber: response.data.order.orderNumber,
+        orderId: response.data.order._id,
+        email: formData.email,
+        fullName: formData.fullName,
+        phone: formData.phone,
+        address: formData.address,
+        total: response.data.order.total,
+        createdAt: new Date().toISOString()
+      };
+      
+      localStorage.setItem('lastGuestOrder', JSON.stringify(orderInfo));
+      localStorage.setItem('guestOrderInfo', JSON.stringify(formData));
+      
       // Rediriger vers une page de confirmation
       navigate('/order-confirmation', { 
         state: { 
           orderId: response.data.order._id,
-          orderNumber: response.data.order.orderNumber 
+          orderNumber: response.data.order.orderNumber,
+          email: formData.email
         } 
       });
 
@@ -165,6 +190,22 @@ const Checkout = () => {
                     placeholder="Votre nom complet"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Adresse email *
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="votre.email@exemple.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Nécessaire pour suivre votre commande</p>
                 </div>
 
                 <div>
