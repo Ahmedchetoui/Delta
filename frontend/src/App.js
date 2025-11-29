@@ -32,7 +32,6 @@ import AdminProductNew from './pages/admin/AdminProductNew';
 import AdminProductEdit from './pages/admin/AdminProductEdit';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminBanners from './pages/admin/AdminBanners';
-import AdminOrders from './pages/admin/AdminOrders';
 import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminRequests from './pages/admin/AdminRequests';
 
@@ -125,11 +124,6 @@ function App() {
             <Route path="/admin/banners" element={
               <AdminRoute>
                 <AdminBanners />
-              </AdminRoute>
-            } />
-            <Route path="/admin/orders" element={
-              <AdminRoute>
-                <AdminOrders />
               </AdminRoute>
             } />
             <Route path="/admin/customers" element={
