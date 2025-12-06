@@ -36,19 +36,19 @@ const corsOptions = {
 
     // Normaliser en supprimant un éventuel trailing slash
     const normalized = origin.replace(/\/$/, '');
-    
+
     // Vérifier si l'origin est dans la liste autorisée
     const isAllowed = allowedOrigins.some(o => normalized === o.replace(/\/$/, ''));
-    
+
     // En développement, autoriser localhost avec n'importe quel port
     const isLocalhost = /^https?:\/\/localhost(:\d+)?$/.test(normalized);
-    
+
     // Autoriser les domaines Vercel (pour les previews)
     const isVercel = /^https:\/\/.*\.vercel\.app$/.test(normalized);
-    
+
     // Autoriser spécifiquement les domaines delta-e79s-* de votre projet
     const isDeltaVercel = /^https:\/\/delta-e79s-.*\.vercel\.app$/.test(normalized);
-    
+
     if (isAllowed || isLocalhost || isVercel || isDeltaVercel) {
       console.log(`✅ CORS: origin autorisé: ${origin}`);
       return callback(null, true);
@@ -152,7 +152,7 @@ app.use('/api/admin-requests', require('./routes/adminRequests'));
 
 // Route de test
 app.get('/api/health', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Delta Fashion API is running! 🛍️',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV
@@ -186,19 +186,34 @@ app.get('/api/db-health', async (req, res) => {
   }
 });
 
-// Route temporaire pour peupler la base de données (À SUPPRIMER EN PRODUCTION)
+// Route sécurisée pour peupler la base de données
 app.get('/api/seed-database', async (req, res) => {
   try {
+    // Sécurité : Vérifier le secret en production
+    if (process.env.NODE_ENV === 'production') {
+      const seedSecret = req.headers['x-seed-secret'];
+      if (!seedSecret || seedSecret !== process.env.SEED_SECRET) {
+        return res.status(403).json({
+          message: 'Non autorisé. Secret requis en production.'
+        });
+      }
+    }
+
     // Importer et exécuter le script de peuplement
     const seedFunction = require('./scripts/seedData');
     await seedFunction();
-    res.json({ 
+    res.json({
       message: 'Base de données peuplée avec succès !',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      counts: {
+        users: 2,
+        categories: 8,
+        products: 5
+      }
     });
   } catch (error) {
     console.error('Erreur lors du peuplement:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Erreur lors du peuplement de la base de données',
       error: error.message
     });
@@ -213,7 +228,7 @@ app.use('*', (req, res) => {
 // Middleware de gestion d'erreurs global
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
+  res.status(500).json({
     message: 'Erreur interne du serveur',
     error: process.env.NODE_ENV === 'development' ? err.message : {}
   });

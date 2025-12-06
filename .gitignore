@@ -19,6 +19,9 @@ yarn-error.log*
 # Uploads (non-persistent in prod)
 uploads/
 
+# Backups (local only)
+backend/backups/
+
 # Editor/OS
 .DS_Store
 Thumbs.db
