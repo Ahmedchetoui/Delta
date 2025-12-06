@@ -1,18 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-// import { useDispatch } from 'react-redux';
-import { HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 
 const ProductCard = ({ product }) => {
-  // const dispatch = useDispatch();
-
-  // Ancien ajout panier (désactivé sur cette carte spécifique)
-
   const handleWishlist = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    // TODO: Implémenter la wishlist
     toast.info('Fonctionnalité wishlist à venir !');
   };
 
@@ -20,90 +14,131 @@ const ProductCard = ({ product }) => {
   const discountPercent = product.price && product.finalPrice && Number(product.price) > Number(product.finalPrice)
     ? Math.round((1 - product.finalPrice / product.price) * 100)
     : null;
-  // Dériver couleurs / tailles si absentes, à partir des variantes
+
   const derivedSizes = product.sizes && product.sizes.length > 0
     ? product.sizes
     : Array.from(new Set((product.variants || []).map(v => v.size).filter(Boolean)));
+
   const derivedColors = (product.colors && product.colors.length > 0
     ? product.colors
     : Array.from(new Set((product.variants || []).map(v => v.color).filter(Boolean))))
-      .map(c => (typeof c === 'string' ? { name: c, code: '' } : c));
+    .map(c => (typeof c === 'string' ? { name: c, code: '' } : c));
+
   const colorItems = derivedColors.slice(0, 7);
 
   return (
-    <div className="group bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+    <div className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-transparent hover:border-blue-500">
       <Link to={`/product/${product._id}`}>
-        <div className="relative h-60 overflow-hidden">
+        {/* Image Container */}
+        <div className="relative h-64 md:h-72 overflow-hidden bg-gray-100">
           <img
             src={product.images?.[0] || '/api/placeholder/300/300'}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
-          {/* Badge remise / nouveau */}
-          <div className="absolute top-3 left-3">
+
+          {/* Gradient Overlay on Hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+          {/* Badges */}
+          <div className="absolute top-3 left-3 flex flex-col gap-2">
             {discountPercent ? (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-200 text-amber-800">-{discountPercent}%</span>
+              <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full uppercase shadow-lg">
+                -{discountPercent}%
+              </span>
             ) : product.isNewProduct ? (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-200 text-green-800">Nouveau</span>
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full uppercase shadow-lg">
+                <SparklesIcon className="h-3 w-3" />
+                NOUVEAU
+              </span>
             ) : null}
           </div>
-          {/* Wishlist bouton */}
-            <button
-              onClick={handleWishlist}
-            className="absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow"
-            aria-label="wishlist"
+
+          {/* Wishlist Button */}
+          <button
+            onClick={handleWishlist}
+            className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-white/90 hover:bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110"
+            aria-label="Ajouter aux favoris"
           >
-            <HeartIcon className="h-5 w-5 text-gray-700" />
-            </button>
+            <HeartIcon className="h-5 w-5 text-gray-700 hover:text-red-500 transition-colors" />
+          </button>
+
+          {/* Stock Indicator */}
+          {product.totalStock === 0 && (
+            <div className="absolute inset-0 bg-gray-900/60 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">RUPTURE DE STOCK</span>
+            </div>
+          )}
         </div>
 
+        {/* Content */}
         <div className="p-5">
-          <h3 className="font-semibold text-gray-900 mb-3 line-clamp-2">
+          {/* Title */}
+          <h3 className="font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors" style={{ fontFamily: "'Montserrat', sans-serif" }}>
             {product.name}
           </h3>
-          
-          {/* Tailles */}
-          {derivedSizes?.length > 0 && (
-            <p className="text-sm text-gray-600 mb-2">
-              <span className="font-semibold">Tailles:</span>
-              <span className="ml-2">{derivedSizes.join(' , ')}</span>
-            </p>
-          )}
 
-          {/* Couleurs */}
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-sm font-semibold text-gray-600">Couleurs:</span>
-            {colorItems.length > 0 ? (
-              colorItems.map((c, idx) => (
+          {/* Sizes */}
+          {derivedSizes?.length > 0 && (
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="text-xs font-semibold text-gray-500">Tailles:</span>
+              {derivedSizes.slice(0, 5).map((size, idx) => (
                 <span
                   key={idx}
-                  className="w-3.5 h-3.5 rounded-full border border-gray-300"
-                  style={{ backgroundColor: c.code || c.hex || c.name || '#ddd' }}
-                  title={c.name || (typeof c === 'string' ? c : '')}
-                />
-              ))
+                  className="px-2 py-0.5 text-xs border border-gray-300 rounded-md text-gray-600 hover:border-blue-600 hover:text-blue-600 transition-colors"
+                >
+                  {size}
+                </span>
+              ))}
+              {derivedSizes.length > 5 && (
+                <span className="text-xs text-gray-400">+{derivedSizes.length - 5}</span>
+              )}
+            </div>
+          )}
+
+          {/* Colors */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xs font-semibold text-gray-500">Couleurs:</span>
+            {colorItems.length > 0 ? (
+              <div className="flex gap-1.5">
+                {colorItems.map((c, idx) => (
+                  <span
+                    key={idx}
+                    className="w-5 h-5 rounded-full border-2 border-gray-200 hover:border-blue-600 transition-colors cursor-pointer shadow-sm"
+                    style={{ backgroundColor: c.code || c.hex || c.name || '#ddd' }}
+                    title={c.name || (typeof c === 'string' ? c : '')}
+                  />
+                ))}
+              </div>
             ) : (
-              <span className="text-sm text-gray-400">-</span>
-              )}
-            </div>
-            
-          {/* Prix + stock */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-baseline gap-3">
-              <span className="text-xl font-extrabold text-amber-600">{product.finalPrice} DT</span>
+              <span className="text-xs text-gray-400">-</span>
+            )}
+          </div>
+
+          {/* Price & Stock */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-blue-600">
+                {product.finalPrice} DT
+              </span>
               {discountPercent && (
-                <span className="text-sm text-gray-500 line-through">{product.price} DT</span>
+                <span className="text-sm text-gray-400 line-through">
+                  {product.price} DT
+                </span>
               )}
             </div>
-            <span className={`text-sm ${product.totalStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {product.totalStock > 0 ? 'En stock' : 'Rupture'}
+            <span className={`text-xs font-medium px-2 py-1 rounded-full ${product.totalStock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {product.totalStock > 0 ? '✓ Disponible' : 'Rupture'}
             </span>
           </div>
 
-          {/* Bouton */}
-          <div className="mt-4">
-            <span className="inline-flex w-full items-center justify-center rounded-xl border border-amber-300 px-5 py-3 text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100">
+          {/* Button */}
+          <div className="relative overflow-hidden">
+            <span className="inline-flex w-full items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition-all duration-300 border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white cursor-pointer">
               Voir Détails
+              <svg className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </span>
           </div>
         </div>
