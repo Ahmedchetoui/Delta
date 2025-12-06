@@ -67,7 +67,7 @@ const LandingPage = ({ onComplete }) => {
                             Delta Fashion
                         </h1>
                         <p className="text-gray-600 text-lg md:text-xl font-light tracking-wide">
-                            {progress < 100 ? `Chargement... ${progress}%` : 'Élégance Moderne'}
+                            Élégance Moderne
                         </p>
                     </motion.div>
                 </div>
