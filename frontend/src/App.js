@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import LandingPage from './components/layout/LandingPage';
+import ScrollToTop from './components/ui/ScrollToTop';
 
 // Pages
 import Home from './pages/Home';
@@ -78,6 +79,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      <ScrollToTop />
 
       <main className="min-h-screen">
         <Routes>
