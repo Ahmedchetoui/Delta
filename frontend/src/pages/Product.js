@@ -3,31 +3,28 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProduct } from '../store/slices/productSlice';
 import { addToCart } from '../store/slices/cartSlice';
-import { HeartIcon, ShoppingCartIcon, StarIcon, ShareIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import Loading from '../components/ui/Loading';
 import { toast } from 'react-toastify';
-import api from '../services/api';
 
 const Product = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+
   const { currentProduct, loading } = useSelector((state) => state.products);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const [showOrderModal, setShowOrderModal] = useState(false);
-  
+
   // Champs d'informations de livraison
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
-  const [preferredColor, setPreferredColor] = useState('');
+
 
   const deliveryCost = 7.0; // Coût de livraison affiché dans la maquette
   const productPrice = currentProduct ? (currentProduct.price || 0) : 0;
@@ -122,23 +119,7 @@ const Product = () => {
     }
   };
 
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    toast.info(isWishlisted ? 'Retiré de la wishlist' : 'Ajouté à la wishlist');
-  };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: currentProduct.name,
-        text: currentProduct.description,
-        url: window.location.href
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Lien copié dans le presse-papiers !');
-    }
-  };
 
 
   if (loading) {
@@ -189,7 +170,7 @@ const Product = () => {
                 className="w-full h-full object-cover"
               />
             </div>
-            
+
             {/* Thumbnail Images */}
             {currentProduct.images.length > 1 && (
               <div className="grid grid-cols-4 gap-2 mt-4">
@@ -197,11 +178,10 @@ const Product = () => {
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`aspect-square bg-white rounded-lg shadow-sm overflow-hidden border-2 ${
-                      selectedImage === index 
-                        ? 'border-blue-500' 
-                        : 'border-gray-200'
-                    }`}
+                    className={`aspect-square bg-white rounded-lg shadow-sm overflow-hidden border-2 ${selectedImage === index
+                      ? 'border-blue-500'
+                      : 'border-gray-200'
+                      }`}
                   >
                     <img
                       src={image}
@@ -229,8 +209,8 @@ const Product = () => {
               <h1 className="text-2xl font-bold text-gray-900 mb-4">
                 {currentProduct.name}
               </h1>
-              
-              <div className="text-3xl font-bold mb-6" style={{color: '#B8860B'}}>
+
+              <div className="text-3xl font-bold mb-6" style={{ color: '#B8860B' }}>
                 {productPrice.toFixed(2)} DT
               </div>
             </div>
@@ -248,11 +228,10 @@ const Product = () => {
                         key={size}
                         onClick={() => setSelectedSize(size)}
                         disabled={!available}
-                        className={`w-10 h-10 border rounded text-sm font-medium ${
-                          isSelected
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                        } ${!available ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-10 h-10 border rounded text-sm font-medium ${isSelected
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                          } ${!available ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {size}
                       </button>
@@ -274,9 +253,8 @@ const Product = () => {
                       <div key={color} className="flex flex-col items-center">
                         <button
                           onClick={() => setSelectedColor(color)}
-                          className={`w-8 h-8 rounded-full border-2 ${
-                            isSelected ? 'border-gray-800' : 'border-gray-300'
-                          }`}
+                          className={`w-8 h-8 rounded-full border-2 ${isSelected ? 'border-gray-800' : 'border-gray-300'
+                            }`}
                           style={{ backgroundColor: hex }}
                           title={color}
                         />
@@ -293,7 +271,7 @@ const Product = () => {
             {/* Informations de livraison */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
               <h3 className="text-sm font-medium text-blue-900 mb-3">Informations de livraison:</h3>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
@@ -320,7 +298,7 @@ const Product = () => {
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-xs text-gray-600 mb-1">
                   Adresse:
@@ -386,7 +364,7 @@ const Product = () => {
               <ShoppingCartIcon className="h-5 w-5 mr-2" />
               Ajouter au Panier - {total.toFixed(2)} DT
             </button>
-            
+
           </div>
         </div>
 
