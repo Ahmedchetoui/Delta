@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Configuration de base d'axios
-let API_BASE_URL = process.env.REACT_APP_API_URL || 'https://delta-n5d8.onrender.com/api';
+let API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 // Normaliser pour garantir le préfixe /api
 if (/^https?:\/\//i.test(API_BASE_URL)) {
   const url = new URL(API_BASE_URL);
