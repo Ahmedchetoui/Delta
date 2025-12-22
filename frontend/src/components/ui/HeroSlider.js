@@ -33,10 +33,19 @@ const HeroSlider = ({ slides }) => {
           className={`absolute inset-0 transition-all duration-1000 ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
             }`}
         >
-          <div
-            className="h-full bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${slide.image})` }}
-          >
+          <div className="h-full relative">
+            {/* Image optimisée */}
+            <img
+              src={slide.image}
+              alt={slide.title || 'Banner'}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              fetchpriority={index === 0 ? 'high' : 'low'}
+              decoding={index === 0 ? 'sync' : 'async'}
+              width="1920"
+              height="700"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+
             {/* Dark Overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-900/95 via-gray-900/90 to-blue-900/80"></div>
 

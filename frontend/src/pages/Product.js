@@ -167,6 +167,10 @@ const Product = () => {
               <img
                 src={currentProduct.images[selectedImage] || '/api/placeholder/600/600'}
                 alt={currentProduct.name}
+                loading="eager"
+                fetchpriority="high"
+                width="600"
+                height="600"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -186,6 +190,9 @@ const Product = () => {
                     <img
                       src={image}
                       alt={`${currentProduct.name} ${index + 1}`}
+                      loading="lazy"
+                      width="150"
+                      height="150"
                       className="w-full h-full object-cover"
                     />
                   </button>

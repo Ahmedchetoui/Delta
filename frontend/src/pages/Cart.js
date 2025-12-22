@@ -12,7 +12,7 @@ const Cart = () => {
   const items = useSelector(selectCartItems);
   const totalItems = useSelector(selectCartItemCount);
   const totalAmount = useSelector(selectCartTotal);
-  
+
   // États pour les informations de livraison
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -34,7 +34,7 @@ const Cart = () => {
       }
     }
   }, []);
-  
+
   const deliveryCost = 7.0;
   const total = totalAmount + deliveryCost;
 
@@ -95,15 +95,15 @@ const Cart = () => {
       };
 
       const response = await api.post('/orders', orderData);
-      
+
       toast.success('Commande passée avec succès !');
       dispatch(clearCart());
-      
-      navigate('/order-confirmation', { 
-        state: { 
+
+      navigate('/order-confirmation', {
+        state: {
           orderId: response.data.order._id,
-          orderNumber: response.data.order.orderNumber 
-        } 
+          orderNumber: response.data.order.orderNumber
+        }
       });
 
     } catch (error) {
@@ -141,11 +141,11 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {/* Informations de livraison selon l'image 3 */}
         <div className="bg-green-100 border border-green-300 rounded-lg p-4 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations de livraison:</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nom:</label>
@@ -160,7 +160,7 @@ const Cart = () => {
               <div className="text-right text-gray-900 font-medium">{address}</div>
             </div>
           </div>
-          
+
           <div className="flex space-x-3">
             <button
               onClick={() => {
@@ -288,6 +288,9 @@ const Cart = () => {
                     <img
                       src={(item.product?.images?.[0]) || '/api/placeholder/50/50'}
                       alt={item.product?.name}
+                      loading="lazy"
+                      width="50"
+                      height="50"
                       className="h-12 w-12 object-cover rounded"
                     />
                     <div>
