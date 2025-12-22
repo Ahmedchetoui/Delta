@@ -30,20 +30,20 @@ if (useCloudinary) {
 const storage = (useCloudinary && cloudinary)
   ? multer.memoryStorage()
   : multer.diskStorage({
-      destination: (req, file, cb) => {
-        const uploadPath = process.env.UPLOAD_PATH || '../uploads';
-        const fullPath = path.join(__dirname, uploadPath);
-        if (!fs.existsSync(fullPath)) {
-          fs.mkdirSync(fullPath, { recursive: true });
-        }
-        cb(null, fullPath);
-      },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    destination: (req, file, cb) => {
+      const uploadPath = process.env.UPLOAD_PATH || '../uploads';
+      const fullPath = path.join(__dirname, uploadPath);
+      if (!fs.existsSync(fullPath)) {
+        fs.mkdirSync(fullPath, { recursive: true });
       }
-    });
+      cb(null, fullPath);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    }
+  });
 
 // Filtre pour les types de fichiers
 const fileFilter = (req, file, cb) => {
@@ -108,7 +108,7 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
       const localUploads = [];
       for (const f of files) {
         const ext = path.extname(f.originalname || '.jpg') || '.jpg';
-        const filename = `images-${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+        const filename = `images-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
         const full = path.join(produitDir, filename);
         // f.buffer peut ne pas exister si storage n'est pas memoryStorage. Ici, c'est memoryStorage.
         const buffer = f.buffer || (f.path ? fs.readFileSync(f.path) : null);
@@ -149,13 +149,13 @@ const handleUploadError = (error, req, res, next) => {
       });
     }
   }
-  
+
   if (error.message === 'Seules les images sont autorisées') {
     return res.status(400).json({
       message: error.message
     });
   }
-  
+
   next(error);
 };
 

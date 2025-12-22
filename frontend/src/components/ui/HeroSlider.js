@@ -133,8 +133,8 @@ const HeroSlider = ({ slides }) => {
             key={index}
             onClick={() => goToSlide(index)}
             className={`transition-all duration-300 rounded-full ${index === currentSlide
-                ? 'w-10 h-3 bg-blue-500 shadow-lg'
-                : 'w-3 h-3 bg-white/50 hover:bg-white/75 hover:scale-110'
+              ? 'w-10 h-3 bg-blue-500 shadow-lg'
+              : 'w-3 h-3 bg-white/50 hover:bg-white/75 hover:scale-110'
               }`}
           />
         ))}

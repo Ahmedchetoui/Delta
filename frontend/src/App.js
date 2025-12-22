@@ -35,6 +35,7 @@ import AdminProductEdit from './pages/admin/AdminProductEdit';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminBanners from './pages/admin/AdminBanners';
 import AdminCustomers from './pages/admin/AdminCustomers';
+import AdminOrders from './pages/admin/AdminOrders';
 import AdminRequests from './pages/admin/AdminRequests';
 
 // Request Admin Page
@@ -151,6 +152,11 @@ function App() {
           <Route path="/admin/customers" element={
             <AdminRoute>
               <AdminCustomers />
+            </AdminRoute>
+          } />
+          <Route path="/admin/orders" element={
+            <AdminRoute>
+              <AdminOrders />
             </AdminRoute>
           } />
           <Route path="/admin/requests" element={
