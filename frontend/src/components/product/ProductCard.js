@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
+import Skeleton from '../ui/Skeleton';
 
 const ProductCard = ({ product }) => {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+
   const handleWishlist = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -31,20 +34,24 @@ const ProductCard = ({ product }) => {
       <Link to={`/product/${product._id}`}>
         {/* Image Container */}
         <div className="relative h-64 md:h-72 overflow-hidden bg-gray-100">
+          {!isImageLoaded && (
+            <Skeleton className="absolute inset-0 w-full h-full z-10" />
+          )}
           <img
             src={product.images?.[0] || '/api/placeholder/300/300'}
             alt={product.name}
             loading="lazy"
+            onLoad={() => setIsImageLoaded(true)}
             width="300"
             height="300"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className={`w-full h-full object-cover transition-all duration-700 ${isImageLoaded ? 'scale-100 opacity-100' : 'scale-110 opacity-0'} group-hover:scale-110`}
           />
 
           {/* Gradient Overlay on Hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
+          <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
             {discountPercent ? (
               <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full uppercase shadow-lg">
                 -{discountPercent}%
@@ -60,7 +67,7 @@ const ProductCard = ({ product }) => {
           {/* Wishlist Button */}
           <button
             onClick={handleWishlist}
-            className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-white/90 hover:bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110"
+            className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-white/90 hover:bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110 z-20"
             aria-label="Ajouter aux favoris"
           >
             <HeartIcon className="h-5 w-5 text-gray-700 hover:text-red-500 transition-colors" />
@@ -68,7 +75,7 @@ const ProductCard = ({ product }) => {
 
           {/* Stock Indicator */}
           {product.totalStock === 0 && (
-            <div className="absolute inset-0 bg-gray-900/60 flex items-center justify-center">
+            <div className="absolute inset-0 bg-gray-900/60 flex items-center justify-center z-20">
               <span className="text-white font-bold text-lg">RUPTURE DE STOCK</span>
             </div>
           )}

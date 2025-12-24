@@ -3,14 +3,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import { fetchProducts } from '../store/slices/productSlice';
 import { fetchCategories } from '../store/slices/categorySlice';
-import Loading from '../components/ui/Loading';
+import Skeleton from '../components/ui/Skeleton';
 import ProductCard from '../components/product/ProductCard';
 import ProductFilters from '../components/product/ProductFilters';
-import { 
-  FunnelIcon, 
-  Squares2X2Icon, 
+import {
+  FunnelIcon,
+  Squares2X2Icon,
   ListBulletIcon,
-  ChevronDownIcon 
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 
 const Shop = () => {
@@ -57,10 +57,10 @@ const Shop = () => {
 
   const handleFilterChange = (newFilters) => {
     const params = new URLSearchParams(searchParams);
-    
+
     // Réinitialiser la page à 1 lors d'un changement de filtre
     params.set('page', '1');
-    
+
     // Mettre à jour les paramètres
     Object.entries(newFilters).forEach(([key, value]) => {
       if (value && value !== '') {
@@ -69,7 +69,7 @@ const Shop = () => {
         params.delete(key);
       }
     });
-    
+
     setSearchParams(params);
   };
 
@@ -95,9 +95,10 @@ const Shop = () => {
     { value: 'rating', label: 'Mieux notés' }
   ];
 
-  if (loading && products.length === 0) {
-    return <Loading size="large" text="Chargement des produits..." />;
-  }
+  // No longer blocking the whole page with a loader
+  // if (loading && products.length === 0) {
+  //   return <Loading size="large" text="Chargement des produits..." />;
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -108,7 +109,11 @@ const Shop = () => {
             {search ? `Résultats pour "${search}"` : 'Boutique'}
           </h1>
           <p className="text-gray-600">
-            {totalProducts} produit{totalProducts > 1 ? 's' : ''} trouvé{totalProducts > 1 ? 's' : ''}
+            {loading && products.length === 0 ? (
+              <Skeleton className="h-4 w-32" />
+            ) : (
+              `${totalProducts} produit${totalProducts > 1 ? 's' : ''} trouvé${totalProducts > 1 ? 's' : ''}`
+            )}
           </p>
         </div>
 
@@ -125,7 +130,7 @@ const Shop = () => {
                   ✕
                 </button>
               </div>
-              
+
               <ProductFilters
                 categories={categories}
                 onFilterChange={handleFilterChange}
@@ -163,21 +168,19 @@ const Shop = () => {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-lg transition-colors ${
-                        viewMode === 'grid'
+                      className={`p-2 rounded-lg transition-colors ${viewMode === 'grid'
                           ? 'bg-blue-100 text-blue-600'
                           : 'text-gray-500 hover:text-gray-700'
-                      }`}
+                        }`}
                     >
                       <Squares2X2Icon className="h-5 w-5" />
                     </button>
                     <button
                       onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-lg transition-colors ${
-                        viewMode === 'list'
+                      className={`p-2 rounded-lg transition-colors ${viewMode === 'list'
                           ? 'bg-blue-100 text-blue-600'
                           : 'text-gray-500 hover:text-gray-700'
-                      }`}
+                        }`}
                     >
                       <ListBulletIcon className="h-5 w-5" />
                     </button>
@@ -192,16 +195,15 @@ const Shop = () => {
                       <span>Trier par</span>
                       <ChevronDownIcon className="h-4 w-4" />
                     </button>
-                    
+
                     {showSortMenu && (
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-10">
                         {sortOptions.map((option) => (
                           <button
                             key={option.value}
                             onClick={() => handleSortChange(option.value)}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                              sortBy === option.value ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
-                            }`}
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${sortBy === option.value ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                              }`}
                           >
                             {option.label}
                           </button>
@@ -214,15 +216,25 @@ const Shop = () => {
             </div>
 
             {/* Products Grid/List */}
-            {loading ? (
-              <Loading size="medium" text="Chargement des produits..." />
+            {loading && products.length === 0 ? (
+              <div className={`grid gap-6 ${viewMode === 'grid'
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                  : 'grid-cols-1'
+                }`}>
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-2xl shadow-md p-4 h-96">
+                    <Skeleton className="w-full h-64 rounded-xl mb-4" />
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-6 w-1/2" />
+                  </div>
+                ))}
+              </div>
             ) : products.length > 0 ? (
               <>
-                <div className={`grid gap-6 ${
-                  viewMode === 'grid'
+                <div className={`grid gap-6 ${viewMode === 'grid'
                     ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
                     : 'grid-cols-1'
-                }`}>
+                  }`}>
                   {products.map((product) => (
                     <ProductCard key={product._id} product={product} viewMode={viewMode} />
                   ))}
@@ -239,24 +251,23 @@ const Shop = () => {
                       >
                         Précédent
                       </button>
-                      
+
                       {[...Array(totalPages)].map((_, index) => {
                         const page = index + 1;
                         const isCurrentPage = page === currentPage;
                         const isNearCurrentPage = Math.abs(page - currentPage) <= 2;
                         const isFirstPage = page === 1;
                         const isLastPage = page === totalPages;
-                        
+
                         if (isFirstPage || isLastPage || isNearCurrentPage) {
                           return (
                             <button
                               key={page}
                               onClick={() => handlePageChange(page)}
-                              className={`px-3 py-2 text-sm font-medium rounded-lg ${
-                                isCurrentPage
+                              className={`px-3 py-2 text-sm font-medium rounded-lg ${isCurrentPage
                                   ? 'bg-blue-600 text-white'
                                   : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                              }`}
+                                }`}
                             >
                               {page}
                             </button>
@@ -268,7 +279,7 @@ const Shop = () => {
                         }
                         return null;
                       })}
-                      
+
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { fetchFeaturedProducts, fetchNewProducts } from '../store/slices/productSlice';
 import { fetchCategories } from '../store/slices/categorySlice';
 import Loading from '../components/ui/Loading';
+import Skeleton from '../components/ui/Skeleton';
 import ProductCard from '../components/product/ProductCard';
 import HeroSlider from '../components/ui/HeroSlider';
 import api from '../services/api';
@@ -14,7 +15,7 @@ const Home = () => {
   const { categories = [], loading: categoriesLoading } = useSelector((state) => state.categories || {});
   const [banners, setBanners] = useState([]);
 
-  // Bannière par défaut si l'API échoue
+  // ... (defaultBanners and loadBanners remain the same)
   const defaultBanners = React.useMemo(() => [
     {
       _id: 'default-1',
@@ -64,10 +65,6 @@ const Home = () => {
     position: banner.position
   }));
 
-  if (productsLoading || categoriesLoading) {
-    return <Loading size="large" text="Chargement de la page d'accueil..." />;
-  }
-
   return (
     <div className="min-h-screen bg-white">
       <HeroSlider slides={heroSlides} />
@@ -83,25 +80,34 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {categories.slice(0, 4).map((category) => (
-              <Link key={category._id} to={`/shop?category=${category._id}`} className="group">
-                <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
-                  <img
-                    src={category.image || 'https://via.placeholder.com/600x800'}
-                    alt={category.name}
-                    loading="lazy"
-                    width="600"
-                    height="800"
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                  <div className="absolute bottom-6 left-6">
-                    <h3 className="text-white text-2xl font-bold capitalize mb-2">{category.name}</h3>
-                    <span className="text-blue-400 font-medium">Découvrir →</span>
-                  </div>
+            {categoriesLoading ? (
+              // Skeletons while loading
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="relative h-72 rounded-2xl overflow-hidden shadow-lg">
+                  <Skeleton className="w-full h-full" />
                 </div>
-              </Link>
-            ))}
+              ))
+            ) : (
+              categories.slice(0, 4).map((category) => (
+                <Link key={category._id} to={`/shop?category=${category._id}`} className="group">
+                  <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
+                    <img
+                      src={category.image || 'https://via.placeholder.com/600x800'}
+                      alt={category.name}
+                      loading="lazy"
+                      width="600"
+                      height="800"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                    <div className="absolute bottom-6 left-6">
+                      <h3 className="text-white text-2xl font-bold capitalize mb-2">{category.name}</h3>
+                      <span className="text-blue-400 font-medium">Découvrir →</span>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
