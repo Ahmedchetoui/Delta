@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import {
+  ShoppingBagIcon as ShoppingCartIcon,
+  Bars3Icon,
+  XMarkIcon,
+  MagnifyingGlassIcon,
+  UserIcon
+} from '@heroicons/react/24/outline';
 import { logout } from '../../store/slices/authSlice';
-import { ShoppingCartIcon, UserIcon, MagnifyingGlassIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { scrollToTop } from '../../utils/scrollUtils';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [isTransparent, setIsTransparent] = useState(true);
 
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { items } = useSelector((state) => state.cart);
@@ -21,42 +23,22 @@ const Navbar = () => {
 
   const cartItemsCount = items.reduce((total, item) => total + item.quantity, 0);
 
-  // Gérer le scroll pour la transparence et la visibilité
+  // Close menu on scroll
   useEffect(() => {
-    const controlNavbar = () => {
-      const currentScrollY = window.scrollY;
-
-      // Gérer la transparence (seulement au tout début de la page)
-      if (currentScrollY < 50) {
-        setIsTransparent(true);
-        setIsVisible(true);
-      } else {
-        setIsTransparent(false);
-
-        // Gérer l'affichage/masquage au scroll
-        if (currentScrollY > lastScrollY && currentScrollY > 100) {
-          // Scroll vers le bas -> masquer
-          setIsVisible(false);
-        } else {
-          // Scroll vers le haut -> afficher
-          setIsVisible(true);
-        }
+    const handleScroll = () => {
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
       }
-
-      setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener('scroll', controlNavbar);
-    return () => window.removeEventListener('scroll', controlNavbar);
-  }, [lastScrollY]);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMenuOpen]);
 
-  // Si on n'est pas sur la page d'accueil, pas de transparence
+  // Si on change de page, fermer le menu
   useEffect(() => {
-    if (location.pathname !== '/') {
-      setIsTransparent(false);
-    } else {
-      setIsTransparent(window.scrollY < 50);
-    }
+    setIsMenuOpen(false);
+    setIsSearchOpen(false);
   }, [location.pathname]);
 
   const handleLogout = () => {
@@ -73,83 +55,49 @@ const Navbar = () => {
     }
   };
 
-  // Handle navigation with centered scrolling
-  const handleNavClick = (e, path, sectionId = null) => {
-    e.preventDefault();
-    setIsMenuOpen(false); // Close mobile menu
-
-    if (path === '/') {
-      if (location.pathname === '/') {
-        // Already on home page, scroll to top
-        scrollToTop();
-      } else {
-        // Navigate to home page
-        navigate('/');
-      }
-    } else {
-      // Navigate to other pages
-      navigate(path);
+  const handleNavClick = (e, path) => {
+    if (path === '/' && location.pathname === '/') {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+    setIsMenuOpen(false);
   };
 
-  // Classes dynamiques pour le navbar
-  // md:translate-y-0 forces visibility on desktop regardless of scroll state
-  // md:bg-white/95 md:text-gray-800 md:border-b md:border-gold/10 forces standard look on desktop
-  const navbarClasses = `
-    fixed top-0 w-full z-50 transition-all duration-300
-    ${isVisible ? 'translate-y-0' : '-translate-y-full md:translate-y-0'}
-    ${isTransparent && location.pathname === '/'
-      ? 'bg-transparent text-white border-transparent md:bg-white/95 md:backdrop-blur-md md:shadow-lg md:text-gray-800 md:border-b md:border-gold/10'
-      : 'bg-white/95 backdrop-blur-md shadow-lg text-gray-800 border-b border-gold/10'}
-  `;
-
-  // Classes pour le logo text
-  const logoTextClasses = isTransparent && location.pathname === '/'
-    ? "text-3xl md:text-4xl font-extrabold tracking-tight text-white drop-shadow-md md:bg-gradient-to-r md:from-blue-600 md:to-blue-800 md:bg-clip-text md:text-transparent md:drop-shadow-none"
-    : "text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent";
-
-  // Classes pour les liens
-  const linkClasses = `transition-colors cursor-pointer font-medium ${isTransparent && location.pathname === '/'
-      ? 'text-white hover:text-blue-200 drop-shadow-sm md:text-gray-700 md:hover:text-blue-600 md:drop-shadow-none'
-      : 'text-gray-700 hover:text-blue-600'
-    }`;
-
-  // Classes pour les icônes
-  const iconClasses = isTransparent && location.pathname === '/'
-    ? 'text-white hover:text-blue-200 drop-shadow-sm md:text-gray-700 md:hover:text-blue-600 md:drop-shadow-none'
-    : 'text-gray-700 hover:text-blue-600';
+  // Styles constants
+  const linkClasses = "text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium";
+  const iconClasses = "text-gray-700 hover:text-blue-600 transition-colors cursor-pointer";
 
   return (
-    <nav className={navbarClasses}>
+    <nav className="fixed top-0 w-full z-50 bg-white shadow-lg border-b border-gray-100 transition-all duration-300">
       <div className="w-full mx-auto px-2 sm:px-4 lg:px-6">
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <a href="/" onClick={(e) => handleNavClick(e, '/')} className="flex items-center space-x-4 cursor-pointer">
+          <Link to="/" onClick={(e) => handleNavClick(e, '/')} className="flex items-center space-x-4 cursor-pointer">
             <img
               src={require('../../assets/logo/delta.jpg')}
               alt="Delta Fashion"
               className="h-12 w-12 md:h-16 md:w-16 rounded object-cover"
               loading="eager"
             />
-            <div className={logoTextClasses} style={{ fontFamily: "'Playfair Display', serif" }}>
+            <div className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent" style={{ fontFamily: "'Playfair Display', serif" }}>
               Delta Fashion
             </div>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="/" onClick={(e) => handleNavClick(e, '/')} className={linkClasses}>
+            <Link to="/" onClick={(e) => handleNavClick(e, '/')} className={linkClasses}>
               Accueil
-            </a>
-            <a href="/shop" onClick={(e) => handleNavClick(e, '/shop')} className={linkClasses}>
+            </Link>
+            <Link to="/shop" className={linkClasses}>
               Boutique
-            </a>
-            <a href="/about" onClick={(e) => handleNavClick(e, '/about')} className={linkClasses}>
+            </Link>
+            <Link to="/about" className={linkClasses}>
               À propos
-            </a>
-            <a href="/contact" onClick={(e) => handleNavClick(e, '/contact')} className={linkClasses}>
+            </Link>
+            <Link to="/contact" className={linkClasses}>
               Contact
-            </a>
+            </Link>
           </div>
 
           {/* Search Bar (Desktop) */}
@@ -161,13 +109,9 @@ const Navbar = () => {
                   placeholder="Rechercher..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isTransparent && location.pathname === '/'
-                      ? 'bg-white/20 border-white/30 text-white placeholder-white/70 md:bg-white md:border-gray-300 md:text-gray-900 md:placeholder-gray-500'
-                      : 'bg-white border-gray-300 text-gray-900'
-                    }`}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
                 />
-                <MagnifyingGlassIcon className={`absolute left-3 top-2.5 h-5 w-5 ${isTransparent && location.pathname === '/' ? 'text-white/70 md:text-gray-400' : 'text-gray-400'
-                  }`} />
+                <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
             </form>
           </div>
@@ -183,7 +127,7 @@ const Navbar = () => {
             </button>
 
             {/* Cart */}
-            <Link to="/cart" className={`relative p-2 ${iconClasses} transition-colors`}>
+            <Link to="/cart" className={`relative p-2 ${iconClasses}`}>
               <ShoppingCartIcon className="h-6 w-6" />
               {cartItemsCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-md">
@@ -260,68 +204,67 @@ const Navbar = () => {
 
         {/* Mobile Search */}
         {isSearchOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200/20">
-            <form onSubmit={handleSearch}>
+          <div className="md:hidden py-4 border-t border-gray-100 animate-fadeIn">
+            <form onSubmit={handleSearch} className="px-2">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Rechercher..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isTransparent && location.pathname === '/'
-                      ? 'bg-white/20 border-white/30 text-white placeholder-white/70'
-                      : 'bg-white border-gray-300 text-gray-900'
-                    }`}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  autoFocus
                 />
-                <MagnifyingGlassIcon className={`absolute left-3 top-2.5 h-5 w-5 ${isTransparent && location.pathname === '/' ? 'text-white/70' : 'text-gray-400'
-                  }`} />
+                <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
             </form>
           </div>
         )}
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu (Professional Gray & Centered) */}
         {isMenuOpen && (
-          <div className={`md:hidden py-4 border-t ${isTransparent && location.pathname === '/' ? 'border-white/20' : 'border-gray-200'
-            }`}>
-            <div className="flex flex-col space-y-4">
-              <a href="/" onClick={(e) => handleNavClick(e, '/')} className={linkClasses}>
+          <div className="md:hidden fixed top-[64px] inset-x-0 bg-gray-100/95 backdrop-blur-md shadow-xl border-t border-gray-200 animate-slideDown z-40 transition-all duration-300 ease-in-out">
+            <div className="flex flex-col space-y-4 py-8 px-4 text-center">
+              <Link to="/" onClick={(e) => handleNavClick(e, '/')} className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 border-b border-gray-200/50 w-3/4 mx-auto">
                 Accueil
-              </a>
-              <a href="/shop" onClick={(e) => handleNavClick(e, '/shop')} className={linkClasses}>
+              </Link>
+              <Link to="/shop" className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 border-b border-gray-200/50 w-3/4 mx-auto">
                 Boutique
-              </a>
-              <a href="/about" onClick={(e) => handleNavClick(e, '/about')} className={linkClasses}>
+              </Link>
+              <Link to="/about" className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 border-b border-gray-200/50 w-3/4 mx-auto">
                 À propos
-              </a>
-              <a href="/contact" onClick={(e) => handleNavClick(e, '/contact')} className={linkClasses}>
+              </Link>
+              <Link to="/contact" className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 w-3/4 mx-auto">
                 Contact
-              </a>
-              {!isAuthenticated && (
-                <>
-                  <Link to="/login" className={linkClasses}>
-                    Connexion
-                  </Link>
-                  <Link to="/register" className="text-blue-500 font-semibold">
-                    S'inscrire
-                  </Link>
-                </>
-              )}
-              {isAuthenticated && (
-                <>
-                  <Link to="/profile" className={linkClasses}>
-                    Mon Profil
-                  </Link>
-                  {user?.role === 'admin' && (
-                    <Link to="/admin" className={linkClasses}>
-                      Administration
+              </Link>
+
+              <div className="pt-6 flex flex-col items-center gap-4">
+                {!isAuthenticated && (
+                  <>
+                    <Link to="/login" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
+                      Connexion
                     </Link>
-                  )}
-                  <button onClick={handleLogout} className={`text-left ${linkClasses}`}>
-                    Déconnexion
-                  </button>
-                </>
-              )}
+                    <Link to="/register" className="bg-blue-600 text-white px-8 py-3 rounded-full hover:bg-blue-700 transition-colors shadow-md text-lg font-medium">
+                      S'inscrire
+                    </Link>
+                  </>
+                )}
+                {isAuthenticated && (
+                  <>
+                    <Link to="/profile" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
+                      Mon Profil
+                    </Link>
+                    {user?.role === 'admin' && (
+                      <Link to="/admin" className="text-blue-600 font-bold text-lg">
+                        Espace Admin
+                      </Link>
+                    )}
+                    <button onClick={handleLogout} className="text-red-500 font-medium mt-2 text-lg">
+                      Déconnexion
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}
