@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const sharp = require('sharp');
 let cloudinary = null;
 
 // Détection Cloudinary via variables d'environnement
@@ -60,7 +61,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max
+    fileSize: 5 * 1024 * 1024, // 5MB max (avant traitement sharp, pour éviter DoS)
     files: 10 // 10 fichiers max
   }
 });
@@ -78,7 +79,22 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
     if (!files.length) return next();
     const folder = process.env.CLOUDINARY_FOLDER || 'delta-fashion/uploads';
 
-    const uploads = await Promise.all(files.map(file => {
+    const uploads = await Promise.all(files.map(async file => {
+      // Optimisation d'image avec Sharp
+      let processedBuffer = file.buffer;
+      try {
+        processedBuffer = await sharp(file.buffer)
+          .resize(1200, 1200, {
+            fit: 'inside',
+            withoutEnlargement: true
+          })
+          .jpeg({ quality: 80, mozjpeg: true })
+          .toBuffer();
+        console.log(`Image optimisée: ${file.originalname} (${(file.buffer.length / 1024).toFixed(2)}KB -> ${(processedBuffer.length / 1024).toFixed(2)}KB)`);
+      } catch (sharpError) {
+        console.warn('Erreur lors de l\'optimisation Sharp, utilisation de l\'original:', sharpError.message);
+      }
+
       return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder, resource_type: 'image' },
@@ -87,7 +103,7 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
             resolve({ url: result.secure_url, public_id: result.public_id });
           }
         );
-        stream.end(file.buffer);
+        stream.end(processedBuffer);
       });
     }));
 
@@ -110,8 +126,20 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
         const ext = path.extname(f.originalname || '.jpg') || '.jpg';
         const filename = `images-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
         const full = path.join(produitDir, filename);
+
+        // Optimisation locale si possible
+        let bufferToSave = f.buffer;
+        try {
+          if (f.buffer) {
+            bufferToSave = await sharp(f.buffer)
+              .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: 80 })
+              .toBuffer();
+          }
+        } catch (e) { /* ignore */ }
+
         // f.buffer peut ne pas exister si storage n'est pas memoryStorage. Ici, c'est memoryStorage.
-        const buffer = f.buffer || (f.path ? fs.readFileSync(f.path) : null);
+        const buffer = bufferToSave || f.buffer || (f.path ? fs.readFileSync(f.path) : null);
         if (!buffer) continue;
         fs.writeFileSync(full, buffer);
         // Renseigner comme si c'était des URLs (sera préfixé par getImageUrl)
