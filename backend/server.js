@@ -89,9 +89,18 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Middleware d'optimisation des images
+const { optimizeStaticAssets, imageSecurityHeaders } = require('./middleware/imageOptimization');
+app.use('/uploads', imageSecurityHeaders);
+app.use('/uploads', optimizeStaticAssets);
+
 // Servir les fichiers statiques (images)
 // Les fichiers sont enregistrés dans backend/uploads (voir middleware/upload.js)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Avec support du cache long terme et compression
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '30d', // Cache 30 jours pour les images
+  etag: false, // Désactiver etag pour le cache immutable
+}));
 
 // Route pour servir manifest.json (si nécessaire depuis le backend)
 app.get('/manifest.json', (req, res) => {

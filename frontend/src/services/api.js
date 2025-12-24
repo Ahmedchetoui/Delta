@@ -13,7 +13,7 @@ if (/^https?:\/\//i.test(API_BASE_URL)) {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10 secondes timeout
+  timeout: 30000, // 30 secondes timeout (images peuvent être volumineuses)
   withCredentials: true, // Inclure les cookies pour CORS
 });
 
