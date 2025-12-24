@@ -71,8 +71,24 @@ app.use(cors(corsOptions));
 // Gérer les requêtes preflight OPTIONS explicitement
 app.options('*', cors(corsOptions));
 
+// Middleware de headers de sécurité globaux
+const { securityHeadersMiddleware } = require('./middleware/securityHeaders');
+app.use(securityHeadersMiddleware);
+
 // Middleware de sécurité
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Permet le chargement cross-origin des images
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
+      connectSrc: ["'self'", "https://res.cloudinary.com", "https://fonts.googleapis.com"],
+    },
+  },
+}));
 app.use(compression());
 
 // Rate limiting

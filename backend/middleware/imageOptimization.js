@@ -51,14 +51,19 @@ const serveOptimizedImage = (uploadDir) => {
  * Middleware pour ajouter les headers de sécurité et performance
  */
 const imageSecurityHeaders = (req, res, next) => {
-  // Empêcher le chargement des images d'origines non autorisées
+  // Headers de sécurité pour images
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   
-  // Support CORS pour les images
+  // Permettre le chargement cross-origin des images
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept-Encoding');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, X-Content-Type-Options');
+  
+  // Headers de performance
+  res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
   next();
 };
