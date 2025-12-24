@@ -24,14 +24,10 @@ const defaultOrigins = [
   'https://delta-e79s-4lp8o17ah-deltas-projects-ce7253f2.vercel.app',
   'https://delta-e79s-7wjv9yhjg-deltas-projects-ce7253f2.vercel.app',
   'https://delta-e79s-d82s4f8jb-deltas-projects-ce7253f2.vercel.app',
-  'https://delta-fashion.vercel.app', // ✅ AJOUT du domaine principal Vercel
   'https://delta-n5d8.onrender.com'
 ];
 
 const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
-
-// Utiliser le middleware CORS personnalisé qui gère correctement les credentials
-const { corsWithCredentials } = require('./middleware/corsWithCredentials');
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -50,8 +46,8 @@ const corsOptions = {
     // Autoriser les domaines Vercel (pour les previews)
     const isVercel = /^https:\/\/.*\.vercel\.app$/.test(normalized);
 
-    // Autoriser spécifiquement les domaines delta* de votre projet
-    const isDeltaVercel = /^https:\/\/delta.*\.vercel\.app$/.test(normalized);
+    // Autoriser spécifiquement les domaines delta-e79s-* de votre projet
+    const isDeltaVercel = /^https:\/\/delta-e79s-.*\.vercel\.app$/.test(normalized);
 
     if (isAllowed || isLocalhost || isVercel || isDeltaVercel) {
       console.log(`✅ CORS: origin autorisé: ${origin}`);
@@ -72,30 +68,11 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Appliquer aussi le middleware personnalisé pour les credentials
-app.use(corsWithCredentials(allowedOrigins));
-
 // Gérer les requêtes preflight OPTIONS explicitement
 app.options('*', cors(corsOptions));
 
-// Middleware de headers de sécurité globaux
-const { securityHeadersMiddleware } = require('./middleware/securityHeaders');
-app.use(securityHeadersMiddleware);
-
 // Middleware de sécurité
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Permet le chargement cross-origin des images
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
-      scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
-      connectSrc: ["'self'", "https://res.cloudinary.com", "https://fonts.googleapis.com"],
-    },
-  },
-}));
+app.use(helmet());
 app.use(compression());
 
 // Rate limiting
@@ -112,18 +89,9 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Middleware d'optimisation des images
-const { optimizeStaticAssets, imageSecurityHeaders } = require('./middleware/imageOptimization');
-app.use('/uploads', imageSecurityHeaders);
-app.use('/uploads', optimizeStaticAssets);
-
 // Servir les fichiers statiques (images)
 // Les fichiers sont enregistrés dans backend/uploads (voir middleware/upload.js)
-// Avec support du cache long terme et compression
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  maxAge: '30d', // Cache 30 jours pour les images
-  etag: false, // Désactiver etag pour le cache immutable
-}));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Route pour servir manifest.json (si nécessaire depuis le backend)
 app.get('/manifest.json', (req, res) => {

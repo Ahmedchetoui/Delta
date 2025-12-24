@@ -3,18 +3,9 @@ import { Link } from 'react-router-dom';
 import { HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import Skeleton from '../ui/Skeleton';
-import { useOptimizedImage, useResponsiveImage } from '../../hooks/useOptimizedImage';
 
 const ProductCard = ({ product }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  
-  // Utiliser l'optimisation d'image
-  const imageSrc = product.images?.[0] || '/api/placeholder/300/300';
-  const { url: optimizedUrl, loaded: imageOptimized } = useOptimizedImage(imageSrc, {
-    defaultSize: 'small', // Utiliser small pour les cartes produit
-    sizes: ['thumbnail', 'small'],
-  });
-  const { srcSet, sizes } = useResponsiveImage(imageSrc);
 
   const handleWishlist = (e) => {
     e.preventDefault();
@@ -43,20 +34,17 @@ const ProductCard = ({ product }) => {
       <Link to={`/product/${product._id}`}>
         {/* Image Container */}
         <div className="relative h-64 md:h-72 overflow-hidden bg-gray-100">
-          {(!isImageLoaded || !imageOptimized) && (
+          {!isImageLoaded && (
             <Skeleton className="absolute inset-0 w-full h-full z-10" />
           )}
           <img
-            src={optimizedUrl}
-            srcSet={srcSet}
-            sizes={sizes}
+            src={product.images?.[0] || '/api/placeholder/300/300'}
             alt={product.name}
             loading="lazy"
-            decoding="async"
             onLoad={() => setIsImageLoaded(true)}
             width="300"
             height="300"
-            className={`w-full h-full object-cover transition-all duration-700 ${isImageLoaded && imageOptimized ? 'scale-100 opacity-100' : 'scale-110 opacity-0'} group-hover:scale-110`}
+            className={`w-full h-full object-cover transition-all duration-700 ${isImageLoaded ? 'scale-100 opacity-100' : 'scale-110 opacity-0'} group-hover:scale-110`}
           />
 
           {/* Gradient Overlay on Hover */}
