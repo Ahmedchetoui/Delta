@@ -124,9 +124,14 @@ export const userService = {
 
 // Services admin
 export const adminService = {
-  getDashboard: () => api.get('/admin/dashboard'),
+  getDashboard: (period) => api.get(`/admin/dashboard?period=${period || '30d'}`),
   getStats: () => api.get('/admin/stats'),
   getAnalytics: (period) => api.get(`/admin/analytics?period=${period}`),
+
+  // Analytics Power BI
+  getSalesAnalytics: (params) => api.get('/admin/analytics/sales', { params }),
+  getProductsAnalytics: (period) => api.get(`/admin/analytics/products?period=${period || '30d'}`),
+  getCustomersAnalytics: (period) => api.get(`/admin/analytics/customers?period=${period || '30d'}`),
 
   // Gestion des commandes
   getOrders: (params) => api.get('/admin/orders', { params }),
@@ -138,6 +143,7 @@ export const adminService = {
   getCustomers: (params) => api.get('/admin/customers', { params }),
   getProducts: (params) => api.get('/admin/products', { params }),
   getCategories: () => api.get('/admin/categories'),
+  inviteAdmin: (data) => api.post('/admin-requests/invite', data),
 };
 
 export default api;

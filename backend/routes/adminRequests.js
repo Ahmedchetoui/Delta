@@ -4,6 +4,7 @@ const AdminRequest = require('../models/AdminRequest');
 const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+const { sendAdminInvitation, sendApprovalNotification } = require('../services/emailService');
 
 // @route   POST /api/admin-requests
 // @desc    Créer une demande d'administration
@@ -68,7 +69,7 @@ router.post('/', authenticateToken, async (req, res) => {
 router.get('/', adminAuth, async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
-    
+
     const filter = {};
     if (status) {
       filter.status = status;
@@ -256,6 +257,73 @@ router.get('/user/status', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur serveur lors de la vérification du statut'
+    });
+  }
+});
+
+// @route   POST /api/admin-requests/invite
+// @desc    Envoyer une invitation admin par email
+// @access  Private (admin seulement)
+router.post('/invite', adminAuth, async (req, res) => {
+  try {
+    const { email, firstName, lastName } = req.body;
+    const senderName = `${req.user.firstName} ${req.user.lastName}`;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'L\'adresse email est requise'
+      });
+    }
+
+    // Vérifier si l'utilisateur existe déjà
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+
+    if (existingUser) {
+      if (existingUser.role === 'admin') {
+        return res.status(400).json({
+          success: false,
+          message: 'Cet utilisateur est déjà administrateur'
+        });
+      }
+      // L'utilisateur existe mais n'est pas admin - envoyer invitation pour devenir admin
+    }
+
+    // Générer le lien d'invitation
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const invitationLink = existingUser
+      ? `${frontendUrl}/login?invite=admin`
+      : `${frontendUrl}/register?invite=admin&email=${encodeURIComponent(email)}`;
+
+    // Envoyer l'email d'invitation
+    const result = await sendAdminInvitation(
+      email,
+      firstName || (existingUser ? existingUser.firstName : ''),
+      senderName,
+      invitationLink
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: result.simulated
+          ? 'Invitation simulée (service email non configuré)'
+          : 'Invitation envoyée avec succès',
+        simulated: result.simulated || false
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de l\'envoi de l\'invitation',
+        error: result.error
+      });
+    }
+
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi de l\'invitation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur lors de l\'envoi de l\'invitation'
     });
   }
 });
