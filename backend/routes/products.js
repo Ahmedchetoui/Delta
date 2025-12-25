@@ -169,9 +169,9 @@ router.get('/', [
 // @access  Public
 router.get('/featured', async (req, res) => {
   try {
-    const products = await Product.find({ 
-      isActive: true, 
-      isFeatured: true 
+    const products = await Product.find({
+      isActive: true,
+      isFeatured: true
     })
       .populate('category', 'name slug')
       .sort({ createdAt: -1 })
@@ -201,9 +201,9 @@ router.get('/featured', async (req, res) => {
 // @access  Public
 router.get('/new', async (req, res) => {
   try {
-    const products = await Product.find({ 
-      isActive: true, 
-      isNewProduct: true 
+    const products = await Product.find({
+      isActive: true,
+      isNewProduct: true
     })
       .populate('category', 'name slug')
       .sort({ createdAt: -1 })
@@ -233,8 +233,8 @@ router.get('/new', async (req, res) => {
 // @access  Public
 router.get('/sale', async (req, res) => {
   try {
-    const products = await Product.find({ 
-      isActive: true, 
+    const products = await Product.find({
+      isActive: true,
       isOnSale: true,
       discount: { $gt: 0 }
     })
@@ -275,8 +275,8 @@ router.get('/:id', optionalAuth, async (req, res) => {
     }
 
     // Incrémenter le compteur de vues
-    await Product.findByIdAndUpdate(req.params.id, { 
-      $inc: { viewCount: 1 } 
+    await Product.findByIdAndUpdate(req.params.id, {
+      $inc: { viewCount: 1 }
     });
 
     // Ajouter les URLs d'images et le prix final
@@ -303,9 +303,9 @@ router.get('/:id', optionalAuth, async (req, res) => {
 // @access  Public
 router.get('/slug/:slug', optionalAuth, async (req, res) => {
   try {
-    const product = await Product.findOne({ 
-      slug: req.params.slug, 
-      isActive: true 
+    const product = await Product.findOne({
+      slug: req.params.slug,
+      isActive: true
     })
       .populate('category', 'name slug')
       .populate('reviews.user', 'firstName lastName')
@@ -319,7 +319,7 @@ router.get('/slug/:slug', optionalAuth, async (req, res) => {
 
     // Incrémenter le compteur de vues
     await Product.findOneAndUpdate(
-      { slug: req.params.slug }, 
+      { slug: req.params.slug },
       { $inc: { viewCount: 1 } }
     );
 
@@ -495,9 +495,30 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
     });
 
   } catch (error) {
-    console.error('Erreur lors de la création du produit:', error);
+    console.error('=== ERREUR CRÉATION PRODUIT ===');
+    console.error('Stack trace:', error.stack);
+
+    // Erreur de duplication (ex: slug déjà existant)
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'champ';
+      return res.status(400).json({
+        message: `Un produit avec ce ${field === 'slug' ? 'nom' : field} existe déjà`,
+        error: error.message
+      });
+    }
+
+    // Erreur de validation Mongoose
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        message: 'Erreur de validation des données',
+        errors: messages
+      });
+    }
+
     res.status(500).json({
-      message: 'Erreur lors de la création du produit'
+      message: 'Erreur lors de la création du produit',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -534,7 +555,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     console.log('Body reçu:', Object.keys(req.body));
     console.log('Files reçus:', req.files ? req.files.length : 0);
     console.log('uploadedImages:', req.uploadedImages ? req.uploadedImages.length : 0);
-    
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.log('Erreurs de validation:', errors.array());
@@ -593,7 +614,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     // Gestion des images existantes et nouvelles
     console.log('=== GESTION DES IMAGES ===');
     let finalImages = [];
-    
+
     // Récupérer les images existantes à conserver
     if (req.body.existingImages) {
       try {
@@ -604,7 +625,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
         console.error('Erreur lors du parsing des images existantes:', error);
       }
     }
-    
+
     // Supprimer les images marquées pour suppression
     if (req.body.imagesToDelete) {
       try {
@@ -617,7 +638,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
         console.error('Erreur lors de la suppression des images:', error);
       }
     }
-    
+
     // Ajouter les nouvelles images
     if ((req.files && req.files.length > 0) || (req.uploadedImages && req.uploadedImages.length > 0)) {
       const newImages = req.uploadedImages
@@ -625,7 +646,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
         : (req.files ? req.files.map(file => file.filename) : []);
       finalImages = [...finalImages, ...newImages];
     }
-    
+
     // Mettre à jour les images du produit
     if (finalImages.length > 0) {
       product.images = finalImages;
@@ -719,7 +740,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     console.log('Sauvegarde du produit...');
     await product.save();
     console.log('Produit sauvegardé avec succès');
-    
+
     console.log('Population de la catégorie...');
     await product.populate('category', 'name slug');
     console.log('Catégorie populée');
@@ -736,8 +757,23 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
   } catch (error) {
     console.error('=== ERREUR MISE À JOUR ===');
     console.error('Stack trace:', error.stack);
-    console.error('Message:', error.message);
-    console.error('Name:', error.name);
+
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'champ';
+      return res.status(400).json({
+        message: `Un produit avec ce ${field === 'slug' ? 'nom' : field} existe déjà`,
+        error: error.message
+      });
+    }
+
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        message: 'Erreur de validation des données',
+        errors: messages
+      });
+    }
+
     res.status(500).json({
       message: 'Erreur lors de la mise à jour du produit',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
