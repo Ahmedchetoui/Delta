@@ -495,30 +495,9 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
     });
 
   } catch (error) {
-    console.error('=== ERREUR CRÉATION PRODUIT ===');
-    console.error('Stack trace:', error.stack);
-
-    // Erreur de duplication (ex: slug déjà existant)
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyPattern || {})[0] || 'champ';
-      return res.status(400).json({
-        message: `Un produit avec ce ${field === 'slug' ? 'nom' : field} existe déjà`,
-        error: error.message
-      });
-    }
-
-    // Erreur de validation Mongoose
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({
-        message: 'Erreur de validation des données',
-        errors: messages
-      });
-    }
-
+    console.error('Erreur lors de la création du produit:', error);
     res.status(500).json({
-      message: 'Erreur lors de la création du produit',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'Erreur lors de la création du produit'
     });
   }
 });
@@ -757,23 +736,8 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
   } catch (error) {
     console.error('=== ERREUR MISE À JOUR ===');
     console.error('Stack trace:', error.stack);
-
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyPattern || {})[0] || 'champ';
-      return res.status(400).json({
-        message: `Un produit avec ce ${field === 'slug' ? 'nom' : field} existe déjà`,
-        error: error.message
-      });
-    }
-
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({
-        message: 'Erreur de validation des données',
-        errors: messages
-      });
-    }
-
+    console.error('Message:', error.message);
+    console.error('Name:', error.name);
     res.status(500).json({
       message: 'Erreur lors de la mise à jour du produit',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
