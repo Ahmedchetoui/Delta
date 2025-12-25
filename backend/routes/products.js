@@ -15,8 +15,8 @@ const productValidation = [
     .withMessage('Le nom doit contenir entre 2 et 100 caractères'),
   body('description')
     .trim()
-    .isLength({ min: 10, max: 2000 })
-    .withMessage('La description doit contenir entre 10 et 2000 caractères'),
+    .isLength({ min: 3, max: 2000 })
+    .withMessage('La description doit contenir entre 3 et 2000 caractères'),
   body('price')
     .isFloat({ min: 0 })
     .withMessage('Le prix doit être un nombre positif'),
