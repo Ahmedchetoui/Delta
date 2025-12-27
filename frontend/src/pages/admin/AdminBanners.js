@@ -12,7 +12,7 @@ const AdminBanners = () => {
     subtitle: '',
     description: '',
     buttonText: 'Voir les offres',
-    buttonLink: '/boutique',
+    buttonLink: '/shop',
     order: 0,
     isActive: true,
     backgroundColor: '#f8f9fa',
@@ -57,7 +57,7 @@ const AdminBanners = () => {
           form.append(key, formData[key]);
         }
       });
-      
+
       if (imageFile) {
         form.append('image', imageFile);
       }
@@ -126,7 +126,7 @@ const AdminBanners = () => {
       subtitle: '',
       description: '',
       buttonText: 'Voir les offres',
-      buttonLink: '/boutique',
+      buttonLink: '/shop',
       order: 0,
       isActive: true,
       backgroundColor: '#f8f9fa',
@@ -164,7 +164,7 @@ const AdminBanners = () => {
             <h2 className="text-xl font-bold mb-4">
               {editingBanner ? 'Modifier la bannière' : 'Nouvelle bannière'}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -173,7 +173,7 @@ const AdminBanners = () => {
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full border rounded-lg px-3 py-2"
                   required
                 />
@@ -186,7 +186,7 @@ const AdminBanners = () => {
                 <input
                   type="text"
                   value={formData.subtitle}
-                  onChange={(e) => setFormData({...formData, subtitle: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                   className="w-full border rounded-lg px-3 py-2"
                 />
               </div>
@@ -197,7 +197,7 @@ const AdminBanners = () => {
                 </label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full border rounded-lg px-3 py-2"
                   rows="3"
                 />
@@ -211,7 +211,7 @@ const AdminBanners = () => {
                   <input
                     type="text"
                     value={formData.buttonText}
-                    onChange={(e) => setFormData({...formData, buttonText: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
                     className="w-full border rounded-lg px-3 py-2"
                   />
                 </div>
@@ -223,7 +223,7 @@ const AdminBanners = () => {
                   <input
                     type="text"
                     value={formData.buttonLink}
-                    onChange={(e) => setFormData({...formData, buttonLink: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
                     className="w-full border rounded-lg px-3 py-2"
                   />
                 </div>
@@ -237,7 +237,7 @@ const AdminBanners = () => {
                   <input
                     type="number"
                     value={formData.order}
-                    onChange={(e) => setFormData({...formData, order: parseInt(e.target.value)})}
+                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
                     className="w-full border rounded-lg px-3 py-2"
                     min="0"
                   />
@@ -249,7 +249,7 @@ const AdminBanners = () => {
                   </label>
                   <select
                     value={formData.position}
-                    onChange={(e) => setFormData({...formData, position: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                     className="w-full border rounded-lg px-3 py-2"
                   >
                     <option value="center">Centre</option>
@@ -263,7 +263,7 @@ const AdminBanners = () => {
                     <input
                       type="checkbox"
                       checked={formData.isActive}
-                      onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                       className="rounded"
                     />
                     <span className="text-sm font-medium text-gray-700">Active</span>
@@ -279,7 +279,7 @@ const AdminBanners = () => {
                   <input
                     type="color"
                     value={formData.backgroundColor}
-                    onChange={(e) => setFormData({...formData, backgroundColor: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
                     className="w-full border rounded-lg px-3 py-2 h-10"
                   />
                 </div>
@@ -291,7 +291,7 @@ const AdminBanners = () => {
                   <input
                     type="color"
                     value={formData.textColor}
-                    onChange={(e) => setFormData({...formData, textColor: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, textColor: e.target.value })}
                     className="w-full border rounded-lg px-3 py-2 h-10"
                   />
                 </div>
@@ -381,11 +381,10 @@ const AdminBanners = () => {
                   {banner.order}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    banner.isActive 
-                      ? 'bg-green-100 text-green-800' 
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${banner.isActive
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
-                  }`}>
+                    }`}>
                     {banner.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
@@ -413,7 +412,7 @@ const AdminBanners = () => {
             ))}
           </tbody>
         </table>
-        
+
         {banners.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             Aucune bannière trouvée. Créez votre première bannière !

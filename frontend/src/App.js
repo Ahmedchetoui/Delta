@@ -1,6 +1,6 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useDispatch } from 'react-redux';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -99,6 +99,7 @@ function App() {
             <Route path="/delivery" element={<Delivery />} />
             <Route path="/order-tracking" element={<OrderTracking />} />
             <Route path="/guest-order-tracking" element={<GuestOrderTracking />} />
+            <Route path="/boutique" element={<Navigate to="/shop" replace />} />
 
             {/* Auth Routes */}
             <Route path="/login" element={<Login />} />

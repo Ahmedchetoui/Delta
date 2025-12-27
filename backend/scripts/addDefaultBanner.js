@@ -24,7 +24,7 @@ async function addDefaultBanner() {
       description: "Découvrez notre collection exclusive de vêtements tendance",
       image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
       buttonText: "Découvrir la boutique",
-      buttonLink: "/boutique",
+      buttonLink: "/shop",
       order: 0,
       isActive: true,
       backgroundColor: "#1f2937",
