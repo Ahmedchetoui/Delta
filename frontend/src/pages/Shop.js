@@ -109,10 +109,10 @@ const Shop = () => {
             {search ? `Résultats pour "${search}"` : 'Boutique'}
           </h1>
           <p className="text-gray-600">
-            {loading && products.length === 0 ? (
+            {loading ? (
               <Skeleton className="h-4 w-32" />
             ) : (
-              `${totalProducts} produit${totalProducts > 1 ? 's' : ''} trouvé${totalProducts > 1 ? 's' : ''}`
+              `${totalProducts || 0} produit${(totalProducts || 0) > 1 ? 's' : ''} trouvé${(totalProducts || 0) > 1 ? 's' : ''}`
             )}
           </p>
         </div>
@@ -169,8 +169,8 @@ const Shop = () => {
                     <button
                       onClick={() => setViewMode('grid')}
                       className={`p-2 rounded-lg transition-colors ${viewMode === 'grid'
-                          ? 'bg-blue-100 text-blue-600'
-                          : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-blue-100 text-blue-600'
+                        : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
                       <Squares2X2Icon className="h-5 w-5" />
@@ -178,8 +178,8 @@ const Shop = () => {
                     <button
                       onClick={() => setViewMode('list')}
                       className={`p-2 rounded-lg transition-colors ${viewMode === 'list'
-                          ? 'bg-blue-100 text-blue-600'
-                          : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-blue-100 text-blue-600'
+                        : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
                       <ListBulletIcon className="h-5 w-5" />
@@ -218,8 +218,8 @@ const Shop = () => {
             {/* Products Grid/List */}
             {loading && products.length === 0 ? (
               <div className={`grid gap-6 ${viewMode === 'grid'
-                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                  : 'grid-cols-1'
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                : 'grid-cols-1'
                 }`}>
                 {[...Array(8)].map((_, i) => (
                   <div key={i} className="bg-white rounded-2xl shadow-md p-4 h-96">
@@ -232,8 +232,8 @@ const Shop = () => {
             ) : products.length > 0 ? (
               <>
                 <div className={`grid gap-6 ${viewMode === 'grid'
-                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                    : 'grid-cols-1'
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                  : 'grid-cols-1'
                   }`}>
                   {products.map((product) => (
                     <ProductCard key={product._id} product={product} viewMode={viewMode} />
@@ -265,8 +265,8 @@ const Shop = () => {
                               key={page}
                               onClick={() => handlePageChange(page)}
                               className={`px-3 py-2 text-sm font-medium rounded-lg ${isCurrentPage
-                                  ? 'bg-blue-600 text-white'
-                                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                                 }`}
                             >
                               {page}

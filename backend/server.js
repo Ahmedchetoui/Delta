@@ -91,7 +91,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Servir les fichiers statiques (images)
 // Les fichiers sont enregistrés dans backend/uploads (voir middleware/upload.js)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '1d', // Cache pour 1 jour
+  immutable: true
+}));
 
 // Route pour servir manifest.json (si nécessaire depuis le backend)
 app.get('/manifest.json', (req, res) => {

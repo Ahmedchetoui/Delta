@@ -5,6 +5,7 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Order = require('../models/Order');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { getImageUrl } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.use(authenticateToken, requireAdmin);
 router.get('/dashboard', async (req, res) => {
   try {
     const { period = '30d' } = req.query;
-    
+
     // Calculer la date de début selon la période
     let startDate = new Date();
     switch (period) {
@@ -250,7 +251,7 @@ router.get('/dashboard', async (req, res) => {
       monthlyStats,
       topProducts: topProducts.map(product => ({
         ...product,
-        productImage: product.productImage ? `http://localhost:5000/uploads/${product.productImage}` : null
+        productImage: getImageUrl(product.productImage)
       })),
       topCategories,
       topUsers
@@ -359,7 +360,7 @@ router.get('/analytics/sales', [
 router.get('/analytics/products', async (req, res) => {
   try {
     const { period = '30d' } = req.query;
-    
+
     // Calculer la date de début
     let startDate = new Date();
     switch (period) {
@@ -461,23 +462,23 @@ router.get('/analytics/products', async (req, res) => {
       stats,
       lowStockProducts: lowStockProducts.map(product => ({
         ...product,
-        images: product.images.map(image => `http://localhost:5000/uploads/${image}`)
+        images: product.images.map(image => getImageUrl(image))
       })),
       outOfStockProducts: outOfStockProducts.map(product => ({
         ...product,
-        images: product.images.map(image => `http://localhost:5000/uploads/${image}`)
+        images: product.images.map(image => getImageUrl(image))
       })),
       mostViewedProducts: mostViewedProducts.map(product => ({
         ...product,
-        images: product.images.map(image => `http://localhost:5000/uploads/${image}`)
+        images: product.images.map(image => getImageUrl(image))
       })),
       bestSellingProducts: bestSellingProducts.map(product => ({
         ...product,
-        images: product.images.map(image => `http://localhost:5000/uploads/${image}`)
+        images: product.images.map(image => getImageUrl(image))
       })),
       recentProducts: recentProducts.map(product => ({
         ...product,
-        images: product.images.map(image => `http://localhost:5000/uploads/${image}`)
+        images: product.images.map(image => getImageUrl(image))
       }))
     });
 
@@ -495,7 +496,7 @@ router.get('/analytics/products', async (req, res) => {
 router.get('/analytics/customers', async (req, res) => {
   try {
     const { period = '30d' } = req.query;
-    
+
     // Calculer la date de début
     let startDate = new Date();
     switch (period) {
@@ -726,7 +727,7 @@ router.get('/orders', [
         ...item,
         product: {
           ...item.product,
-          images: item.product?.images?.map(img => `http://localhost:5000/uploads/${img}`) || []
+          images: item.product?.images?.map(img => getImageUrl(img)) || []
         }
       }))
     }));
@@ -781,7 +782,7 @@ router.get('/orders/:id', async (req, res) => {
         ...item,
         product: {
           ...item.product,
-          images: item.product?.images?.map(img => `http://localhost:5000/uploads/${img}`) || []
+          images: item.product?.images?.map(img => getImageUrl(img)) || []
         }
       }))
     };

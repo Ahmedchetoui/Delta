@@ -9,13 +9,13 @@ export const fetchProducts = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const queryParams = new URLSearchParams();
-      
+
       Object.keys(params).forEach(key => {
         if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
           queryParams.append(key, params[key]);
         }
       });
-      
+
       const response = await axios.get(`${API_URL}/products?${queryParams}`);
       return response.data;
     } catch (error) {
@@ -101,13 +101,13 @@ export const searchProducts = createAsyncThunk(
   async (searchParams, { rejectWithValue }) => {
     try {
       const queryParams = new URLSearchParams();
-      
+
       Object.keys(searchParams).forEach(key => {
         if (searchParams[key] !== undefined && searchParams[key] !== null && searchParams[key] !== '') {
           queryParams.append(key, searchParams[key]);
         }
       });
-      
+
       const response = await axios.get(`${API_URL}/products?${queryParams}`);
       return response.data;
     } catch (error) {
@@ -218,7 +218,7 @@ const productSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch Product
       .addCase(fetchProduct.pending, (state) => {
         state.isLoading = true;
@@ -233,7 +233,7 @@ const productSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch Product By Slug
       .addCase(fetchProductBySlug.pending, (state) => {
         state.isLoading = true;
@@ -248,7 +248,7 @@ const productSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch Featured Products
       .addCase(fetchFeaturedProducts.pending, (state) => {
         state.isLoading = true;
@@ -263,7 +263,7 @@ const productSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch New Products
       .addCase(fetchNewProducts.pending, (state) => {
         state.isLoading = true;
@@ -278,7 +278,7 @@ const productSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch Sale Products
       .addCase(fetchSaleProducts.pending, (state) => {
         state.isLoading = true;
@@ -293,7 +293,7 @@ const productSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      
+
       // Search Products
       .addCase(searchProducts.pending, (state) => {
         state.isSearching = true;
@@ -309,7 +309,7 @@ const productSlice = createSlice({
         state.isSearching = false;
         state.error = action.payload;
       })
-      
+
       // Add Product Review
       .addCase(addProductReview.pending, (state) => {
         state.isLoading = true;
