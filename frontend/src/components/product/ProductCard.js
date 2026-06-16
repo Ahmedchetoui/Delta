@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import Skeleton from '../ui/Skeleton';
+import { resolveImageUrl } from '../../utils/imageUtils';
 
 const ProductCard = ({ product }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -38,7 +39,7 @@ const ProductCard = ({ product }) => {
             <Skeleton className="absolute inset-0 w-full h-full z-10" />
           )}
           <img
-            src={product.images?.[0] || '/api/placeholder/300/300'}
+            src={resolveImageUrl(product.images?.[0])}
             alt={product.name}
             loading="lazy"
             onLoad={() => setIsImageLoaded(true)}

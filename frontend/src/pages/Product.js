@@ -6,6 +6,7 @@ import { addToCart } from '../store/slices/cartSlice';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import Loading from '../components/ui/Loading';
 import { toast } from 'react-toastify';
+import { resolveImageUrl } from '../utils/imageUtils';
 
 const Product = () => {
   const { id } = useParams();
@@ -165,7 +166,7 @@ const Product = () => {
           <div>
             <div className="aspect-square bg-white rounded-lg shadow-md overflow-hidden">
               <img
-                src={currentProduct.images[selectedImage] || '/api/placeholder/600/600'}
+                src={resolveImageUrl(currentProduct.images[selectedImage])}
                 alt={currentProduct.name}
                 loading="eager"
                 fetchpriority="high"

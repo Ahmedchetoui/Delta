@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Banner = require('../models/Banner');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
 
 const router = express.Router();
@@ -33,16 +33,19 @@ const bannerValidation = [
 // @route   GET /api/banners
 // @desc    Obtenir toutes les bannières (admin) ou actives (public)
 // @access  Public pour les actives, Admin pour toutes
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const { includeInactive = false } = req.query;
     let banners;
 
     if (includeInactive === 'true') {
-      // Admin: toutes les bannières
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({
+          message: 'Accès refusé. Droits administrateur requis.'
+        });
+      }
       banners = await Banner.find().sort({ order: 1, createdAt: -1 });
     } else {
-      // Public: seulement les bannières actives
       banners = await Banner.getActiveBanners();
     }
 

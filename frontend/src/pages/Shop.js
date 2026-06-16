@@ -21,8 +21,22 @@ const Shop = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [showSortMenu, setShowSortMenu] = useState(false);
 
-  const { products, loading, totalProducts, currentPage, totalPages } = useSelector((state) => state.products);
+  const {
+    products,
+    isLoading: loading,
+    pagination: {
+      totalProducts = 0,
+      currentPage = 1,
+      totalPages = 1
+    } = {}
+  } = useSelector((state) => state.products);
   const { categories } = useSelector((state) => state.categories);
+
+  useEffect(() => {
+    if (!categories.length) {
+      dispatch(fetchCategories());
+    }
+  }, [dispatch, categories.length]);
 
   // Récupérer les paramètres de l'URL
   const search = searchParams.get('search') || '';
@@ -88,10 +102,10 @@ const Shop = () => {
   const sortOptions = [
     { value: 'newest', label: 'Plus récents' },
     { value: 'oldest', label: 'Plus anciens' },
-    { value: 'price-low', label: 'Prix croissant' },
-    { value: 'price-high', label: 'Prix décroissant' },
-    { value: 'name-asc', label: 'Nom A-Z' },
-    { value: 'name-desc', label: 'Nom Z-A' },
+    { value: 'price_asc', label: 'Prix croissant' },
+    { value: 'price_desc', label: 'Prix décroissant' },
+    { value: 'name_asc', label: 'Nom A-Z' },
+    { value: 'name_desc', label: 'Nom Z-A' },
     { value: 'rating', label: 'Mieux notés' }
   ];
 

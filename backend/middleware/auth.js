@@ -1,6 +1,16 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+function getJwtSecret() {
+  if (!process.env.JWT_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET doit être défini en production');
+    }
+    return 'dev-only-insecure-secret';
+  }
+  return process.env.JWT_SECRET;
+}
+
 // Middleware pour vérifier le token JWT
 const authenticateToken = async (req, res, next) => {
   try {
@@ -13,7 +23,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const user = await User.findById(decoded.userId).select('-password');
 
     if (!user) {
@@ -78,9 +88,9 @@ const requireOwnerOrAdmin = (req, res, next) => {
   }
 
   // Vérifier si l'utilisateur est propriétaire de la ressource
-  const resourceUserId = req.params.userId || req.body.userId;
-  
-  if (req.user._id.toString() !== resourceUserId) {
+  const resourceUserId = req.params.id || req.params.userId;
+
+  if (!resourceUserId || req.user._id.toString() !== resourceUserId.toString()) {
     return res.status(403).json({ 
       message: 'Accès refusé. Vous ne pouvez accéder qu\'à vos propres ressources.' 
     });
@@ -96,7 +106,7 @@ const optionalAuth = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, getJwtSecret());
       const user = await User.findById(decoded.userId).select('-password');
       
       if (user && user.isActive) {
@@ -115,7 +125,7 @@ const optionalAuth = async (req, res, next) => {
 const generateToken = (userId) => {
   return jwt.sign(
     { userId },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET || getJwtSecret(),
     { expiresIn: '7d' }
   );
 };
@@ -125,5 +135,6 @@ module.exports = {
   requireAdmin,
   requireOwnerOrAdmin,
   optionalAuth,
-  generateToken
+  generateToken,
+  getJwtSecret
 };

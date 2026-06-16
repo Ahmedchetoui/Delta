@@ -26,12 +26,15 @@ const seedData = async () => {
     await Product.deleteMany({});
     console.log('🧹 Données existantes supprimées');
 
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'admin123';
+    const ahmedPassword = process.env.SEED_AHMED_PASSWORD || 'ChangeMeNow123!';
+
     // 1. Créer un utilisateur admin
     const adminUser = new User({
       firstName: 'Admin',
       lastName: 'Delta Fashion',
-      email: 'admin@deltafashion.com',
-      password: 'admin123',
+      email: process.env.SEED_ADMIN_EMAIL || 'admin@deltafashion.com',
+      password: adminPassword,
       phone: '+216 12 345 678',
       role: 'admin',
       address: {
@@ -48,8 +51,8 @@ const seedData = async () => {
     const testUser = new User({
       firstName: 'Ahmed',
       lastName: 'Chetoui',
-      email: 'ahmedchetoui987@gmail.com',
-      password: '200223Ata',
+      email: process.env.SEED_AHMED_EMAIL || 'ahmedchetoui987@gmail.com',
+      password: ahmedPassword,
       phone: '+216 98 765 432',
       role: 'admin',
       address: {
@@ -68,24 +71,28 @@ const seedData = async () => {
         name: 'Hommes',
         description: 'Mode masculine tendance',
         icon: 'male',
+        image: 'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&h=800&fit=crop',
         order: 1
       },
       {
         name: 'Femmes',
         description: 'Mode féminine élégante',
         icon: 'female',
+        image: 'https://images.unsplash.com/photo-1483985988355-763728c450fe?w=600&h=800&fit=crop',
         order: 2
       },
       {
         name: 'Enfants',
         description: 'Mode pour enfants',
         icon: 'child',
+        image: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=600&h=800&fit=crop',
         order: 3
       },
       {
         name: 'Accessoires',
         description: 'Accessoires de mode',
         icon: 'accessory',
+        image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=800&fit=crop',
         order: 4
       }
     ];
@@ -104,12 +111,14 @@ const seedData = async () => {
       {
         name: 'T-shirts Homme',
         description: 'T-shirts pour hommes',
+        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=800&fit=crop',
         parentCategory: createdCategories[0]._id,
         order: 1
       },
       {
         name: 'Pantalons Homme',
         description: 'Pantalons pour hommes',
+        image: 'https://images.unsplash.com/photo-1473966968600-fa801b869a4a?w=600&h=800&fit=crop',
         parentCategory: createdCategories[0]._id,
         order: 2
       },
@@ -117,12 +126,14 @@ const seedData = async () => {
       {
         name: 'Robes',
         description: 'Robes élégantes',
+        image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&h=800&fit=crop',
         parentCategory: createdCategories[1]._id,
         order: 1
       },
       {
         name: 'Tops Femme',
         description: 'Tops et hauts pour femmes',
+        image: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&h=800&fit=crop',
         parentCategory: createdCategories[1]._id,
         order: 2
       }
@@ -149,7 +160,7 @@ const seedData = async () => {
         category: createdSubCategories[0]._id, // T-shirts Homme
         brand: 'Delta Fashion',
         sku: 'TS-WHT-001',
-        images: ['https://via.placeholder.com/400x400/ffffff/000000?text=T-shirt+Blanc'],
+        images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop'],
         variants: [
           { size: 'S', color: 'Blanc', stock: 10, price: 29.99 },
           { size: 'M', color: 'Blanc', stock: 15, price: 29.99 },
@@ -172,7 +183,7 @@ const seedData = async () => {
         category: createdSubCategories[1]._id, // Pantalons Homme
         brand: 'Delta Fashion',
         sku: 'JN-BLU-001',
-        images: ['https://via.placeholder.com/400x400/4169E1/ffffff?text=Jean+Bleu'],
+        images: ['https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop'],
         variants: [
           { size: 'S', color: 'Bleu', stock: 8, price: 79.99 },
           { size: 'M', color: 'Bleu', stock: 12, price: 79.99 },
@@ -197,7 +208,7 @@ const seedData = async () => {
         category: createdSubCategories[2]._id, // Robes
         brand: 'Delta Fashion',
         sku: 'RB-BLK-001',
-        images: ['https://via.placeholder.com/400x400/000000/ffffff?text=Robe+Noire'],
+        images: ['https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop'],
         variants: [
           { size: 'XS', color: 'Noir', stock: 5, price: 89.99 },
           { size: 'S', color: 'Noir', stock: 8, price: 89.99 },
@@ -220,7 +231,7 @@ const seedData = async () => {
         category: createdSubCategories[3]._id, // Tops Femme
         brand: 'Delta Fashion',
         sku: 'TP-FLR-001',
-        images: ['https://via.placeholder.com/400x400/FFB6C1/ffffff?text=Top+Fleuri'],
+        images: ['https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=400&fit=crop'],
         variants: [
           { size: 'XS', color: 'Rose', stock: 6, price: 34.99 },
           { size: 'S', color: 'Rose', stock: 9, price: 34.99 },
@@ -243,7 +254,7 @@ const seedData = async () => {
         category: createdCategories[3]._id, // Accessoires
         brand: 'Delta Fashion',
         sku: 'SAC-MAR-001',
-        images: ['https://via.placeholder.com/400x400/8B4513/ffffff?text=Sac+Cuir'],
+        images: ['https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop'],
         variants: [
           { size: 'M', color: 'Marron', stock: 15, price: 149.99 }
         ],
@@ -269,8 +280,8 @@ const seedData = async () => {
     console.log(`🛍️ Produits créés: ${await Product.countDocuments()}`);
     
     console.log('\n🔑 Comptes de test :');
-    console.log('Admin: admin@deltafashion.com / admin123');
-    console.log('Admin Ahmed: ahmedchetoui987@gmail.com / 200223Ata');
+    console.log(`Admin: ${process.env.SEED_ADMIN_EMAIL || 'admin@deltafashion.com'} (voir SEED_ADMIN_PASSWORD)`);
+    console.log(`Admin Ahmed: ${process.env.SEED_AHMED_EMAIL || 'ahmedchetoui987@gmail.com'} (voir SEED_AHMED_PASSWORD)`);
 
   } catch (error) {
     console.error('❌ Erreur lors du peuplement:', error);

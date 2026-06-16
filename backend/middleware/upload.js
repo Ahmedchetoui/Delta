@@ -2,30 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
-let cloudinary = null;
-
-// Détection Cloudinary via variables d'environnement
-const useCloudinary = !!(
-  process.env.CLOUDINARY_URL ||
-  (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)
-);
-
-if (useCloudinary) {
-  try {
-    cloudinary = require('cloudinary').v2;
-    if (process.env.CLOUDINARY_URL) {
-      cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
-    } else {
-      cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET,
-      });
-    }
-  } catch (e) {
-    console.warn('Cloudinary non disponible, bascule sur stockage local.', e?.message);
-  }
-}
+const { cloudinary, enabled: useCloudinary, getCloudinaryFolder } = require('../config/cloudinary');
 
 // Configuration du stockage Multer
 const storage = (useCloudinary && cloudinary)
@@ -77,7 +54,7 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
     if (!(useCloudinary && cloudinary)) return next();
     const files = req.files || (req.file ? [req.file] : []);
     if (!files.length) return next();
-    const folder = process.env.CLOUDINARY_FOLDER || 'delta-fashion/uploads';
+    const folder = getCloudinaryFolder();
 
     const uploads = await Promise.all(files.map(async file => {
       // Optimisation d'image avec Sharp

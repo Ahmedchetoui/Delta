@@ -1,24 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import deltaLogo from '../../assets/logo/delta.jpg';
 
 const LandingPage = ({ onComplete }) => {
-    const [progress, setProgress] = useState(0);
-
     useEffect(() => {
-        // Animation de progression
-        const interval = setInterval(() => {
-            setProgress((prev) => {
-                if (prev >= 100) {
-                    clearInterval(interval);
-                    setTimeout(() => onComplete(), 500);
-                    return 100;
-                }
-                return prev + 2;
-            });
-        }, 30);
-
-        return () => clearInterval(interval);
+        const timer = setTimeout(() => onComplete(), 600);
+        return () => clearTimeout(timer);
     }, [onComplete]);
 
     return (

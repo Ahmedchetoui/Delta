@@ -22,8 +22,12 @@ uploads/
 # Backups (local only)
 backend/backups/
 
-# Editor/OS
-.DS_Store
+# Scripts avec credentials inline
+backend/scripts/cloudinary-onboarding.js
+
+# MongoDB local (binaire portable)
+.mongodb/
+
 Thumbs.db
 .vscode/
 .idea/

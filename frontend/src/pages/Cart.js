@@ -5,6 +5,7 @@ import { removeFromCart, updateCartItemQuantity, clearCart, selectCartItems, sel
 import { ShoppingCartIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import { resolveImageUrl } from '../utils/imageUtils';
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -286,7 +287,7 @@ const Cart = () => {
                 <div key={item.id} className="flex items-center justify-between border-b pb-2">
                   <div className="flex items-center space-x-3">
                     <img
-                      src={(item.product?.images?.[0]) || '/api/placeholder/50/50'}
+                      src={resolveImageUrl(item.product?.images?.[0])}
                       alt={item.product?.name}
                       loading="lazy"
                       width="50"

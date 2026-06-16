@@ -1,9 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { getJwtSecret } = require('./auth');
 
 const adminAuth = async (req, res, next) => {
   try {
-    // Récupérer le token depuis les headers
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
@@ -13,11 +13,8 @@ const adminAuth = async (req, res, next) => {
       });
     }
 
-    // Vérifier le token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'delta-fashion-secret');
-    
-    // Récupérer l'utilisateur depuis la base de données
-    const user = await User.findById(decoded.id).select('-password');
+    const decoded = jwt.verify(token, getJwtSecret());
+    const user = await User.findById(decoded.userId).select('-password');
     
     if (!user) {
       return res.status(401).json({

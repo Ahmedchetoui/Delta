@@ -1,7 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { getApiBaseUrl } from '../../config/apiConfig';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = getApiBaseUrl();
+const REQUEST_TIMEOUT = 15000;
+
+const SORT_ALIASES = {
+  'price-low': 'price_asc',
+  'price-high': 'price_desc',
+  'name-asc': 'name_asc',
+  'name-desc': 'name_desc',
+};
 
 // Actions asynchrones
 export const fetchProducts = createAsyncThunk(
@@ -11,12 +20,18 @@ export const fetchProducts = createAsyncThunk(
       const queryParams = new URLSearchParams();
 
       Object.keys(params).forEach(key => {
-        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-          queryParams.append(key, params[key]);
+        let value = params[key];
+        if (key === 'sort' && SORT_ALIASES[value]) {
+          value = SORT_ALIASES[value];
+        }
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
         }
       });
 
-      const response = await axios.get(`${API_URL}/products?${queryParams}`);
+      const response = await axios.get(`${API_URL}/products?${queryParams}`, {
+        timeout: REQUEST_TIMEOUT,
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(

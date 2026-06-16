@@ -135,7 +135,14 @@ const orderSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  giftMessage: String
+  giftMessage: String,
+  deliveredAt: Date,
+  cancelledAt: Date,
+  cancelledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  cancellationReason: String
 }, {
   timestamps: true
 });

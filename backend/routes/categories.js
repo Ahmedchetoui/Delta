@@ -2,10 +2,29 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
 
 const router = express.Router();
+
+async function getProductCountsByCategory(categoryIds) {
+  if (!categoryIds.length) return {};
+
+  const counts = await Product.aggregate([
+    { $match: { category: { $in: categoryIds }, isActive: true } },
+    { $group: { _id: '$category', count: { $sum: 1 } } }
+  ]);
+
+  return Object.fromEntries(counts.map(({ _id, count }) => [_id.toString(), count]));
+}
+
+function enrichCategoriesWithDetails(categories, countMap) {
+  return categories.map((category) => ({
+    ...category,
+    image: category.image ? getImageUrl(category.image) : null,
+    productCount: countMap[category._id.toString()] || 0
+  }));
+}
 
 // Validation pour la création/mise à jour de catégorie
 const categoryValidation = [
@@ -30,32 +49,28 @@ const categoryValidation = [
 // @route   GET /api/categories
 // @desc    Obtenir toutes les catégories
 // @access  Public
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const { includeInactive = false } = req.query;
-    
+
+    if (includeInactive === 'true') {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({
+          message: 'Accès refusé. Droits administrateur requis.'
+        });
+      }
+    }
+
     const filter = includeInactive === 'true' ? {} : { isActive: true };
-    
+
     const categories = await Category.find(filter)
       .populate('parentCategory', 'name slug')
       .sort({ order: 1, name: 1 })
       .lean();
 
-    // Ajouter les URLs d'images et le nombre de produits
-    const categoriesWithDetails = await Promise.all(
-      categories.map(async (category) => {
-        const productCount = await Product.countDocuments({ 
-          category: category._id, 
-          isActive: true 
-        });
-        
-        return {
-          ...category,
-          image: category.image ? getImageUrl(category.image) : null,
-          productCount
-        };
-      })
-    );
+    const categoryIds = categories.map((category) => category._id);
+    const countMap = await getProductCountsByCategory(categoryIds);
+    const categoriesWithDetails = enrichCategoriesWithDetails(categories, countMap);
 
     res.json({ categories: categoriesWithDetails });
 
@@ -73,38 +88,22 @@ router.get('/', async (req, res) => {
 router.get('/tree', async (req, res) => {
   try {
     const categoryTree = await Category.getCategoryTree();
+    const allCategoryIds = categoryTree.flatMap((category) => [
+      category._id,
+      ...category.subCategories.map((sub) => sub._id)
+    ]);
+    const countMap = await getProductCountsByCategory(allCategoryIds);
 
-    // Ajouter les URLs d'images et le nombre de produits pour chaque catégorie
-    const treeWithDetails = await Promise.all(
-      categoryTree.map(async (category) => {
-        const productCount = await Product.countDocuments({ 
-          category: category._id, 
-          isActive: true 
-        });
-
-        const subCategoriesWithDetails = await Promise.all(
-          category.subCategories.map(async (subCategory) => {
-            const subProductCount = await Product.countDocuments({ 
-              category: subCategory._id, 
-              isActive: true 
-            });
-            
-            return {
-              ...subCategory,
-              image: subCategory.image ? getImageUrl(subCategory.image) : null,
-              productCount: subProductCount
-            };
-          })
-        );
-
-        return {
-          ...category,
-          image: category.image ? getImageUrl(category.image) : null,
-          productCount,
-          subCategories: subCategoriesWithDetails
-        };
-      })
-    );
+    const treeWithDetails = categoryTree.map((category) => ({
+      ...category,
+      image: category.image ? getImageUrl(category.image) : null,
+      productCount: countMap[category._id.toString()] || 0,
+      subCategories: category.subCategories.map((subCategory) => ({
+        ...subCategory,
+        image: subCategory.image ? getImageUrl(subCategory.image) : null,
+        productCount: countMap[subCategory._id.toString()] || 0
+      }))
+    }));
 
     res.json({ categories: treeWithDetails });
 

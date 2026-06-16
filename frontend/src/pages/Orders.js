@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserOrders } from '../store/slices/orderSlice';
 import Loading from '../components/ui/Loading';
 import { EyeIcon, TruckIcon } from '@heroicons/react/24/outline';
+import { resolveImageUrl } from '../utils/imageUtils';
 
 const Orders = () => {
   const dispatch = useDispatch();
@@ -131,7 +132,7 @@ const Orders = () => {
                       {order.items.slice(0, 3).map((item, index) => (
                         <div key={index} className="flex items-center space-x-3">
                           <img
-                            src={item.image || '/api/placeholder/50/50'}
+                            src={resolveImageUrl(item.image)}
                             alt={item.name}
                             className="w-10 h-10 object-cover rounded"
                           />

@@ -7,6 +7,19 @@ const { uploadProductImages, uploadBuffersToCloudinary, handleUploadError, delet
 
 const router = express.Router();
 
+const SORT_ALIASES = {
+  'price-low': 'price_asc',
+  'price-high': 'price_desc',
+  'name-asc': 'name_asc',
+  'name-desc': 'name_desc',
+};
+
+const LIST_PRODUCT_FIELDS = 'name slug description price originalPrice discount images category brand totalStock isFeatured isNewProduct isOnSale rating soldCount variants sizes colors createdAt';
+
+function normalizeSort(sort) {
+  return SORT_ALIASES[sort] || sort;
+}
+
 // Validation pour la création/mise à jour de produit
 const productValidation = [
   body('name')
@@ -39,7 +52,10 @@ router.get('/', [
   query('minPrice').optional().isFloat({ min: 0 }).withMessage('Prix minimum invalide'),
   query('maxPrice').optional().isFloat({ min: 0 }).withMessage('Prix maximum invalide'),
   query('search').optional().isLength({ min: 1, max: 100 }).withMessage('Recherche invalide'),
-  query('sort').optional().isIn(['price_asc', 'price_desc', 'newest', 'oldest', 'rating', 'popular']).withMessage('Tri invalide')
+  query('sort').optional().isIn([
+    'price_asc', 'price_desc', 'newest', 'oldest', 'rating', 'popular',
+    'price-low', 'price-high', 'name-asc', 'name-desc', 'name_asc', 'name_desc'
+  ]).withMessage('Tri invalide')
 ], optionalAuth, async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -62,6 +78,8 @@ router.get('/', [
       onSale,
       inStock
     } = req.query;
+
+    const normalizedSort = normalizeSort(sort);
 
     // Construire le filtre
     const filter = { isActive: true };
@@ -99,12 +117,18 @@ router.get('/', [
 
     // Construire le tri
     let sortOption = {};
-    switch (sort) {
+    switch (normalizedSort) {
       case 'price_asc':
         sortOption = { price: 1 };
         break;
       case 'price_desc':
         sortOption = { price: -1 };
+        break;
+      case 'name_asc':
+        sortOption = { name: 1 };
+        break;
+      case 'name_desc':
+        sortOption = { name: -1 };
         break;
       case 'newest':
         sortOption = { createdAt: -1 };
@@ -128,6 +152,7 @@ router.get('/', [
     // Exécuter la requête
     const [products, total] = await Promise.all([
       Product.find(filter)
+        .select(LIST_PRODUCT_FIELDS)
         .populate('category', 'name slug')
         .sort(sortOption)
         .skip(skip)

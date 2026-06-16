@@ -63,14 +63,16 @@ function App() {
     }
 
     // Vérifier si la landing page a déjà été affichée dans cette session
-    const hasSeenLanding = sessionStorage.getItem('hasSeenLanding');
+    const hasSeenLanding =
+      localStorage.getItem('hasSeenLanding') ||
+      sessionStorage.getItem('hasSeenLanding');
     if (hasSeenLanding) {
       setShowLanding(false);
     }
   }, [dispatch]);
 
   const handleLandingComplete = () => {
-    // Marquer comme vu pour cette session
+    localStorage.setItem('hasSeenLanding', 'true');
     sessionStorage.setItem('hasSeenLanding', 'true');
     setShowLanding(false);
   };

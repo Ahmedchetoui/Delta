@@ -8,11 +8,12 @@ import Skeleton from '../components/ui/Skeleton';
 import ProductCard from '../components/product/ProductCard';
 import HeroSlider from '../components/ui/HeroSlider';
 import api from '../services/api';
+import { resolveImageUrl } from '../utils/imageUtils';
 
 const Home = () => {
   const dispatch = useDispatch();
-  const { featuredProducts = [], newProducts = [], loading: productsLoading } = useSelector((state) => state.products || {});
-  const { categories = [], loading: categoriesLoading } = useSelector((state) => state.categories || {});
+  const { featuredProducts = [], newProducts = [], isLoading: productsLoading } = useSelector((state) => state.products || {});
+  const { categories = [], isLoading: categoriesLoading } = useSelector((state) => state.categories || {});
   const [banners, setBanners] = useState([]);
 
   // ... (defaultBanners and loadBanners remain the same)
@@ -88,11 +89,14 @@ const Home = () => {
                 </div>
               ))
             ) : (
-              categories.slice(0, 4).map((category) => (
+              categories
+                .filter((c) => !c.parentCategory)
+                .slice(0, 4)
+                .map((category) => (
                 <Link key={category._id} to={`/shop?category=${category._id}`} className="group">
                   <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
                     <img
-                      src={category.image || 'https://via.placeholder.com/600x800'}
+                      src={resolveImageUrl(category.image)}
                       alt={category.name}
                       loading="lazy"
                       width="600"

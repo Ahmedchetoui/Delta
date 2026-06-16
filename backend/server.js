@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config();
+const { enabled: cloudinaryEnabled, mode: storageMode, cloudName, verifyCloudinaryConnection } = require('./config/cloudinary');
 
 const app = express();
 
@@ -29,6 +30,8 @@ const defaultOrigins = [
 
 const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const corsOptions = {
   origin: (origin, callback) => {
     // Autoriser les requêtes sans origin (Postman, serveurs, mobile apps)
@@ -41,23 +44,23 @@ const corsOptions = {
     const isAllowed = allowedOrigins.some(o => normalized === o.replace(/\/$/, ''));
 
     // En développement, autoriser localhost avec n'importe quel port
-    const isLocalhost = /^https?:\/\/localhost(:\d+)?$/.test(normalized);
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized);
 
-    // Autoriser les domaines Vercel (pour les previews)
-    const isVercel = /^https:\/\/.*\.vercel\.app$/.test(normalized);
+    // En développement, autoriser les IP du réseau local (ex: 192.168.x.x:3000)
+    const isPrivateNetwork = !isProduction &&
+      /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/.test(normalized);
 
-    // Autoriser spécifiquement les domaines delta-e79s-* de votre projet
-    const isDeltaVercel = /^https:\/\/delta-e79s-.*\.vercel\.app$/.test(normalized);
+    // En production : uniquement la liste explicite (pas de wildcard *.vercel.app)
+    if (isProduction) {
+      return callback(null, isAllowed);
+    }
 
-    if (isAllowed || isLocalhost || isVercel || isDeltaVercel) {
-      console.log(`✅ CORS: origin autorisé: ${origin}`);
+    if (isAllowed || isLocalhost || isPrivateNetwork) {
       return callback(null, true);
     }
 
     console.warn(`❌ CORS: origin rejeté: ${origin}`);
-    console.warn(`📋 Origins autorisés: ${allowedOrigins.join(', ')}`);
-    console.warn(`🔍 Vérifications: isAllowed=${isAllowed}, isLocalhost=${isLocalhost}, isVercel=${isVercel}`);
-    return callback(null, false); // Ne pas lever d'erreur, juste refuser
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -77,10 +80,22 @@ app.use(compression());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limite chaque IP à 100 requêtes par fenêtre
+  windowMs: 15 * 60 * 1000,
+  max: isProduction ? 100 : 500,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api/', limiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isProduction ? 15 : 100,
+  message: { message: 'Trop de tentatives. Réessayez dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // Logging
 app.use(morgan('combined'));
@@ -189,17 +204,38 @@ app.get('/api/db-health', async (req, res) => {
   }
 });
 
+// Vérification du stockage images (Cloudinary)
+app.get('/api/storage-health', async (req, res) => {
+  try {
+    const cloudinary = await verifyCloudinaryConnection();
+    res.json({
+      storage: storageMode,
+      cloudinary,
+      publicBaseUrl: process.env.PUBLIC_BASE_URL || null,
+      uploadFolder: process.env.CLOUDINARY_FOLDER || 'delta-fashion/uploads',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur vérification stockage', error: error.message });
+  }
+});
+
 // Route sécurisée pour peupler la base de données
 app.get('/api/seed-database', async (req, res) => {
   try {
-    // Sécurité : Vérifier le secret en production
-    if (process.env.NODE_ENV === 'production') {
-      const seedSecret = req.headers['x-seed-secret'];
-      if (!seedSecret || seedSecret !== process.env.SEED_SECRET) {
-        return res.status(403).json({
-          message: 'Non autorisé. Secret requis en production.'
-        });
-      }
+    const seedSecret = req.headers['x-seed-secret'];
+    const expectedSecret = process.env.SEED_SECRET;
+
+    if (!expectedSecret) {
+      return res.status(503).json({
+        message: 'Route seed désactivée. Définissez SEED_SECRET sur le serveur.'
+      });
+    }
+
+    if (!seedSecret || seedSecret !== expectedSecret) {
+      return res.status(403).json({
+        message: 'Non autorisé. Secret requis.'
+      });
     }
 
     // Importer et exécuter le script de peuplement
@@ -238,7 +274,14 @@ app.use((err, req, res, next) => {
 });
 
 // Connexion à MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/delta-fashion')
+if (isProduction && !process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET est obligatoire en production');
+  process.exit(1);
+}
+
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/delta-fashion', {
+  serverSelectionTimeoutMS: 10000,
+})
   .then(() => {
     console.log('✅ Connecté à MongoDB');
   })
@@ -262,10 +305,12 @@ mongoose.connection.on('reconnected', () => {
 
 // Démarrage du serveur
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Serveur Delta Fashion démarré sur le port ${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Serveur Delta Fashion démarré sur ${HOST}:${PORT}`);
   console.log(`📱 API disponible sur: http://localhost:${PORT}/api`);
   console.log(`🛍️ Mode: ${process.env.NODE_ENV}`);
+  console.log(`📦 Stockage images: ${storageMode}${cloudinaryEnabled ? ` (${cloudName})` : ' — fichiers locaux'}`);
   console.log(`🔗 CORS configuré pour: ${allowedOrigins.join(', ')}`);
   console.log(`📋 Variables d'environnement chargées: ${Object.keys(process.env).filter(k => k.startsWith('CORS_') || k.startsWith('NODE_') || k.startsWith('MONGODB_')).join(', ')}`);
 });

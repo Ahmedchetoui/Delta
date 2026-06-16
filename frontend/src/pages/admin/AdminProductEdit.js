@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import { resolveImageUrl } from '../../utils/imageUtils';
 
 const AdminProductEdit = () => {
   const { id } = useParams();
@@ -283,7 +284,7 @@ const AdminProductEdit = () => {
               {formData.images.map((image, index) => (
                 <div key={index} className="relative">
                   <img
-                    src={image.startsWith('http') ? image : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/uploads/${image}`}
+                    src={resolveImageUrl(image)}
                     alt={`Produit ${index + 1}`}
                     className="w-full h-32 object-cover rounded-lg"
                   />
