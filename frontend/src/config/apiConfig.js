@@ -10,6 +10,8 @@ function normalizeApiBaseUrl(url) {
   return url;
 }
 
+const PRODUCTION_API_URL = 'https://delta-n5d8.onrender.com/api';
+
 export function getApiBaseUrl() {
   if (process.env.REACT_APP_API_URL) {
     return normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
@@ -17,6 +19,12 @@ export function getApiBaseUrl() {
 
   if (typeof window !== 'undefined') {
     const { protocol, hostname } = window.location;
+
+    // Déployé sur Vercel sans variable d'env → backend Render
+    if (hostname.endsWith('.vercel.app') || hostname === 'delta-fashion.vercel.app') {
+      return PRODUCTION_API_URL;
+    }
+
     return `${protocol}//${hostname}:5000/api`;
   }
 

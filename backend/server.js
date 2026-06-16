@@ -19,6 +19,7 @@ const envOrigins = (process.env.CORS_ORIGIN || '')
 
 const defaultOrigins = [
   'http://localhost:3000',
+  'https://delta-fashion.vercel.app',
   'https://delta-fashion-e-commerce.vercel.app',
   'https://delta-12jv2d3wl-deltas-projects-ce7253f2.vercel.app',
   'https://delta-e79s.vercel.app',
