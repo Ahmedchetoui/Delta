@@ -20,7 +20,7 @@ const Register = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error, isAuthenticated } = useSelector((state) => state.auth);
+  const { loading, isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -256,13 +256,13 @@ const Register = () => {
               />
               <label htmlFor="acceptTerms" className="ml-2 block text-sm text-gray-900">
                 J'accepte les{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-500">
+                <Link to="/terms" className="text-blue-600 hover:text-blue-500">
                   conditions d'utilisation
-                </a>{' '}
+                </Link>{' '}
                 et la{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-500">
+                <Link to="/privacy" className="text-blue-600 hover:text-blue-500">
                   politique de confidentialité
-                </a>
+                </Link>
               </label>
             </div>
 

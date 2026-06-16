@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-    BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import {
@@ -9,13 +9,9 @@ import {
     ArrowPathIcon,
     CurrencyDollarIcon,
     ShoppingCartIcon,
-    UserGroupIcon,
-    ArchiveBoxIcon,
     ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { adminService } from '../../services/api';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { toast } from 'react-toastify';
 
 const AdminAnalytics = () => {
@@ -27,11 +23,7 @@ const AdminAnalytics = () => {
     // Common Colors
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
-    useEffect(() => {
-        fetchAnalytics();
-    }, [activeTab, period]);
-
-    const fetchAnalytics = async () => {
+    const fetchAnalytics = useCallback(async () => {
         setLoading(true);
         try {
             let response;
@@ -49,7 +41,11 @@ const AdminAnalytics = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeTab, period]);
+
+    useEffect(() => {
+        fetchAnalytics();
+    }, [fetchAnalytics]);
 
     const exportData = () => {
         if (!data) return;

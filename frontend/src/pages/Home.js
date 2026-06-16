@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { fetchFeaturedProducts, fetchNewProducts } from '../store/slices/productSlice';
 import { fetchCategories } from '../store/slices/categorySlice';
-import Loading from '../components/ui/Loading';
 import Skeleton from '../components/ui/Skeleton';
 import ProductCard from '../components/product/ProductCard';
 import HeroSlider from '../components/ui/HeroSlider';
@@ -12,7 +11,7 @@ import { resolveImageUrl } from '../utils/imageUtils';
 
 const Home = () => {
   const dispatch = useDispatch();
-  const { featuredProducts = [], newProducts = [], isLoading: productsLoading } = useSelector((state) => state.products || {});
+  const { featuredProducts = [], newProducts = [] } = useSelector((state) => state.products || {});
   const { categories = [], isLoading: categoriesLoading } = useSelector((state) => state.categories || {});
   const [banners, setBanners] = useState([]);
 
@@ -34,7 +33,8 @@ const Home = () => {
   const loadBanners = React.useCallback(async () => {
     try {
       const response = await api.get('/banners');
-      setBanners(response.data.banners);
+      const apiBanners = response.data?.banners || [];
+      setBanners(apiBanners.length > 0 ? apiBanners : defaultBanners);
     } catch (error) {
       console.error('Erreur lors du chargement des bannières:', error);
       setBanners(defaultBanners);
@@ -53,12 +53,12 @@ const Home = () => {
     }
   }, [dispatch, featuredProducts.length]);
 
-  const heroSlides = banners.map(banner => ({
+  const heroSlides = (banners.length > 0 ? banners : defaultBanners).map(banner => ({
     id: banner._id,
     title: banner.title,
     subtitle: banner.subtitle,
     description: banner.description,
-    image: banner.image,
+    image: resolveImageUrl(banner.image),
     link: banner.buttonLink,
     buttonText: banner.buttonText,
     backgroundColor: banner.backgroundColor,

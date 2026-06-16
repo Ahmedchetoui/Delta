@@ -3,10 +3,7 @@ import {
   XMarkIcon,
   UserIcon,
   MapPinIcon,
-  CreditCardIcon,
-  TruckIcon,
-  ClockIcon,
-  CheckCircleIcon
+  CreditCardIcon
 } from '@heroicons/react/24/outline';
 
 const OrderDetailsModal = ({ order, isOpen, onClose }) => {

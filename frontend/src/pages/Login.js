@@ -15,7 +15,7 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, error, isAuthenticated } = useSelector((state) => state.auth);
+  const { loading, isAuthenticated } = useSelector((state) => state.auth);
 
   // Redirection après connexion
   const from = location.state?.from?.pathname || '/';
@@ -142,9 +142,9 @@ const Login = () => {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                <button type="button" className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 p-0 cursor-pointer">
                   Mot de passe oublié ?
-                </a>
+                </button>
               </div>
             </div>
 

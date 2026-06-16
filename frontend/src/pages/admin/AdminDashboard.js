@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     CurrencyDollarIcon,
@@ -22,11 +22,7 @@ const AdminDashboard = () => {
     const [dashboardData, setDashboardData] = useState(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        loadDashboard();
-    }, [period]);
-
-    const loadDashboard = async () => {
+    const loadDashboard = useCallback(async () => {
         try {
             setLoading(true);
             const { data } = await adminService.getDashboard(period);
@@ -37,7 +33,11 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [period]);
+
+    useEffect(() => {
+        loadDashboard();
+    }, [loadDashboard]);
 
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('fr-TN', {
