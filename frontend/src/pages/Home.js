@@ -61,7 +61,7 @@ const Home = () => {
   }, [banners]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white -mt-16 md:-mt-20">
       <HeroSlider slides={heroSlides} />
 
       {/* Categories */}

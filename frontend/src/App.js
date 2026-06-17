@@ -106,7 +106,7 @@ function App() {
       <Navbar />
       <ScrollToTop />
 
-      <main className="min-h-screen">
+      <main className="min-h-screen pt-16 md:pt-20">
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public Routes */}
