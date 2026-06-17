@@ -107,6 +107,32 @@ router.get('/', adminAuth, async (req, res) => {
   }
 });
 
+// @route   GET /api/admin-requests/user/status
+// @desc    Vérifier le statut de la demande de l'utilisateur connecté
+// @access  Private
+router.get('/user/status', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const adminRequest = await AdminRequest.findOne({ user: userId })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: {
+        hasRequest: !!adminRequest,
+        request: adminRequest
+      }
+    });
+  } catch (error) {
+    console.error('Erreur lors de la vérification du statut:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur lors de la vérification du statut'
+    });
+  }
+});
+
 // @route   GET /api/admin-requests/:id
 // @desc    Récupérer une demande d'administration spécifique
 // @access  Private (admin seulement)
@@ -230,33 +256,6 @@ router.put('/:id/reject', adminAuth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur serveur lors du rejet de la demande'
-    });
-  }
-});
-
-// @route   GET /api/admin-requests/user/status
-// @desc    Vérifier le statut de la demande de l'utilisateur connecté
-// @access  Private
-router.get('/user/status', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user._id;
-
-    const adminRequest = await AdminRequest.findOne({ user: userId })
-      .sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      data: {
-        hasRequest: !!adminRequest,
-        request: adminRequest
-      }
-    });
-
-  } catch (error) {
-    console.error('Erreur lors de la vérification du statut:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur serveur lors de la vérification du statut'
     });
   }
 });

@@ -119,6 +119,70 @@ router.get('/', authenticateToken, [
   }
 });
 
+// @route   GET /api/users/stats/summary
+// @desc    Obtenir les statistiques des utilisateurs
+// @access  Private (Admin)
+router.get('/stats/summary', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { period = '30d' } = req.query;
+
+    let startDate = new Date();
+    switch (period) {
+      case '7d':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(startDate.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 30);
+    }
+
+    const stats = await User.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalUsers: { $sum: 1 },
+          activeUsers: {
+            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
+          },
+          adminUsers: {
+            $sum: { $cond: [{ $eq: ['$role', 'admin'] }, 1, 0] }
+          },
+          newUsers: {
+            $sum: { $cond: [{ $gte: ['$createdAt', startDate] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+
+    const result = stats[0] || {
+      totalUsers: 0,
+      activeUsers: 0,
+      adminUsers: 0,
+      newUsers: 0
+    };
+
+    res.json({
+      period,
+      startDate,
+      endDate: new Date(),
+      stats: result
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques des utilisateurs:', error);
+    res.status(500).json({
+      message: 'Erreur lors de la récupération des statistiques des utilisateurs'
+    });
+  }
+});
+
 // @route   GET /api/users/:id
 // @desc    Obtenir un utilisateur par ID
 // @access  Private
@@ -466,72 +530,6 @@ router.delete('/:id/wishlist/:productId', authenticateToken, async (req, res) =>
     console.error('Erreur lors de la suppression de la wishlist:', error);
     res.status(500).json({
       message: 'Erreur lors de la suppression de la wishlist'
-    });
-  }
-});
-
-// @route   GET /api/users/stats/summary
-// @desc    Obtenir les statistiques des utilisateurs
-// @access  Private (Admin)
-router.get('/stats/summary', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { period = '30d' } = req.query;
-    
-    // Calculer la date de début selon la période
-    let startDate = new Date();
-    switch (period) {
-      case '7d':
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(startDate.getDate() - 30);
-        break;
-      case '90d':
-        startDate.setDate(startDate.getDate() - 90);
-        break;
-      case '1y':
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-      default:
-        startDate.setDate(startDate.getDate() - 30);
-    }
-
-    const stats = await User.aggregate([
-      {
-        $group: {
-          _id: null,
-          totalUsers: { $sum: 1 },
-          activeUsers: {
-            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
-          },
-          adminUsers: {
-            $sum: { $cond: [{ $eq: ['$role', 'admin'] }, 1, 0] }
-          },
-          newUsers: {
-            $sum: { $cond: [{ $gte: ['$createdAt', startDate] }, 1, 0] }
-          }
-        }
-      }
-    ]);
-
-    const result = stats[0] || {
-      totalUsers: 0,
-      activeUsers: 0,
-      adminUsers: 0,
-      newUsers: 0
-    };
-
-    res.json({
-      period,
-      startDate,
-      endDate: new Date(),
-      stats: result
-    });
-
-  } catch (error) {
-    console.error('Erreur lors de la récupération des statistiques des utilisateurs:', error);
-    res.status(500).json({
-      message: 'Erreur lors de la récupération des statistiques des utilisateurs'
     });
   }
 });

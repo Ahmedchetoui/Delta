@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProduct } from '../store/slices/productSlice';
+import { fetchProduct, clearCurrentProduct } from '../store/slices/productSlice';
 import { addToCart } from '../store/slices/cartSlice';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import Loading from '../components/ui/Loading';
@@ -23,7 +23,7 @@ const Product = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { currentProduct, loading } = useSelector((state) => state.products);
+  const { currentProduct, isLoading } = useSelector((state) => state.products);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColors, setSelectedColors] = useState(['']);
@@ -38,7 +38,9 @@ const Product = () => {
 
 
   const deliveryCost = 7.0; // Coût de livraison affiché dans la maquette
-  const productPrice = currentProduct ? (currentProduct.price || 0) : 0;
+  const productPrice = currentProduct
+    ? (currentProduct.finalPrice ?? currentProduct.price ?? 0)
+    : 0;
   const subtotal = productPrice * quantity;
   const total = subtotal + deliveryCost;
 
@@ -130,8 +132,12 @@ const Product = () => {
 
   useEffect(() => {
     if (id) {
+      dispatch(clearCurrentProduct());
       dispatch(fetchProduct(id));
     }
+    return () => {
+      dispatch(clearCurrentProduct());
+    };
   }, [dispatch, id]);
 
   const handleAddToCart = async () => {
@@ -201,7 +207,7 @@ const Product = () => {
 
 
 
-  if (loading) {
+  if (isLoading) {
     return <Loading size="large" text="Chargement du produit..." />;
   }
 

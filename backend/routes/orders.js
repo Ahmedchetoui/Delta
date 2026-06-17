@@ -6,8 +6,28 @@ const User = require('../models/User');
 const { authenticateToken, requireAdmin, requireOwnerOrAdmin, optionalAuth } = require('../middleware/auth');
 
 const { deductOrderStock, restoreOrderStock, getAvailableStock } = require('../utils/stockUtils');
+const { guestOrderLimiter, orderCreateLimiter } = require('../middleware/rateLimiters');
 
 const router = express.Router();
+
+function canAccessOrder(order, user) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (!order.user) return false;
+  const orderUserId = order.user._id ? order.user._id.toString() : order.user.toString();
+  return orderUserId === user._id.toString();
+}
+
+function mapOrderImages(order) {
+  const base = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
+  return {
+    ...order,
+    items: order.items.map((item) => ({
+      ...item,
+      image: item.image ? `${base}/uploads/${item.image}` : null,
+    })),
+  };
+}
 
 function productRequiresColor(product) {
   if (product.colors?.length > 0) return true;
@@ -116,13 +136,7 @@ router.get('/', authenticateToken, [
     ]);
 
     // Ajouter les URLs d'images aux produits
-    const ordersWithImageUrls = orders.map(order => ({
-      ...order,
-      items: order.items.map(item => ({
-        ...item,
-        image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
-      }))
-    }));
+    const ordersWithImageUrls = orders.map(mapOrderImages);
 
     res.json({
       orders: ordersWithImageUrls,
@@ -143,83 +157,105 @@ router.get('/', authenticateToken, [
   }
 });
 
-// @route   GET /api/orders/:id
-// @desc    Obtenir une commande par ID
-// @access  Private
-router.get('/:id', authenticateToken, async (req, res) => {
+// @route   GET /api/orders/stats/summary
+// @desc    Obtenir les statistiques des commandes
+// @access  Private (Admin)
+router.get('/stats/summary', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate('user', 'firstName lastName email phone')
-      .populate('items.product', 'name images slug')
-      .lean();
+    const { period = '30d' } = req.query;
 
-    if (!order) {
-      return res.status(404).json({
-        message: 'Commande non trouvée'
-      });
+    let startDate = new Date();
+    switch (period) {
+      case '7d':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(startDate.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 30);
     }
 
-    // Vérifier que l'utilisateur peut accéder à cette commande
-    if (req.user.role !== 'admin' && order.user._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        message: 'Accès refusé'
-      });
-    }
+    const stats = await Order.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalRevenue: { $sum: '$total' },
+          averageOrderValue: { $avg: '$total' },
+          pendingOrders: { $sum: { $cond: [{ $eq: ['$orderStatus', 'pending'] }, 1, 0] } },
+          confirmedOrders: { $sum: { $cond: [{ $eq: ['$orderStatus', 'confirmed'] }, 1, 0] } },
+          shippedOrders: { $sum: { $cond: [{ $eq: ['$orderStatus', 'shipped'] }, 1, 0] } },
+          deliveredOrders: { $sum: { $cond: [{ $eq: ['$orderStatus', 'delivered'] }, 1, 0] } },
+          cancelledOrders: { $sum: { $cond: [{ $eq: ['$orderStatus', 'cancelled'] }, 1, 0] } },
+        },
+      },
+    ]);
 
-    // Ajouter les URLs d'images aux produits
-    const orderWithImageUrls = {
-      ...order,
-      items: order.items.map(item => ({
-        ...item,
-        image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
-      }))
+    const result = stats[0] || {
+      totalOrders: 0,
+      totalRevenue: 0,
+      averageOrderValue: 0,
+      pendingOrders: 0,
+      confirmedOrders: 0,
+      shippedOrders: 0,
+      deliveredOrders: 0,
+      cancelledOrders: 0,
     };
 
-    res.json({ order: orderWithImageUrls });
-
+    res.json({
+      period,
+      startDate,
+      endDate: new Date(),
+      stats: result,
+    });
   } catch (error) {
-    console.error('Erreur lors de la récupération de la commande:', error);
+    console.error('Erreur lors de la récupération des statistiques:', error);
     res.status(500).json({
-      message: 'Erreur lors de la récupération de la commande'
+      message: 'Erreur lors de la récupération des statistiques',
     });
   }
 });
 
 // @route   GET /api/orders/guest/:orderNumber/:email
 // @desc    Obtenir une commande invité par numéro et email
-// @access  Public
-router.get('/guest/:orderNumber/:email', async (req, res) => {
+// @access  Public (rate limited)
+router.get('/guest/:orderNumber/:email', guestOrderLimiter, async (req, res) => {
   try {
-    const { orderNumber, email } = req.params;
+    const orderNumber = String(req.params.orderNumber || '').trim();
+    const email = String(req.params.email || '').trim().toLowerCase();
 
-    const order = await Order.findOne({ 
-      orderNumber: orderNumber,
-      guestEmail: email.toLowerCase()
+    if (!orderNumber || !email) {
+      return res.status(400).json({
+        message: 'Numéro de commande et email requis.',
+      });
+    }
+
+    const order = await Order.findOne({
+      orderNumber,
+      guestEmail: email,
     })
       .populate('items.product', 'name images slug')
       .lean();
 
     if (!order) {
       return res.status(404).json({
-        message: 'Commande non trouvée. Vérifiez le numéro de commande et l\'email.'
+        message: 'Commande non trouvée. Vérifiez le numéro de commande et l\'email.',
       });
     }
 
-    // Ajouter les URLs d'images aux produits
-    const orderWithImageUrls = {
-      ...order,
-      items: order.items.map(item => ({
-        ...item,
-        image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
-      }))
-    };
-
-    res.json({ order: orderWithImageUrls });
-
+    res.json({ order: mapOrderImages(order) });
   } catch (error) {
     console.error('Erreur lors de la récupération de la commande invité:', error);
     res.status(500).json({
-      message: 'Erreur lors de la récupération de la commande'
+      message: 'Erreur lors de la récupération de la commande',
     });
   }
 });
@@ -236,27 +272,48 @@ router.get('/number/:orderNumber', authenticateToken, async (req, res) => {
 
     if (!order) {
       return res.status(404).json({
-        message: 'Commande non trouvée'
+        message: 'Commande non trouvée',
       });
     }
 
-    // Vérifier que l'utilisateur peut accéder à cette commande
-    if (req.user.role !== 'admin' && order.user._id.toString() !== req.user._id.toString()) {
+    if (!canAccessOrder(order, req.user)) {
       return res.status(403).json({
-        message: 'Accès refusé'
+        message: 'Accès refusé',
       });
     }
 
-    // Ajouter les URLs d'images aux produits
-    const orderWithImageUrls = {
-      ...order,
-      items: order.items.map(item => ({
-        ...item,
-        image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
-      }))
-    };
+    res.json({ order: mapOrderImages(order) });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la commande:', error);
+    res.status(500).json({
+      message: 'Erreur lors de la récupération de la commande',
+    });
+  }
+});
 
-    res.json({ order: orderWithImageUrls });
+// @route   GET /api/orders/:id
+// @desc    Obtenir une commande par ID
+// @access  Private
+router.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'firstName lastName email phone')
+      .populate('items.product', 'name images slug')
+      .lean();
+
+    if (!order) {
+      return res.status(404).json({
+        message: 'Commande non trouvée',
+      });
+    }
+
+    if (!canAccessOrder(order, req.user)) {
+      return res.status(403).json({
+        message: 'Accès refusé',
+      });
+    }
+
+    res.json({ order: mapOrderImages(order) });
 
   } catch (error) {
     console.error('Erreur lors de la récupération de la commande:', error);
@@ -269,7 +326,7 @@ router.get('/number/:orderNumber', authenticateToken, async (req, res) => {
 // @route   POST /api/orders
 // @desc    Créer une nouvelle commande (utilisateurs connectés et invités)
 // @access  Public/Private
-router.post('/', optionalAuth, orderValidation, async (req, res) => {
+router.post('/', orderCreateLimiter, optionalAuth, orderValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -457,8 +514,14 @@ router.put('/:id/status', authenticateToken, requireAdmin, [
     }
 
     if (orderStatus === 'confirmed' && !order.stockDeducted) {
-      await deductOrderStock(order);
-      order.stockDeducted = true;
+      try {
+        await deductOrderStock(order);
+        order.stockDeducted = true;
+      } catch (stockError) {
+        return res.status(400).json({
+          message: stockError.message || 'Stock insuffisant pour confirmer la commande',
+        });
+      }
     }
 
     if (orderStatus === 'cancelled' && order.stockDeducted) {
@@ -515,10 +578,12 @@ router.put('/:id/cancel', authenticateToken, [
     }
 
     // Vérifier que l'utilisateur peut annuler cette commande
-    if (req.user.role !== 'admin' && order.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        message: 'Accès refusé'
-      });
+    if (req.user.role !== 'admin') {
+      if (!order.user || order.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          message: 'Accès refusé',
+        });
+      }
     }
 
     // Vérifier que la commande peut être annulée
@@ -553,89 +618,6 @@ router.put('/:id/cancel', authenticateToken, [
     console.error('Erreur lors de l\'annulation de la commande:', error);
     res.status(500).json({
       message: 'Erreur lors de l\'annulation de la commande'
-    });
-  }
-});
-
-// @route   GET /api/orders/stats/summary
-// @desc    Obtenir les statistiques des commandes
-// @access  Private (Admin)
-router.get('/stats/summary', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { period = '30d' } = req.query;
-    
-    // Calculer la date de début selon la période
-    let startDate = new Date();
-    switch (period) {
-      case '7d':
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(startDate.getDate() - 30);
-        break;
-      case '90d':
-        startDate.setDate(startDate.getDate() - 90);
-        break;
-      case '1y':
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-      default:
-        startDate.setDate(startDate.getDate() - 30);
-    }
-
-    const stats = await Order.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: startDate }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          totalOrders: { $sum: 1 },
-          totalRevenue: { $sum: '$total' },
-          averageOrderValue: { $avg: '$total' },
-          pendingOrders: {
-            $sum: { $cond: [{ $eq: ['$orderStatus', 'pending'] }, 1, 0] }
-          },
-          confirmedOrders: {
-            $sum: { $cond: [{ $eq: ['$orderStatus', 'confirmed'] }, 1, 0] }
-          },
-          shippedOrders: {
-            $sum: { $cond: [{ $eq: ['$orderStatus', 'shipped'] }, 1, 0] }
-          },
-          deliveredOrders: {
-            $sum: { $cond: [{ $eq: ['$orderStatus', 'delivered'] }, 1, 0] }
-          },
-          cancelledOrders: {
-            $sum: { $cond: [{ $eq: ['$orderStatus', 'cancelled'] }, 1, 0] }
-          }
-        }
-      }
-    ]);
-
-    const result = stats[0] || {
-      totalOrders: 0,
-      totalRevenue: 0,
-      averageOrderValue: 0,
-      pendingOrders: 0,
-      confirmedOrders: 0,
-      shippedOrders: 0,
-      deliveredOrders: 0,
-      cancelledOrders: 0
-    };
-
-    res.json({
-      period,
-      startDate,
-      endDate: new Date(),
-      stats: result
-    });
-
-  } catch (error) {
-    console.error('Erreur lors de la récupération des statistiques:', error);
-    res.status(500).json({
-      message: 'Erreur lors de la récupération des statistiques'
     });
   }
 });

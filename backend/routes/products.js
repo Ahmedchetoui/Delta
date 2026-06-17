@@ -26,6 +26,10 @@ function normalizeSort(sort) {
   return SORT_ALIASES[sort] || sort;
 }
 
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function normalizeVariants(variants = []) {
   return variants
     .filter((v) => v && v.size && String(v.size).trim())
@@ -81,7 +85,7 @@ router.get('/', [
     'price_asc', 'price_desc', 'newest', 'oldest', 'rating', 'popular',
     'price-low', 'price-high', 'name-asc', 'name-desc', 'name_asc', 'name_desc'
   ]).withMessage('Tri invalide')
-], optionalAuth, async (req, res) => {
+], publicCache(120), optionalAuth, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -120,11 +124,12 @@ router.get('/', [
     }
 
     if (search) {
+      const safeSearch = escapeRegex(search);
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { brand: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
+        { name: { $regex: safeSearch, $options: 'i' } },
+        { description: { $regex: safeSearch, $options: 'i' } },
+        { brand: { $regex: safeSearch, $options: 'i' } },
+        { tags: { $in: [new RegExp(safeSearch, 'i')] } }
       ];
     }
 
@@ -307,9 +312,9 @@ router.get('/:id', optionalAuth, async (req, res) => {
       });
     }
 
-    // Incrémenter le compteur de vues
-    await Product.findByIdAndUpdate(req.params.id, {
-      $inc: { viewCount: 1 }
+    // Incrémenter le compteur de vues (async, ne bloque pas la réponse)
+    setImmediate(() => {
+      Product.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } }).catch(() => {});
     });
 
     const productWithUrls = maybeSanitizeProduct(enrichProduct(product), req);
@@ -343,11 +348,12 @@ router.get('/slug/:slug', optionalAuth, async (req, res) => {
       });
     }
 
-    // Incrémenter le compteur de vues
-    await Product.findOneAndUpdate(
-      { slug: req.params.slug },
-      { $inc: { viewCount: 1 } }
-    );
+    setImmediate(() => {
+      Product.findOneAndUpdate(
+        { slug: req.params.slug },
+        { $inc: { viewCount: 1 } }
+      ).catch(() => {});
+    });
 
     const productWithUrls = maybeSanitizeProduct(enrichProduct(product), req);
 

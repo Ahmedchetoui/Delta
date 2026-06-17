@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 
 function normalizeSize(size) {
@@ -64,39 +65,84 @@ function syncTotalStock(product) {
   }
 }
 
-async function deductOrderStock(order) {
-  for (const item of order.items) {
-    const product = await Product.findById(item.product);
-    if (!product) continue;
+function applyStockDeduction(product, item) {
+  const variant = findVariant(product, item.size, item.color);
+  if (variant) {
+    const available = variant.stock || 0;
+    if (available < item.quantity) {
+      throw new Error(`Stock insuffisant pour ${product.name}`);
+    }
+    variant.stock = Math.max(0, available - item.quantity);
+    product.markModified('variants');
+    syncTotalStock(product);
+    return;
+  }
 
-    const variant = findVariant(product, item.size, item.color);
-    if (variant) {
-      variant.stock = Math.max(0, variant.stock - item.quantity);
-      product.markModified('variants');
-      syncTotalStock(product);
-    } else {
-      product.totalStock = Math.max(0, product.totalStock - item.quantity);
+  if ((product.totalStock || 0) < item.quantity) {
+    throw new Error(`Stock insuffisant pour ${product.name}`);
+  }
+  product.totalStock = Math.max(0, product.totalStock - item.quantity);
+}
+
+function applyStockRestore(product, item) {
+  const variant = findVariant(product, item.size, item.color);
+  if (variant) {
+    variant.stock += item.quantity;
+    product.markModified('variants');
+    syncTotalStock(product);
+    return;
+  }
+  product.totalStock += item.quantity;
+}
+
+async function deductOrderStock(order) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    for (const item of order.items) {
+      const product = await Product.findById(item.product).session(session);
+      if (!product) {
+        throw new Error('Produit introuvable lors de la déduction de stock');
+      }
+
+      const available = getAvailableStock(product, item.size, item.color);
+      if (available < item.quantity) {
+        throw new Error(`Stock insuffisant pour ${product.name}`);
+      }
+
+      applyStockDeduction(product, item);
+      await product.save({ session });
     }
 
-    await product.save();
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
 }
 
 async function restoreOrderStock(order) {
-  for (const item of order.items) {
-    const product = await Product.findById(item.product);
-    if (!product) continue;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-    const variant = findVariant(product, item.size, item.color);
-    if (variant) {
-      variant.stock += item.quantity;
-      product.markModified('variants');
-      syncTotalStock(product);
-    } else {
-      product.totalStock += item.quantity;
+  try {
+    for (const item of order.items) {
+      const product = await Product.findById(item.product).session(session);
+      if (!product) continue;
+
+      applyStockRestore(product, item);
+      await product.save({ session });
     }
 
-    await product.save();
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
 }
 

@@ -21,6 +21,10 @@ const saveCartToStorage = (cart) => {
   }
 };
 
+function getProductUnitPrice(product) {
+  return Number(product?.finalPrice ?? product?.price ?? 0);
+}
+
 const initialState = {
   items: loadCartFromStorage(),
   isOpen: false,
@@ -55,7 +59,7 @@ const cartSlice = createSlice({
           size: size || null,
           colors: unitColors,
           color: unitColors[0] || color || null,
-          price: product.price,
+          price: getProductUnitPrice(product),
           addedAt: new Date().toISOString(),
         });
       }

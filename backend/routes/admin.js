@@ -871,8 +871,14 @@ router.put('/orders/:id/status', [
 
     // Déduire le stock à la confirmation
     if (orderStatus === 'confirmed' && !order.stockDeducted) {
-      await deductOrderStock(order);
-      order.stockDeducted = true;
+      try {
+        await deductOrderStock(order);
+        order.stockDeducted = true;
+      } catch (stockError) {
+        return res.status(400).json({
+          message: stockError.message || 'Stock insuffisant pour confirmer la commande',
+        });
+      }
     }
 
     // Restaurer le stock si annulation après confirmation

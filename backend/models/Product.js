@@ -180,6 +180,9 @@ productSchema.index({ isNewProduct: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ 'rating.average': -1 });
 productSchema.index({ createdAt: -1 });
+productSchema.index({ isActive: 1, isFeatured: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, isNewProduct: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, category: 1, createdAt: -1 });
 
 // Générer le slug et calculer des champs dérivés avant validation
 productSchema.pre('validate', function(next) {

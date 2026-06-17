@@ -11,6 +11,9 @@ const { enabled: cloudinaryEnabled, mode: storageMode, cloudName, verifyCloudina
 
 const app = express();
 
+// Render / reverse proxy — requis pour rate-limit par IP réelle
+app.set('trust proxy', 1);
+
 // Configuration CORS en premier
 const envOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
@@ -81,10 +84,10 @@ app.options('*', cors(corsOptions));
 app.use(helmet());
 app.use(compression());
 
-// Rate limiting
+// Rate limiting global (catalogue + navigation)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isProduction ? 100 : 500,
+  max: isProduction ? 400 : 500,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -181,8 +184,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Vérification de la base de données
+// Vérification de la base de données (désactivé en production)
 app.get('/api/db-health', async (req, res) => {
+  if (isProduction) {
+    return res.status(404).json({ message: 'Route non trouvée' });
+  }
   try {
     const state = mongoose.connection.readyState; // 0:disconnected, 1:connected, 2:connecting, 3:disconnecting
     const stateMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
@@ -208,8 +214,11 @@ app.get('/api/db-health', async (req, res) => {
   }
 });
 
-// Vérification du stockage images (Cloudinary)
+// Vérification du stockage images (désactivé en production)
 app.get('/api/storage-health', async (req, res) => {
+  if (isProduction) {
+    return res.status(404).json({ message: 'Route non trouvée' });
+  }
   try {
     const cloudinary = await verifyCloudinaryConnection();
     res.json({

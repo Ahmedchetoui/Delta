@@ -82,7 +82,7 @@ export const productService = {
   searchProducts: (query) => api.get(`/products/search?q=${query}`),
   getFeaturedProducts: () => api.get('/products/featured'),
   getNewProducts: () => api.get('/products/new'),
-  getOnSaleProducts: () => api.get('/products/on-sale'),
+  getOnSaleProducts: () => api.get('/products/sale'),
   getHomeData: () => api.get('/home'),
 };
 
