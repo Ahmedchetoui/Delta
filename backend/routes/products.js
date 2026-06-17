@@ -20,6 +20,55 @@ function normalizeSort(sort) {
   return SORT_ALIASES[sort] || sort;
 }
 
+function normalizeVariants(variants = []) {
+  return variants
+    .filter((v) => v && v.size && String(v.size).trim())
+    .map((v) => ({
+      ...v,
+      size: String(v.size).trim(),
+      color: v.color ? String(v.color).trim() : '',
+      stock: Number(v.stock) || 0,
+    }));
+}
+
+function isAdminUser(req) {
+  return req.user?.role === 'admin';
+}
+
+function sanitizeProductForClient(product) {
+  const inStock = (product.totalStock || 0) > 0;
+  const sanitized = { ...product, inStock };
+  delete sanitized.totalStock;
+
+  if (sanitized.variants?.length) {
+    sanitized.variants = sanitized.variants.map((v) => {
+      const entry = {
+        size: v.size,
+        color: v.color,
+        inStock: (v.stock || 0) > 0,
+      };
+      if (v.price != null) entry.price = v.price;
+      return entry;
+    });
+  }
+
+  return sanitized;
+}
+
+function maybeSanitizeProduct(product, req) {
+  return isAdminUser(req) ? product : sanitizeProductForClient(product);
+}
+
+function enrichProduct(product) {
+  return {
+    ...product,
+    images: product.images.map((image) => getImageUrl(image)),
+    finalPrice: product.discount > 0 && product.originalPrice
+      ? product.originalPrice * (1 - product.discount / 100)
+      : product.price,
+  };
+}
+
 // Validation pour la création/mise à jour de produit
 const productValidation = [
   body('name')
@@ -162,13 +211,9 @@ router.get('/', [
     ]);
 
     // Ajouter les URLs d'images et le prix final
-    const productsWithUrls = products.map(product => ({
-      ...product,
-      images: product.images.map(image => getImageUrl(image)),
-      finalPrice: product.discount > 0 && product.originalPrice
-        ? product.originalPrice * (1 - product.discount / 100)
-        : product.price
-    }));
+    const productsWithUrls = products.map((product) =>
+      maybeSanitizeProduct(enrichProduct(product), req)
+    );
 
     res.json({
       products: productsWithUrls,
@@ -203,13 +248,9 @@ router.get('/featured', async (req, res) => {
       .limit(8)
       .lean();
 
-    const productsWithUrls = products.map(product => ({
-      ...product,
-      images: product.images.map(image => getImageUrl(image)),
-      finalPrice: product.discount > 0 && product.originalPrice
-        ? product.originalPrice * (1 - product.discount / 100)
-        : product.price
-    }));
+    const productsWithUrls = products.map((product) =>
+      sanitizeProductForClient(enrichProduct(product))
+    );
 
     res.json({ products: productsWithUrls });
 
@@ -235,13 +276,9 @@ router.get('/new', async (req, res) => {
       .limit(8)
       .lean();
 
-    const productsWithUrls = products.map(product => ({
-      ...product,
-      images: product.images.map(image => getImageUrl(image)),
-      finalPrice: product.discount > 0 && product.originalPrice
-        ? product.originalPrice * (1 - product.discount / 100)
-        : product.price
-    }));
+    const productsWithUrls = products.map((product) =>
+      sanitizeProductForClient(enrichProduct(product))
+    );
 
     res.json({ products: productsWithUrls });
 
@@ -268,10 +305,9 @@ router.get('/sale', async (req, res) => {
       .limit(8)
       .lean();
 
-    const productsWithUrls = products.map(product => ({
-      ...product,
-      images: product.images.map(image => getImageUrl(image))
-    }));
+    const productsWithUrls = products.map((product) =>
+      sanitizeProductForClient(enrichProduct(product))
+    );
 
     res.json({ products: productsWithUrls });
 
@@ -304,14 +340,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
       $inc: { viewCount: 1 }
     });
 
-    // Ajouter les URLs d'images et le prix final
-    const productWithUrls = {
-      ...product,
-      images: product.images.map(image => getImageUrl(image)),
-      finalPrice: product.discount > 0 && product.originalPrice
-        ? product.originalPrice * (1 - product.discount / 100)
-        : product.price
-    };
+    const productWithUrls = maybeSanitizeProduct(enrichProduct(product), req);
 
     res.json({ product: productWithUrls });
 
@@ -348,14 +377,7 @@ router.get('/slug/:slug', optionalAuth, async (req, res) => {
       { $inc: { viewCount: 1 } }
     );
 
-    // Ajouter les URLs d'images et le prix final
-    const productWithUrls = {
-      ...product,
-      images: product.images.map(image => getImageUrl(image)),
-      finalPrice: product.discount > 0 && product.originalPrice
-        ? product.originalPrice * (1 - product.discount / 100)
-        : product.price
-    };
+    const productWithUrls = maybeSanitizeProduct(enrichProduct(product), req);
 
     res.json({ product: productWithUrls });
 
@@ -428,7 +450,7 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
     let processedVariants = [];
     if (variants) {
       try {
-        processedVariants = JSON.parse(variants);
+        processedVariants = normalizeVariants(JSON.parse(variants));
       } catch (error) {
         return res.status(400).json({
           message: 'Format de variantes invalide'
@@ -698,7 +720,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     // Traiter les variantes
     if (variants) {
       try {
-        product.variants = JSON.parse(variants);
+        product.variants = normalizeVariants(JSON.parse(variants));
         product.totalStock = product.variants.reduce((total, variant) => total + (variant.stock || 0), 0);
       } catch (error) {
         return res.status(400).json({

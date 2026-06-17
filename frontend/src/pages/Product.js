@@ -8,6 +8,7 @@ import Loading from '../components/ui/Loading';
 import { toast } from 'react-toastify';
 import { resolveImageUrl } from '../utils/imageUtils';
 import { normalizeProductColors, colorNameToHex } from '../utils/colorUtils';
+import { variantHasStock, productHasStock } from '../utils/productStock';
 
 const Product = () => {
   const { id } = useParams();
@@ -43,11 +44,22 @@ const Product = () => {
     if (!selectedSize) return displayColors;
 
     const variantColors = currentProduct.variants
-      .filter((v) => v.size === selectedSize && (v.stock ?? 0) > 0)
-      .map((v) => v.color);
+      .filter((v) => v.size === selectedSize && variantHasStock(v))
+      .map((v) => v.color)
+      .filter(Boolean);
+
+    if (variantColors.length === 0) return displayColors;
 
     return displayColors.filter((c) => variantColors.includes(c.name));
   }, [currentProduct, selectedSize, displayColors]);
+
+  const colorRequired = displayColors.length > 0;
+
+  useEffect(() => {
+    if (selectedColor && !availableColorsForSize.some((c) => c.name === selectedColor)) {
+      setSelectedColor('');
+    }
+  }, [selectedSize, availableColorsForSize, selectedColor]);
 
   useEffect(() => {
     if (id) {
@@ -73,7 +85,7 @@ const Product = () => {
       toast.error('Veuillez sélectionner une taille');
       return;
     }
-    if (displayColors.length > 0 && !selectedColor) {
+    if (colorRequired && !selectedColor) {
       toast.error('Veuillez sélectionner une couleur');
       return;
     }
@@ -220,7 +232,9 @@ const Product = () => {
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Taille</h3>
                 <div className="flex gap-2">
                   {[...new Set(currentProduct.variants.map(v => v.size))].map((size) => {
-                    const available = currentProduct.variants.some(v => v.size === size && (v.stock ?? 0) > 0);
+                    const available = currentProduct.variants.some(
+                      (v) => v.size === size && variantHasStock(v)
+                    );
                     const isSelected = selectedSize === size;
                     return (
                       <button
@@ -243,7 +257,9 @@ const Product = () => {
             {/* Couleur */}
             {displayColors.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Couleur</h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-3">
+                  Couleur <span className="text-red-500">*</span>
+                </h3>
                 <div className="flex flex-wrap gap-4">
                   {availableColorsForSize.map((color) => {
                     const isSelected = selectedColor === color.name;
@@ -334,32 +350,27 @@ const Product = () => {
             {/* Quantité */}
             <div className="bg-white border border-gray-300 rounded-lg p-3">
               <h3 className="text-sm font-medium text-gray-700 mb-2">Quantité:</h3>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
-                  >
-                    -
-                  </button>
-                  <span className="w-8 text-center font-medium text-sm">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
-                  >
-                    +
-                  </button>
-                </div>
-                <span className="text-xs text-gray-600">
-                  {currentProduct.totalStock} en stock
-                </span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                >
+                  -
+                </button>
+                <span className="w-8 text-center font-medium text-sm">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                >
+                  +
+                </button>
               </div>
             </div>
 
             {/* Bouton Ajouter au Panier */}
             <button
               onClick={handleAddToCart}
-              disabled={currentProduct.totalStock === 0}
+              disabled={!productHasStock(currentProduct)}
               className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               <ShoppingCartIcon className="h-5 w-5 mr-2" />

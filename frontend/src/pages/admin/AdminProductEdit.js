@@ -357,7 +357,7 @@ const AdminProductEdit = () => {
         <div>
           <div className="flex items-center justify-between mb-4">
             <label className="block text-sm font-medium text-gray-700">
-              Variantes (Tailles/Couleurs/Stock)
+              Variantes (taille obligatoire, couleur optionnelle)
             </label>
             <button
               type="button"

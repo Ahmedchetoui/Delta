@@ -228,9 +228,6 @@ const Cart = () => {
             >
               +
             </button>
-            <span className="ml-4 text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-              {totalItems} en stock
-            </span>
           </div>
         </div>
 

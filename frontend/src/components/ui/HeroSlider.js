@@ -2,16 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 
-const HeroSlider = ({ slides }) => {
+const HeroSlider = ({ slides = [] }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
+    if (slides.length <= 1) return undefined;
+
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 6000);
 
     return () => clearInterval(timer);
   }, [slides.length]);
+
+  if (slides.length === 0) {
+    return null;
+  }
 
   const goToSlide = (index) => {
     setCurrentSlide(index);
@@ -121,21 +127,26 @@ const HeroSlider = ({ slides }) => {
       ))}
 
       {/* Navigation Arrows */}
+      {slides.length > 1 && (
       <button
         onClick={goToPrevious}
         className="absolute left-6 md:left-10 top-1/2 transform -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-white/50 bg-white/10 backdrop-blur-md hover:bg-blue-600 hover:border-blue-600 text-white transition-all duration-300 flex items-center justify-center hover:scale-110"
       >
         <ChevronLeftIcon className="h-6 w-6" />
       </button>
+      )}
 
+      {slides.length > 1 && (
       <button
         onClick={goToNext}
         className="absolute right-6 md:right-10 top-1/2 transform -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-white/50 bg-white/10 backdrop-blur-md hover:bg-blue-600 hover:border-blue-600 text-white transition-all duration-300 flex items-center justify-center hover:scale-110"
       >
         <ChevronRightIcon className="h-6 w-6" />
       </button>
+      )}
 
       {/* Dots Indicator */}
+      {slides.length > 1 && (
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3">
         {slides.map((_, index) => (
           <button
@@ -148,6 +159,7 @@ const HeroSlider = ({ slides }) => {
           />
         ))}
       </div>
+      )}
     </div>
   );
 };

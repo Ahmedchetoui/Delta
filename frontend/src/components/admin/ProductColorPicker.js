@@ -33,7 +33,7 @@ const ProductColorPicker = ({ colors = [], onChange }) => {
     <div className="space-y-4">
       <div>
         <p className="text-sm text-gray-600 mb-3">
-          Cliquez sur les couleurs disponibles pour ce produit
+          Couleurs proposées au client (obligatoire à la commande). Sur chaque variante, la couleur reste optionnelle.
         </p>
         <div className="flex flex-wrap gap-3">
           {PRESET_COLORS.map((preset) => {

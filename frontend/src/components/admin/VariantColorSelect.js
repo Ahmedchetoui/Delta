@@ -21,7 +21,7 @@ const VariantColorSelect = ({ value, colors = [], onChange, className = '' }) =>
         onChange={(e) => onChange(e.target.value)}
         className={className || 'border rounded px-3 py-2 w-full'}
       >
-        <option value="">Choisir une couleur</option>
+        <option value="">Couleur (optionnel)</option>
         {colors.map((color) => (
           <option key={color.name} value={color.name}>
             {color.name}

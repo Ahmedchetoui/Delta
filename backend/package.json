@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "seed": "node scripts/seedData.js",
     "db:cleanup-orders": "node scripts/cleanupOrders.js",
+    "db:sync-stock": "node scripts/syncConfirmedOrderStock.js",
     "cloudinary:verify": "node scripts/verifyCloudinary.js",
     "db:backup": "node scripts/backupDatabase.js",
     "db:restore": "node scripts/restoreDatabase.js",

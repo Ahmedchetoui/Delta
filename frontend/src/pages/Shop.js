@@ -122,13 +122,13 @@ const Shop = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {search ? `Résultats pour "${search}"` : 'Boutique'}
           </h1>
-          <p className="text-gray-600">
+          <div className="text-gray-600">
             {loading ? (
               <Skeleton className="h-4 w-32" />
             ) : (
               `${totalProducts || 0} produit${(totalProducts || 0) > 1 ? 's' : ''} trouvé${(totalProducts || 0) > 1 ? 's' : ''}`
             )}
-          </p>
+          </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">

@@ -6,6 +6,7 @@ require('dotenv').config();
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
+const Banner = require('../models/Banner');
 
 // Données de test
 const seedData = async () => {
@@ -24,6 +25,7 @@ const seedData = async () => {
     await User.deleteMany({});
     await Category.deleteMany({});
     await Product.deleteMany({});
+    await Banner.deleteMany({});
     console.log('🧹 Données existantes supprimées');
 
     const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'admin123';
@@ -273,11 +275,27 @@ const seedData = async () => {
     }
     console.log('🛍️ Produits créés');
 
+    const defaultBanner = new Banner({
+      title: 'Nouvelle Collection Automne 2026',
+      subtitle: 'Découvrez notre sélection de vêtements tendance et élégants pour toute la famille',
+      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80&auto=format&fit=crop',
+      buttonText: 'Découvrir',
+      buttonLink: '/shop',
+      order: 0,
+      isActive: true,
+      backgroundColor: '#f8f9fa',
+      textColor: '#ffffff',
+      position: 'center'
+    });
+    await defaultBanner.save();
+    console.log('🖼️ Bannière créée');
+
     console.log('\n🎉 Base de données peuplée avec succès !');
     console.log('\n📋 Résumé :');
     console.log(`👤 Utilisateurs créés: ${await User.countDocuments()}`);
     console.log(`📂 Catégories créées: ${await Category.countDocuments()}`);
     console.log(`🛍️ Produits créés: ${await Product.countDocuments()}`);
+    console.log(`🖼️ Bannières créées: ${await Banner.countDocuments()}`);
     
     console.log('\n🔑 Comptes de test :');
     console.log(`Admin: ${process.env.SEED_ADMIN_EMAIL || 'admin@deltafashion.com'} (voir SEED_ADMIN_PASSWORD)`);

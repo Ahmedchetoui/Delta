@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const User = require('../models/User');
 const Product = require('../models/Product');
+const { deductOrderStock, restoreOrderStock } = require('../utils/stockUtils');
 const Category = require('../models/Category');
 const Order = require('../models/Order');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
@@ -868,6 +869,18 @@ router.put('/orders/:id/status', [
         break;
     }
 
+    // Déduire le stock à la confirmation
+    if (orderStatus === 'confirmed' && !order.stockDeducted) {
+      await deductOrderStock(order);
+      order.stockDeducted = true;
+    }
+
+    // Restaurer le stock si annulation après confirmation
+    if (orderStatus === 'cancelled' && order.stockDeducted) {
+      await restoreOrderStock(order);
+      order.stockDeducted = false;
+    }
+
     await order.save();
 
     res.json({
@@ -928,22 +941,9 @@ router.post('/orders/:id/cancel', [
     // Utiliser la méthode du modèle pour annuler
     order.cancelOrder(reason, req.user._id);
 
-    for (const item of order.items) {
-      const product = await Product.findById(item.product);
-      if (!product) continue;
-
-      product.totalStock += item.quantity;
-
-      if (item.size && item.color) {
-        const variant = product.variants.find(
-          (v) => v.size === item.size && v.color === item.color
-        );
-        if (variant) {
-          variant.stock += item.quantity;
-        }
-      }
-
-      await product.save();
+    if (order.stockDeducted) {
+      await restoreOrderStock(order);
+      order.stockDeducted = false;
     }
 
     await order.save();

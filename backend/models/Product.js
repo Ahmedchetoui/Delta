@@ -67,7 +67,7 @@ const productSchema = new mongoose.Schema({
     },
     color: {
       type: String,
-      required: true
+      default: ''
     },
     stock: {
       type: Number,
@@ -196,9 +196,9 @@ productSchema.pre('validate', function(next) {
     this.price = this.originalPrice * (1 - this.discount / 100);
   }
 
-  // Calculer le stock total
-  if (this.variants && this.variants.length > 0) {
-    this.totalStock = this.variants.reduce((total, variant) => total + variant.stock, 0);
+  // Calculer le stock total uniquement si les variantes changent
+  if (this.isModified('variants') && this.variants && this.variants.length > 0) {
+    this.totalStock = this.variants.reduce((total, variant) => total + (variant.stock || 0), 0);
   }
 
   next();
@@ -219,18 +219,27 @@ productSchema.methods.isInStock = function() {
 
 // Méthode pour obtenir le stock d'une variante spécifique
 productSchema.methods.getVariantStock = function(size, color) {
-  const variant = this.variants.find(v => 
-    v.size === size && v.color === color
-  );
-  return variant ? variant.stock : 0;
+  if (color) {
+    const variant = this.variants.find(v => v.size === size && v.color === color);
+    return variant ? variant.stock : 0;
+  }
+  return this.variants
+    .filter(v => v.size === size)
+    .reduce((sum, v) => sum + (v.stock || 0), 0);
 };
 
 // Méthode pour mettre à jour le stock
 productSchema.methods.updateStock = function(size, color, quantity) {
-  const variant = this.variants.find(v => 
-    v.size === size && v.color === color
-  );
-  
+  let variant;
+  if (color) {
+    variant = this.variants.find(v => v.size === size && v.color === color);
+  } else {
+    const forSize = this.variants.filter(v => v.size === size);
+    variant = forSize.length === 1
+      ? forSize[0]
+      : forSize.find(v => v.stock > 0) || forSize[0];
+  }
+
   if (variant) {
     variant.stock = Math.max(0, variant.stock - quantity);
     this.totalStock = this.variants.reduce((total, v) => total + v.stock, 0);

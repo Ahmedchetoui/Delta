@@ -159,7 +159,9 @@ const AdminProductNew = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Variantes (taille / couleur / stock)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Variantes (taille obligatoire, couleur optionnelle)
+          </label>
           <div className="space-y-3">
             {form.variants.map((v, idx) => (
               <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">

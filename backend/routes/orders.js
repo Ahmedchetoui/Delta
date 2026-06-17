@@ -5,7 +5,14 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const { authenticateToken, requireAdmin, requireOwnerOrAdmin, optionalAuth } = require('../middleware/auth');
 
+const { deductOrderStock, restoreOrderStock, getAvailableStock } = require('../utils/stockUtils');
+
 const router = express.Router();
+
+function productRequiresColor(product) {
+  if (product.colors?.length > 0) return true;
+  return product.variants?.some((v) => v.color && String(v.color).trim()) ?? false;
+}
 
 // Validation pour la création de commande (utilisateurs connectés et invités)
 const orderValidation = [
@@ -308,14 +315,21 @@ router.post('/', optionalAuth, orderValidation, async (req, res) => {
         });
       }
 
-      // Vérifier le stock
-      if (item.size && item.color && product.variants?.length) {
-        const variant = product.variants.find(
-          (v) => v.size === item.size && v.color === item.color
-        );
-        if (!variant || variant.stock < item.quantity) {
+      if (productRequiresColor(product) && !item.color) {
+        return res.status(400).json({
+          message: `Veuillez sélectionner une couleur pour ${product.name}`
+        });
+      }
+
+      // Vérifier le stock (déduction réelle à la confirmation admin)
+      if (item.size && product.variants?.length) {
+        const available = item.color
+          ? getAvailableStock(product, item.size, item.color)
+          : getAvailableStock(product, item.size, null);
+        if (available < item.quantity) {
+          const label = item.color ? `${item.size}, ${item.color}` : item.size;
           return res.status(400).json({
-            message: `Stock insuffisant pour ${product.name} (${item.size}, ${item.color})`
+            message: `Stock insuffisant pour ${product.name} (${label})`
           });
         }
       } else if (product.totalStock < item.quantity) {
@@ -365,22 +379,6 @@ router.post('/', optionalAuth, orderValidation, async (req, res) => {
     });
 
     await order.save();
-
-    // Mettre à jour le stock des produits
-    for (const item of items) {
-      const product = products.find(p => p._id.toString() === item.product);
-      if (product) {
-        // Mettre à jour le stock total
-        product.totalStock = Math.max(0, product.totalStock - item.quantity);
-        
-        // Mettre à jour le stock des variantes si applicable
-        if (item.size && item.color) {
-          product.updateStock(item.size, item.color, item.quantity);
-        }
-        
-        await product.save();
-      }
-    }
 
     // Populate pour la réponse
     await order.populate([
@@ -445,19 +443,27 @@ router.put('/:id/status', authenticateToken, requireAdmin, [
       });
     }
 
-    // Mettre à jour les champs
     if (orderStatus) order.orderStatus = orderStatus;
     if (paymentStatus) order.paymentStatus = paymentStatus;
     if (trackingNumber) order.trackingNumber = trackingNumber;
     if (notes) order.notes = { ...order.notes, admin: notes };
 
-    // Actions spéciales selon le statut
     if (orderStatus === 'delivered') {
       order.markAsDelivered();
     }
 
     if (orderStatus === 'cancelled') {
-      order.cancelOrder('Annulée par l\'administrateur', 'admin');
+      order.cancelOrder('Annulée par l\'administrateur', req.user._id);
+    }
+
+    if (orderStatus === 'confirmed' && !order.stockDeducted) {
+      await deductOrderStock(order);
+      order.stockDeducted = true;
+    }
+
+    if (orderStatus === 'cancelled' && order.stockDeducted) {
+      await restoreOrderStock(order);
+      order.stockDeducted = false;
     }
 
     await order.save();
@@ -525,24 +531,9 @@ router.put('/:id/cancel', authenticateToken, [
     // Annuler la commande
     order.cancelOrder(reason || 'Annulée par le client', req.user._id);
 
-    // Restaurer le stock des produits
-    for (const item of order.items) {
-      const product = await Product.findById(item.product);
-      if (product) {
-        product.totalStock += item.quantity;
-        
-        // Restaurer le stock des variantes si applicable
-        if (item.size && item.color) {
-          const variant = product.variants.find(v => 
-            v.size === item.size && v.color === item.color
-          );
-          if (variant) {
-            variant.stock += item.quantity;
-          }
-        }
-        
-        await product.save();
-      }
+    if (order.stockDeducted) {
+      await restoreOrderStock(order);
+      order.stockDeducted = false;
     }
 
     await order.save();

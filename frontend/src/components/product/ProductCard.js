@@ -4,6 +4,7 @@ import { HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import Skeleton from '../ui/Skeleton';
 import { resolveImageUrl } from '../../utils/imageUtils';
+import { productHasStock } from '../../utils/productStock';
 
 const ProductCard = ({ product }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -14,7 +15,8 @@ const ProductCard = ({ product }) => {
     toast.info('Fonctionnalité wishlist à venir !');
   };
 
-  // Helpers
+  const inStock = productHasStock(product);
+
   const discountPercent = product.price && product.finalPrice && Number(product.price) > Number(product.finalPrice)
     ? Math.round((1 - product.finalPrice / product.price) * 100)
     : null;
@@ -75,7 +77,7 @@ const ProductCard = ({ product }) => {
           </button>
 
           {/* Stock Indicator */}
-          {product.totalStock === 0 && (
+          {!inStock && (
             <div className="absolute inset-0 bg-gray-900/60 flex items-center justify-center z-20">
               <span className="text-white font-bold text-lg">RUPTURE DE STOCK</span>
             </div>
@@ -138,8 +140,8 @@ const ProductCard = ({ product }) => {
                 </span>
               )}
             </div>
-            <span className={`text-xs font-medium px-2 py-1 rounded-full ${product.totalStock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              {product.totalStock > 0 ? '✓ Disponible' : 'Rupture'}
+            <span className={`text-xs font-medium px-2 py-1 rounded-full ${inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {inStock ? '✓ Disponible' : 'Rupture'}
             </span>
           </div>
 
