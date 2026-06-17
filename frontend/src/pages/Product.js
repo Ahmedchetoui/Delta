@@ -8,7 +8,15 @@ import Loading from '../components/ui/Loading';
 import { toast } from 'react-toastify';
 import { resolveImageUrl } from '../utils/imageUtils';
 import { normalizeProductColors, colorNameToHex } from '../utils/colorUtils';
-import { variantHasStock, productHasStock } from '../utils/productStock';
+import {
+  colorsEqual,
+  getAvailableColorsForSize,
+  getProductSizes,
+  isColorAvailableForSize,
+  productHasStock,
+  sizeHasAvailableStock,
+  sizesEqual,
+} from '../utils/productStock';
 
 const Product = () => {
   const { id } = useParams();
@@ -39,19 +47,17 @@ const Product = () => {
     return normalizeProductColors(currentProduct.colors, currentProduct.variants);
   }, [currentProduct]);
 
-  const availableColorsForSize = useMemo(() => {
-    if (!currentProduct?.variants?.length) return displayColors;
-    if (!selectedSize) return displayColors;
+  const productSizes = useMemo(
+    () => getProductSizes(currentProduct),
+    [currentProduct]
+  );
 
-    const variantColors = currentProduct.variants
-      .filter((v) => v.size === selectedSize && variantHasStock(v))
-      .map((v) => v.color)
-      .filter(Boolean);
+  const hasVariants = productSizes.length > 0;
 
-    if (variantColors.length === 0) return displayColors;
-
-    return displayColors.filter((c) => variantColors.includes(c.name));
-  }, [currentProduct, selectedSize, displayColors]);
+  const availableColorsForSize = useMemo(
+    () => getAvailableColorsForSize(displayColors, currentProduct, selectedSize),
+    [displayColors, currentProduct, selectedSize]
+  );
 
   const colorRequired = displayColors.length > 0;
 
@@ -67,10 +73,21 @@ const Product = () => {
   useEffect(() => {
     setSelectedColors((prev) =>
       prev.map((color) =>
-        color && availableColorsForSize.some((c) => c.name === color) ? color : ''
+        color && availableColorsForSize.some((c) => colorsEqual(c.name, color))
+          ? color
+          : ''
       )
     );
   }, [selectedSize, availableColorsForSize]);
+
+  useEffect(() => {
+    if (!selectedSize || !colorRequired || availableColorsForSize.length !== 1) return;
+
+    const onlyColor = availableColorsForSize[0].name;
+    setSelectedColors((prev) =>
+      Array.from({ length: quantity }, (_, index) => prev[index] || onlyColor)
+    );
+  }, [selectedSize, colorRequired, availableColorsForSize, quantity]);
 
   const setColorAtIndex = (index, colorName) => {
     setSelectedColors((prev) => {
@@ -80,23 +97,29 @@ const Product = () => {
     });
   };
 
-  const renderColorSwatches = (selected, onSelect, keyPrefix = '') => (
+  const renderColorSwatches = (selected, onSelect, keyPrefix = '', allowPick = true) => (
     <div className="flex flex-wrap gap-4">
-      {availableColorsForSize.map((color) => {
+      {displayColors.map((color) => {
         const isSelected = selected === color.name;
+        const isDisabled =
+          !allowPick ||
+          (hasVariants &&
+            selectedSize &&
+            !isColorAvailableForSize(currentProduct, selectedSize, color.name));
         const hex = color.code || colorNameToHex(color.name);
         return (
           <div key={`${keyPrefix}${color.name}`} className="flex flex-col items-center">
             <button
               type="button"
-              onClick={() => onSelect(color.name)}
+              onClick={() => !isDisabled && onSelect(color.name)}
+              disabled={isDisabled}
               className={`w-9 h-9 rounded-full border-2 ${
                 isSelected ? 'border-gray-900 ring-2 ring-offset-2 ring-gray-400' : 'border-gray-300'
-              }`}
+              } ${isDisabled ? 'opacity-30 cursor-not-allowed' : 'hover:scale-105'}`}
               style={{ backgroundColor: hex }}
               title={color.name}
             />
-            <span className="text-xs text-gray-600 mt-1 text-center max-w-[72px]">
+            <span className={`text-xs mt-1 text-center max-w-[72px] ${isDisabled ? 'text-gray-400' : 'text-gray-600'}`}>
               {color.name}
             </span>
           </div>
@@ -125,7 +148,7 @@ const Product = () => {
       toast.error('Veuillez saisir votre adresse');
       return;
     }
-    if (!selectedSize && currentProduct.variants?.length > 0) {
+    if (hasVariants && !selectedSize) {
       toast.error('Veuillez sélectionner une taille');
       return;
     }
@@ -279,24 +302,26 @@ const Product = () => {
             </div>
 
             {/* Taille */}
-            {currentProduct.variants && currentProduct.variants.length > 0 && (
+            {hasVariants && (
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Taille</h3>
-                <div className="flex gap-2">
-                  {[...new Set(currentProduct.variants.map(v => v.size))].map((size) => {
-                    const available = currentProduct.variants.some(
-                      (v) => v.size === size && variantHasStock(v)
-                    );
-                    const isSelected = selectedSize === size;
+                <h3 className="text-sm font-medium text-gray-700 mb-3">
+                  Taille <span className="text-red-500">*</span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {productSizes.map((size) => {
+                    const available = sizeHasAvailableStock(currentProduct, size);
+                    const isSelected = sizesEqual(selectedSize, size);
                     return (
                       <button
                         key={size}
-                        onClick={() => setSelectedSize(size)}
+                        type="button"
+                        onClick={() => available && setSelectedSize(size)}
                         disabled={!available}
-                        className={`w-10 h-10 border rounded text-sm font-medium ${isSelected
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                          } ${!available ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`min-w-10 h-10 px-2 border rounded text-sm font-medium ${
+                          isSelected
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                        } ${!available ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {size}
                       </button>
@@ -340,8 +365,17 @@ const Product = () => {
                     </span>
                   )}
                 </h3>
-                {quantity === 1 ? (
-                  renderColorSwatches(selectedColors[0] || '', (name) => setColorAtIndex(0, name))
+                {hasVariants && !selectedSize ? (
+                  <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    Veuillez d&apos;abord choisir une taille pour sélectionner les couleurs disponibles.
+                  </p>
+                ) : quantity === 1 ? (
+                  renderColorSwatches(
+                    selectedColors[0] || '',
+                    (name) => setColorAtIndex(0, name),
+                    '',
+                    Boolean(selectedSize || !hasVariants)
+                  )
                 ) : (
                   <div className="space-y-4">
                     {Array.from({ length: quantity }, (_, index) => (
@@ -352,7 +386,8 @@ const Product = () => {
                         {renderColorSwatches(
                           selectedColors[index] || '',
                           (name) => setColorAtIndex(index, name),
-                          `${index}-`
+                          `${index}-`,
+                          Boolean(selectedSize || !hasVariants)
                         )}
                       </div>
                     ))}

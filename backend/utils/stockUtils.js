@@ -1,20 +1,42 @@
 const Product = require('../models/Product');
 
+function normalizeSize(size) {
+  return String(size ?? '').trim();
+}
+
+function normalizeColor(color) {
+  return String(color ?? '').trim().toLowerCase();
+}
+
+function sizesMatch(a, b) {
+  return normalizeSize(a) === normalizeSize(b);
+}
+
+function colorsMatch(a, b) {
+  return normalizeColor(a) === normalizeColor(b);
+}
+
+function variantInStock(variant) {
+  return (variant?.stock ?? 0) > 0;
+}
+
 function getVariantsForSize(product, size, color) {
   if (!size || !product.variants?.length) return [];
 
   if (color) {
-    const exact = product.variants.find((v) => v.size === size && v.color === color);
+    const exact = product.variants.find(
+      (v) => sizesMatch(v.size, size) && colorsMatch(v.color, color)
+    );
     return exact ? [exact] : [];
   }
 
-  return product.variants.filter((v) => v.size === size);
+  return product.variants.filter((v) => sizesMatch(v.size, size));
 }
 
 function getAvailableStock(product, size, color) {
   const variants = getVariantsForSize(product, size, color);
   if (variants.length > 0) {
-    return variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    return variants.reduce((sum, v) => sum + (variantInStock(v) ? (v.stock || 0) : 0), 0);
   }
   return product.totalStock || 0;
 }
@@ -23,15 +45,17 @@ function findVariant(product, size, color) {
   if (!size || !product.variants?.length) return null;
 
   if (color) {
-    const exact = product.variants.find((v) => v.size === size && v.color === color);
+    const exact = product.variants.find(
+      (v) => sizesMatch(v.size, size) && colorsMatch(v.color, color)
+    );
     if (exact) return exact;
   }
 
-  const forSize = product.variants.filter((v) => v.size === size);
+  const forSize = product.variants.filter((v) => sizesMatch(v.size, size));
   if (forSize.length === 0) return null;
   if (forSize.length === 1) return forSize[0];
 
-  return forSize.find((v) => (v.stock || 0) > 0) || forSize[0];
+  return forSize.find((v) => variantInStock(v)) || forSize[0];
 }
 
 function syncTotalStock(product) {
@@ -77,6 +101,10 @@ async function restoreOrderStock(order) {
 }
 
 module.exports = {
+  normalizeSize,
+  normalizeColor,
+  sizesMatch,
+  colorsMatch,
   getVariantsForSize,
   getAvailableStock,
   findVariant,

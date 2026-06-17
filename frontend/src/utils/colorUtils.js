@@ -45,7 +45,9 @@ export function normalizeProductColors(colors = [], variants = []) {
     });
   }
 
-  const names = [...new Set(variants.map((v) => v.color).filter(Boolean))];
+  const names = [...new Set(
+    variants.map((v) => String(v.color || '').trim()).filter(Boolean)
+  )];
   return names.map((name) => ({ name, code: colorNameToHex(name) }));
 }
 

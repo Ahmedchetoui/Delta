@@ -43,8 +43,8 @@ function sanitizeProductForClient(product) {
   if (sanitized.variants?.length) {
     sanitized.variants = sanitized.variants.map((v) => {
       const entry = {
-        size: v.size,
-        color: v.color,
+        size: String(v.size ?? '').trim(),
+        color: String(v.color ?? '').trim(),
         inStock: (v.stock || 0) > 0,
       };
       if (v.price != null) entry.price = v.price;
