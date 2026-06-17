@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { resolveImageUrl } from '../../utils/imageUtils';
+import ProductColorPicker from '../../components/admin/ProductColorPicker';
+import VariantColorSelect from '../../components/admin/VariantColorSelect';
+import { normalizeProductColors } from '../../utils/colorUtils';
 
 const AdminProductEdit = () => {
   const { id } = useParams();
@@ -20,6 +23,7 @@ const AdminProductEdit = () => {
     category: '',
     isActive: true,
     images: [],
+    colors: [],
     variants: []
   });
 
@@ -45,6 +49,7 @@ const AdminProductEdit = () => {
           category: product.category?._id || '',
           isActive: product.isActive !== false,
           images: product.images || [],
+          colors: normalizeProductColors(product.colors, product.variants),
           variants: product.variants || []
         });
         
@@ -146,6 +151,7 @@ const AdminProductEdit = () => {
       
       // Variantes
       submitData.append('variants', JSON.stringify(formData.variants));
+      submitData.append('colors', JSON.stringify(formData.colors));
 
       await api.put(`/products/${id}`, submitData, {
         headers: {
@@ -336,6 +342,17 @@ const AdminProductEdit = () => {
           )}
         </div>
 
+        {/* Couleurs */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Couleurs du produit
+          </label>
+          <ProductColorPicker
+            colors={formData.colors}
+            onChange={(colors) => setFormData((prev) => ({ ...prev, colors }))}
+          />
+        </div>
+
         {/* Variantes */}
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -360,12 +377,11 @@ const AdminProductEdit = () => {
                 onChange={(e) => updateVariant(index, 'size', e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <input
-                type="text"
-                placeholder="Couleur"
+              <VariantColorSelect
                 value={variant.color}
-                onChange={(e) => updateVariant(index, 'color', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                colors={formData.colors}
+                onChange={(color) => updateVariant(index, 'color', color)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
               />
               <input
                 type="number"

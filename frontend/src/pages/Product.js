@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProduct } from '../store/slices/productSlice';
@@ -7,6 +7,7 @@ import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import Loading from '../components/ui/Loading';
 import { toast } from 'react-toastify';
 import { resolveImageUrl } from '../utils/imageUtils';
+import { normalizeProductColors, colorNameToHex } from '../utils/colorUtils';
 
 const Product = () => {
   const { id } = useParams();
@@ -32,35 +33,21 @@ const Product = () => {
   const subtotal = productPrice * quantity;
   const total = subtotal + deliveryCost;
 
-  // Helpers d'affichage couleurs (approximation pour swatches)
-  const colorNameToHex = (name) => {
-    const key = (name || '').toLowerCase();
-    const map = {
-      'noir': '#111827',
-      'black': '#111827',
-      'blanc': '#ffffff',
-      'white': '#ffffff',
-      'gris': '#9ca3af',
-      'grège': '#d9cdbf',
-      'kaki': '#786f52',
-      'vert': '#22c55e',
-      'jaune': '#eab308',
-      'bleu': '#2563eb',
-      'marine': '#1e3a8a',
-      'rouge': '#ef4444',
-      'marron': '#92400e',
-      'beige': '#e7dac7',
-    };
-    // quelques combinaisons fréquentes
-    if (key.includes('bleu') && key.includes('marine')) return '#1e3a8a';
-    if (key.includes('blanc') && key.includes('gris')) return '#d1d5db';
-    if (key.includes('jaune') && key.includes('vert')) return '#a3b18a';
-    // fallback: cherche un mot connu
-    for (const k of Object.keys(map)) {
-      if (key.includes(k)) return map[k];
-    }
-    return '#9ca3af';
-  };
+  const displayColors = useMemo(() => {
+    if (!currentProduct) return [];
+    return normalizeProductColors(currentProduct.colors, currentProduct.variants);
+  }, [currentProduct]);
+
+  const availableColorsForSize = useMemo(() => {
+    if (!currentProduct?.variants?.length) return displayColors;
+    if (!selectedSize) return displayColors;
+
+    const variantColors = currentProduct.variants
+      .filter((v) => v.size === selectedSize && (v.stock ?? 0) > 0)
+      .map((v) => v.color);
+
+    return displayColors.filter((c) => variantColors.includes(c.name));
+  }, [currentProduct, selectedSize, displayColors]);
 
   useEffect(() => {
     if (id) {
@@ -84,6 +71,10 @@ const Product = () => {
     }
     if (!selectedSize && currentProduct.variants?.length > 0) {
       toast.error('Veuillez sélectionner une taille');
+      return;
+    }
+    if (displayColors.length > 0 && !selectedColor) {
+      toast.error('Veuillez sélectionner une couleur');
       return;
     }
 
@@ -250,24 +241,26 @@ const Product = () => {
             )}
 
             {/* Couleur */}
-            {currentProduct.variants && currentProduct.variants.length > 0 && (
+            {displayColors.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Couleur:</h3>
-                <div className="flex gap-4">
-                  {[...new Set(currentProduct.variants.map(v => v.color))].map((color) => {
-                    const isSelected = selectedColor === color;
-                    const hex = colorNameToHex(color);
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Couleur</h3>
+                <div className="flex flex-wrap gap-4">
+                  {availableColorsForSize.map((color) => {
+                    const isSelected = selectedColor === color.name;
+                    const hex = color.code || colorNameToHex(color.name);
                     return (
-                      <div key={color} className="flex flex-col items-center">
+                      <div key={color.name} className="flex flex-col items-center">
                         <button
-                          onClick={() => setSelectedColor(color)}
-                          className={`w-8 h-8 rounded-full border-2 ${isSelected ? 'border-gray-800' : 'border-gray-300'
-                            }`}
+                          type="button"
+                          onClick={() => setSelectedColor(color.name)}
+                          className={`w-9 h-9 rounded-full border-2 ${
+                            isSelected ? 'border-gray-900 ring-2 ring-offset-2 ring-gray-400' : 'border-gray-300'
+                          }`}
                           style={{ backgroundColor: hex }}
-                          title={color}
+                          title={color.name}
                         />
-                        <span className="text-xs text-gray-600 mt-1 text-center">
-                          {color}
+                        <span className="text-xs text-gray-600 mt-1 text-center max-w-[72px]">
+                          {color.name}
                         </span>
                       </div>
                     );

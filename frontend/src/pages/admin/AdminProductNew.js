@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { categoryService, productService } from '../../services/api';
 import { toast } from 'react-toastify';
+import ProductColorPicker from '../../components/admin/ProductColorPicker';
+import VariantColorSelect from '../../components/admin/VariantColorSelect';
 
 const AdminProductNew = () => {
   const navigate = useNavigate();
@@ -20,7 +22,8 @@ const AdminProductNew = () => {
     isNew: false,
     isOnSale: false,
     discount: '',
-    variants: [{ size: 'M', color: 'Black', stock: 0 }],
+    colors: [],
+    variants: [{ size: 'M', color: '', stock: 0 }],
     images: []
   });
 
@@ -51,7 +54,7 @@ const AdminProductNew = () => {
     });
   };
 
-  const addVariant = () => setForm((f) => ({ ...f, variants: [...f.variants, { size: 'M', color: 'Black', stock: 0 }] }));
+  const addVariant = () => setForm((f) => ({ ...f, variants: [...f.variants, { size: '', color: f.colors[0]?.name || '', stock: 0 }] }));
   const removeVariant = (idx) => setForm((f) => ({ ...f, variants: f.variants.filter((_, i) => i !== idx) }));
 
   const canSave = useMemo(() => {
@@ -78,6 +81,9 @@ const AdminProductNew = () => {
         color: v.color,
         stock: Number(v.stock || 0)
       }))));
+      if (form.colors.length > 0) {
+        fd.append('colors', JSON.stringify(form.colors));
+      }
       for (const file of form.images) fd.append('images', file);
 
       await productService.createProduct(fd);
@@ -145,12 +151,25 @@ const AdminProductNew = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Variantes</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Couleurs du produit</label>
+          <ProductColorPicker
+            colors={form.colors}
+            onChange={(colors) => setForm((f) => ({ ...f, colors }))}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Variantes (taille / couleur / stock)</label>
           <div className="space-y-3">
             {form.variants.map((v, idx) => (
               <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
-                <input placeholder="Taille" className="border rounded px-3 py-2" value={v.size} onChange={(e) => updateVariant(idx, { size: e.target.value })} />
-                <input placeholder="Couleur" className="border rounded px-3 py-2" value={v.color} onChange={(e) => updateVariant(idx, { color: e.target.value })} />
+                <input placeholder="Taille (ex: 8, M, 42)" className="border rounded px-3 py-2" value={v.size} onChange={(e) => updateVariant(idx, { size: e.target.value })} />
+                <VariantColorSelect
+                  value={v.color}
+                  colors={form.colors}
+                  onChange={(color) => updateVariant(idx, { color })}
+                  className="border rounded px-3 py-2 w-full"
+                />
                 <input type="number" placeholder="Stock" className="border rounded px-3 py-2" value={v.stock} onChange={(e) => updateVariant(idx, { stock: e.target.value })} />
                 <button type="button" className="text-red-600" onClick={() => removeVariant(idx)}>Supprimer</button>
               </div>
