@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { removeFromCart, updateCartItemQuantity, clearCart, selectCartItems, selectCartItemCount, selectCartTotal } from '../store/slices/cartSlice';
+import { removeFromCart, updateCartItemQuantity, clearCart, selectCartItems, selectCartTotal } from '../store/slices/cartSlice';
 import { ShoppingCartIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -12,7 +12,6 @@ const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const items = useSelector(selectCartItems);
-  const totalItems = useSelector(selectCartItemCount);
   const totalAmount = useSelector(selectCartTotal);
 
   // États pour les informations de livraison
