@@ -45,7 +45,7 @@ const HeroSlider = ({ slides = [] }) => {
               src={slide.image}
               alt={slide.title || 'Banner'}
               loading={index === 0 ? 'eager' : 'lazy'}
-              fetchpriority={index === 0 ? 'high' : 'low'}
+              fetchPriority={index === 0 ? 'high' : 'low'}
               decoding={index === 0 ? 'sync' : 'async'}
               width="1920"
               height="700"

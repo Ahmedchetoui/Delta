@@ -18,9 +18,9 @@ export function optimizeImageUrl(src, width = 800) {
   return src;
 }
 
-export function resolveImageUrl(src) {
+export function resolveImageUrl(src, width = 800) {
   if (!src) return PLACEHOLDER_IMAGE;
-  if (/^https?:\/\//i.test(src)) return optimizeImageUrl(src);
+  if (/^https?:\/\//i.test(src)) return optimizeImageUrl(src, width);
   const origin = getApiOrigin();
   if (src.startsWith('/uploads/')) return `${origin}${src}`;
   if (src.startsWith('uploads/')) return `${origin}/${src}`;

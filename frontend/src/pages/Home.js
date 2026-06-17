@@ -127,8 +127,8 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {(featuredProducts.length > 0 ? featuredProducts : newProducts).map((product) => (
-              <ProductCard key={product._id} product={product} />
+            {(featuredProducts.length > 0 ? featuredProducts : newProducts).map((product, index) => (
+              <ProductCard key={product._id} product={product} priority={index < 2} />
             ))}
           </div>
 

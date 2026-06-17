@@ -244,10 +244,10 @@ const Product = () => {
           <div>
             <div className="aspect-square bg-white rounded-lg shadow-md overflow-hidden">
               <img
-                src={resolveImageUrl(currentProduct.images[selectedImage])}
+                src={resolveImageUrl(currentProduct.images[selectedImage], 720)}
                 alt={currentProduct.name}
                 loading="eager"
-                fetchpriority="high"
+                fetchPriority="high"
                 width="600"
                 height="600"
                 className="w-full h-full object-cover"
@@ -267,7 +267,7 @@ const Product = () => {
                       }`}
                   >
                     <img
-                      src={image}
+                      src={resolveImageUrl(image, 150)}
                       alt={`${currentProduct.name} ${index + 1}`}
                       loading="lazy"
                       width="150"
