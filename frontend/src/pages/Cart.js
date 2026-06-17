@@ -6,6 +6,7 @@ import { ShoppingCartIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { resolveImageUrl } from '../utils/imageUtils';
+import { expandCartItemForOrder, formatColorsLabel, normalizeCartColors } from '../utils/cartColors';
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -76,12 +77,7 @@ const Cart = () => {
       const lastName = nameParts.slice(1).join(' ') || firstName;
 
       const orderData = {
-        items: items.map(item => ({
-          product: item.product._id,
-          quantity: item.quantity,
-          size: item.size || null,
-          color: item.color || null
-        })),
+        items: items.flatMap((item) => expandCartItemForOrder(item)),
         shippingAddress: {
           firstName: firstName,
           lastName: lastName,
@@ -294,7 +290,13 @@ const Cart = () => {
                     <div>
                       <div className="font-medium text-gray-900">{item.product?.name}</div>
                       <div className="text-sm text-gray-500">
-                        {item.size && `Taille: ${item.size}`} {item.color && `Couleur: ${item.color}`}
+                        {item.size && `Taille: ${item.size}`}
+                        {normalizeCartColors(item).length > 0 && (
+                          <span>
+                            {item.size ? ' · ' : ''}
+                            Couleur{item.quantity > 1 ? 's' : ''}: {formatColorsLabel(normalizeCartColors(item))}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

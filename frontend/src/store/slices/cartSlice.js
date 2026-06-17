@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { buildCartItemId, normalizeCartColors } from '../../utils/cartColors';
 
 // Fonction pour charger le panier depuis localStorage
 const loadCartFromStorage = () => {
@@ -32,32 +33,33 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     addToCart: (state, action) => {
-      const { product, quantity = 1, size, color } = action.payload;
-      
-      // Vérifier si le produit existe déjà dans le panier avec la même taille et couleur
-      const existingItemIndex = state.items.findIndex(
-        item => 
-          item.product._id === product._id && 
-          item.size === size && 
-          item.color === color
-      );
-      
+      const { product, quantity = 1, size, color, colors } = action.payload;
+      const unitColors = Array.isArray(colors) && colors.length > 0
+        ? colors
+        : (color ? Array(quantity).fill(color) : []);
+      const itemId = buildCartItemId(product._id, size, unitColors);
+
+      const existingItemIndex = state.items.findIndex((item) => item.id === itemId);
+
       if (existingItemIndex >= 0) {
-        // Augmenter la quantité
-        state.items[existingItemIndex].quantity += quantity;
+        const existing = state.items[existingItemIndex];
+        existing.quantity += quantity;
+        if (unitColors.length > 0) {
+          existing.colors = [...(existing.colors || []), ...unitColors];
+        }
       } else {
-        // Ajouter un nouvel article
         state.items.push({
-          id: `${product._id}-${size || 'default'}-${color || 'default'}`,
+          id: itemId,
           product,
           quantity,
           size: size || null,
-          color: color || null,
+          colors: unitColors,
+          color: unitColors[0] || color || null,
           price: product.price,
           addedAt: new Date().toISOString(),
         });
       }
-      
+
       saveCartToStorage(state.items);
     },
     
@@ -69,14 +71,30 @@ const cartSlice = createSlice({
     
     updateQuantity: (state, action) => {
       const { itemId, quantity } = action.payload;
-      const item = state.items.find(item => item.id === itemId);
-      
+      const item = state.items.find((cartItem) => cartItem.id === itemId);
+
       if (item) {
         if (quantity <= 0) {
-          // Supprimer l'article si la quantité est 0 ou négative
-          state.items = state.items.filter(item => item.id !== itemId);
+          state.items = state.items.filter((cartItem) => cartItem.id !== itemId);
         } else {
+          const currentColors = normalizeCartColors(item);
+          let nextColors = currentColors;
+
+          if (currentColors.length > 0) {
+            if (quantity > currentColors.length) {
+              const lastColor = currentColors[currentColors.length - 1] || '';
+              nextColors = [
+                ...currentColors,
+                ...Array(quantity - currentColors.length).fill(lastColor),
+              ];
+            } else {
+              nextColors = currentColors.slice(0, quantity);
+            }
+          }
+
           item.quantity = quantity;
+          item.colors = nextColors;
+          item.color = nextColors[0] || item.color || null;
         }
         saveCartToStorage(state.items);
       }

@@ -18,7 +18,7 @@ const Product = () => {
   const { currentProduct, loading } = useSelector((state) => state.products);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedColors, setSelectedColors] = useState(['']);
   const [quantity, setQuantity] = useState(1);
 
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -56,10 +56,54 @@ const Product = () => {
   const colorRequired = displayColors.length > 0;
 
   useEffect(() => {
-    if (selectedColor && !availableColorsForSize.some((c) => c.name === selectedColor)) {
-      setSelectedColor('');
-    }
-  }, [selectedSize, availableColorsForSize, selectedColor]);
+    setSelectedColors((prev) => {
+      if (quantity > prev.length) {
+        return [...prev, ...Array(quantity - prev.length).fill('')];
+      }
+      return prev.slice(0, quantity);
+    });
+  }, [quantity]);
+
+  useEffect(() => {
+    setSelectedColors((prev) =>
+      prev.map((color) =>
+        color && availableColorsForSize.some((c) => c.name === color) ? color : ''
+      )
+    );
+  }, [selectedSize, availableColorsForSize]);
+
+  const setColorAtIndex = (index, colorName) => {
+    setSelectedColors((prev) => {
+      const next = [...prev];
+      next[index] = colorName;
+      return next;
+    });
+  };
+
+  const renderColorSwatches = (selected, onSelect, keyPrefix = '') => (
+    <div className="flex flex-wrap gap-4">
+      {availableColorsForSize.map((color) => {
+        const isSelected = selected === color.name;
+        const hex = color.code || colorNameToHex(color.name);
+        return (
+          <div key={`${keyPrefix}${color.name}`} className="flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => onSelect(color.name)}
+              className={`w-9 h-9 rounded-full border-2 ${
+                isSelected ? 'border-gray-900 ring-2 ring-offset-2 ring-gray-400' : 'border-gray-300'
+              }`}
+              style={{ backgroundColor: hex }}
+              title={color.name}
+            />
+            <span className="text-xs text-gray-600 mt-1 text-center max-w-[72px]">
+              {color.name}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   useEffect(() => {
     if (id) {
@@ -85,18 +129,26 @@ const Product = () => {
       toast.error('Veuillez sélectionner une taille');
       return;
     }
-    if (colorRequired && !selectedColor) {
-      toast.error('Veuillez sélectionner une couleur');
-      return;
+    if (colorRequired) {
+      const colorsForOrder = selectedColors.slice(0, quantity);
+      if (colorsForOrder.length < quantity || colorsForOrder.some((c) => !c)) {
+        toast.error(
+          quantity === 1
+            ? 'Veuillez sélectionner une couleur'
+            : `Veuillez sélectionner une couleur pour chaque article (${quantity} couleurs)`
+        );
+        return;
+      }
     }
 
     try {
-      // Ajouter au panier au lieu de créer directement la commande
+      const colorsForCart = colorRequired ? selectedColors.slice(0, quantity) : [];
       const cartItem = {
         product: currentProduct,
-        quantity: parseInt(quantity),
+        quantity: parseInt(quantity, 10),
         size: selectedSize || null,
-        color: selectedColor || null
+        colors: colorsForCart,
+        color: colorsForCart[0] || null,
       };
 
       // Stocker les informations de livraison pour la confirmation finale
@@ -254,34 +306,58 @@ const Product = () => {
               </div>
             )}
 
-            {/* Couleur */}
+            {/* Quantité */}
+            <div className="bg-white border border-gray-300 rounded-lg p-3">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Quantité:</h3>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                >
+                  -
+                </button>
+                <span className="w-8 text-center font-medium text-sm">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Couleur(s) — une par article */}
             {displayColors.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  Couleur <span className="text-red-500">*</span>
+                  {quantity === 1 ? 'Couleur' : 'Couleurs'}{' '}
+                  <span className="text-red-500">*</span>
+                  {quantity > 1 && (
+                    <span className="text-gray-500 font-normal text-xs ml-1">
+                      (1 couleur par article)
+                    </span>
+                  )}
                 </h3>
-                <div className="flex flex-wrap gap-4">
-                  {availableColorsForSize.map((color) => {
-                    const isSelected = selectedColor === color.name;
-                    const hex = color.code || colorNameToHex(color.name);
-                    return (
-                      <div key={color.name} className="flex flex-col items-center">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedColor(color.name)}
-                          className={`w-9 h-9 rounded-full border-2 ${
-                            isSelected ? 'border-gray-900 ring-2 ring-offset-2 ring-gray-400' : 'border-gray-300'
-                          }`}
-                          style={{ backgroundColor: hex }}
-                          title={color.name}
-                        />
-                        <span className="text-xs text-gray-600 mt-1 text-center max-w-[72px]">
-                          {color.name}
-                        </span>
+                {quantity === 1 ? (
+                  renderColorSwatches(selectedColors[0] || '', (name) => setColorAtIndex(0, name))
+                ) : (
+                  <div className="space-y-4">
+                    {Array.from({ length: quantity }, (_, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <p className="text-xs font-medium text-gray-600 mb-2">
+                          Article {index + 1}
+                        </p>
+                        {renderColorSwatches(
+                          selectedColors[index] || '',
+                          (name) => setColorAtIndex(index, name),
+                          `${index}-`
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -347,27 +423,6 @@ const Product = () => {
               </div>
             </div>
 
-            {/* Quantité */}
-            <div className="bg-white border border-gray-300 rounded-lg p-3">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Quantité:</h3>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
-                >
-                  -
-                </button>
-                <span className="w-8 text-center font-medium text-sm">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Bouton Ajouter au Panier */}
             <button
               onClick={handleAddToCart}
               disabled={!productHasStock(currentProduct)}
@@ -422,7 +477,7 @@ const Product = () => {
                     setPhone('');
                     setStreetAddress('');
                     setSelectedSize('');
-                    setSelectedColor('');
+                    setSelectedColors(['']);
                     setQuantity(1);
                   }}
                   className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors"
