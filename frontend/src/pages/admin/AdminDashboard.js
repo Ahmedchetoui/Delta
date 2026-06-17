@@ -176,8 +176,9 @@ const AdminDashboard = () => {
                         <ArrowTrendingUpIcon className="w-5 h-5 text-blue-500" />
                         Évolution du Chiffre d'Affaires
                     </h2>
-                    <div className="h-80 w-full min-h-[320px]">
-                        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+                    <div className="h-80 w-full" style={{ minWidth: 0 }}>
+                        {dashboardData && (
+                        <ResponsiveContainer width="100%" height={320}>
                             <AreaChart data={dashboardData?.monthlyStats || []}>
                                 <defs>
                                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -211,6 +212,7 @@ const AdminDashboard = () => {
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
 
@@ -220,8 +222,9 @@ const AdminDashboard = () => {
                         <ChartPieIcon className="w-5 h-5 text-purple-500" />
                         État des Commandes
                     </h2>
-                    <div className="h-64 w-full min-h-[256px] relative">
-                        <ResponsiveContainer width="100%" height="100%" minHeight={256}>
+                    <div className="h-64 w-full relative" style={{ minWidth: 0 }}>
+                        {orderStatusData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={256}>
                             <PieChart>
                                 <Pie
                                     data={orderStatusData}
@@ -240,7 +243,12 @@ const AdminDashboard = () => {
                                 <Legend verticalAlign="bottom" height={36} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-[60%] text-center">
+                        ) : (
+                        <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                            Aucune donnée de commande
+                        </div>
+                        )}
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-[60%] text-center pointer-events-none">
                             <span className="text-3xl font-bold text-gray-800">{dashboardData?.summary?.totalOrders}</span>
                             <p className="text-xs text-gray-500">Total</p>
                         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { adminService } from '../../services/api';
 import { toast } from 'react-toastify';
@@ -6,11 +6,22 @@ import { toast } from 'react-toastify';
 const OrderStatusModal = ({ order, isOpen, onClose, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    orderStatus: order?.orderStatus || '',
-    paymentStatus: order?.paymentStatus || '',
-    trackingNumber: order?.trackingNumber || '',
-    adminNotes: order?.notes?.admin || ''
+    orderStatus: 'pending',
+    paymentStatus: 'pending',
+    trackingNumber: '',
+    adminNotes: ''
   });
+
+  useEffect(() => {
+    if (order && isOpen) {
+      setFormData({
+        orderStatus: order.orderStatus || 'pending',
+        paymentStatus: order.paymentStatus || 'pending',
+        trackingNumber: order.trackingNumber || '',
+        adminNotes: order.notes?.admin || ''
+      });
+    }
+  }, [order, isOpen]);
 
   if (!isOpen || !order) return null;
 
@@ -40,13 +51,25 @@ const OrderStatusModal = ({ order, isOpen, onClose, onUpdate }) => {
     setLoading(true);
 
     try {
-      await adminService.updateOrderStatus(order._id, formData);
+      const payload = {
+        orderStatus: formData.orderStatus,
+        paymentStatus: formData.paymentStatus,
+      };
+      if (formData.trackingNumber?.trim()) {
+        payload.trackingNumber = formData.trackingNumber.trim();
+      }
+      if (formData.adminNotes?.trim()) {
+        payload.adminNotes = formData.adminNotes.trim();
+      }
+
+      await adminService.updateOrderStatus(order._id, payload);
       toast.success('Statut de la commande mis à jour avec succès');
       onUpdate();
       onClose();
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
-      toast.error('Erreur lors de la mise à jour du statut');
+      const details = error?.response?.data?.errors?.map((e) => e.msg).join(', ');
+      toast.error(details || error?.response?.data?.message || 'Erreur lors de la mise à jour du statut');
     } finally {
       setLoading(false);
     }

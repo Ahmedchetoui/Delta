@@ -805,15 +805,15 @@ router.put('/orders/:id/status', [
     .isIn(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'])
     .withMessage('Statut de commande invalide'),
   body('paymentStatus')
-    .optional()
+    .optional({ checkFalsy: true })
     .isIn(['pending', 'paid', 'failed', 'refunded'])
     .withMessage('Statut de paiement invalide'),
   body('trackingNumber')
-    .optional()
+    .optional({ checkFalsy: true })
     .isLength({ max: 100 })
     .withMessage('Numéro de suivi invalide'),
   body('adminNotes')
-    .optional()
+    .optional({ checkFalsy: true })
     .isLength({ max: 500 })
     .withMessage('Notes trop longues')
 ], async (req, res) => {
