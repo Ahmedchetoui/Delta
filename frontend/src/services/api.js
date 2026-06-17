@@ -83,6 +83,7 @@ export const productService = {
   getFeaturedProducts: () => api.get('/products/featured'),
   getNewProducts: () => api.get('/products/new'),
   getOnSaleProducts: () => api.get('/products/on-sale'),
+  getHomeData: () => api.get('/home'),
 };
 
 // Services des catégories

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { getApiBaseUrl } from '../../config/apiConfig';
+import { fetchHomeData } from './homeSlice';
 
 const API_URL = getApiBaseUrl();
 const REQUEST_TIMEOUT = 15000;
@@ -266,7 +267,9 @@ const productSlice = createSlice({
 
       // Fetch Featured Products
       .addCase(fetchFeaturedProducts.pending, (state) => {
-        state.isLoading = true;
+        if (state.featuredProducts.length === 0 && state.newProducts.length === 0) {
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(fetchFeaturedProducts.fulfilled, (state, action) => {
@@ -281,7 +284,9 @@ const productSlice = createSlice({
 
       // Fetch New Products
       .addCase(fetchNewProducts.pending, (state) => {
-        state.isLoading = true;
+        if (state.featuredProducts.length === 0 && state.newProducts.length === 0) {
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(fetchNewProducts.fulfilled, (state, action) => {
@@ -292,6 +297,22 @@ const productSlice = createSlice({
       .addCase(fetchNewProducts.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+      })
+
+      .addCase(fetchHomeData.pending, (state) => {
+        if (state.featuredProducts.length === 0 && state.newProducts.length === 0) {
+          state.isLoading = true;
+        }
+        state.error = null;
+      })
+      .addCase(fetchHomeData.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.featuredProducts = action.payload.featuredProducts || [];
+        state.newProducts = action.payload.newProducts || [];
+        state.error = null;
+      })
+      .addCase(fetchHomeData.rejected, (state) => {
+        state.isLoading = false;
       })
 
       // Fetch Sale Products

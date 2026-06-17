@@ -4,6 +4,12 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadProductImages, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
+const publicCache = require('../middleware/publicCache');
+const {
+  sanitizeProductForClient,
+  enrichProduct,
+  mapProductsForClient,
+} = require('../utils/catalogHelpers');
 
 const router = express.Router();
 
@@ -35,53 +41,8 @@ function isAdminUser(req) {
   return req.user?.role === 'admin';
 }
 
-function sanitizeProductForClient(product) {
-  const variantStockTotal = (product.variants || []).reduce(
-    (sum, v) => sum + (v.stock || 0),
-    0
-  );
-  const hasVariantStock = (product.variants || []).some((v) => (v.stock || 0) > 0);
-  const inStock =
-    (product.totalStock || 0) > 0 || variantStockTotal > 0 || hasVariantStock;
-
-  const sanitized = { ...product, inStock };
-  delete sanitized.totalStock;
-
-  if (sanitized.variants?.length) {
-    sanitized.variants = sanitized.variants.map((v) => {
-      const stock = v.stock || 0;
-      const entry = {
-        size: String(v.size ?? '').trim(),
-        color: String(v.color ?? '').trim(),
-        inStock: stock > 0,
-      };
-      if (v.price != null) entry.price = v.price;
-      return entry;
-    });
-  }
-
-  if (!sanitized.colors?.length && sanitized.variants?.length) {
-    const names = [
-      ...new Set(sanitized.variants.map((v) => v.color).filter(Boolean)),
-    ];
-    sanitized.colors = names.map((name) => ({ name, code: '' }));
-  }
-
-  return sanitized;
-}
-
 function maybeSanitizeProduct(product, req) {
   return isAdminUser(req) ? product : sanitizeProductForClient(product);
-}
-
-function enrichProduct(product) {
-  return {
-    ...product,
-    images: product.images.map((image) => getImageUrl(image)),
-    finalPrice: product.discount > 0 && product.originalPrice
-      ? product.originalPrice * (1 - product.discount / 100)
-      : product.price,
-  };
 }
 
 // Validation pour la création/mise à jour de produit
@@ -252,7 +213,7 @@ router.get('/', [
 // @route   GET /api/products/featured
 // @desc    Obtenir les produits en vedette
 // @access  Public
-router.get('/featured', async (req, res) => {
+router.get('/featured', publicCache(300), async (req, res) => {
   try {
     const products = await Product.find({
       isActive: true,
@@ -263,9 +224,7 @@ router.get('/featured', async (req, res) => {
       .limit(8)
       .lean();
 
-    const productsWithUrls = products.map((product) =>
-      sanitizeProductForClient(enrichProduct(product))
-    );
+    const productsWithUrls = mapProductsForClient(products);
 
     res.json({ products: productsWithUrls });
 
@@ -280,7 +239,7 @@ router.get('/featured', async (req, res) => {
 // @route   GET /api/products/new
 // @desc    Obtenir les nouveaux produits
 // @access  Public
-router.get('/new', async (req, res) => {
+router.get('/new', publicCache(300), async (req, res) => {
   try {
     const products = await Product.find({
       isActive: true,
@@ -291,9 +250,7 @@ router.get('/new', async (req, res) => {
       .limit(8)
       .lean();
 
-    const productsWithUrls = products.map((product) =>
-      sanitizeProductForClient(enrichProduct(product))
-    );
+    const productsWithUrls = mapProductsForClient(products);
 
     res.json({ products: productsWithUrls });
 

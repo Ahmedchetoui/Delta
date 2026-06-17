@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import productReducer from './slices/productSlice';
 import cartReducer from './slices/cartSlice';
 import categoryReducer from './slices/categorySlice';
+import homeReducer from './slices/homeSlice';
 import orderReducer from './slices/orderSlice';
 import uiReducer from './slices/uiSlice';
 import adminRequestReducer from './slices/adminRequestSlice';
@@ -13,6 +14,7 @@ export const store = configureStore({
     products: productReducer,
     cart: cartReducer,
     categories: categoryReducer,
+    home: homeReducer,
     orders: orderReducer,
     ui: uiReducer,
     adminRequests: adminRequestReducer,

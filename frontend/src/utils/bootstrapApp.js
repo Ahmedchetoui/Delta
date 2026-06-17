@@ -1,7 +1,5 @@
-import { fetchFeaturedProducts, fetchNewProducts } from '../store/slices/productSlice';
-import { fetchCategories } from '../store/slices/categorySlice';
+import { fetchHomeData } from '../store/slices/homeSlice';
 import { store } from '../store/store';
-import api from '../services/api';
 import { resolveImageUrl } from './imageUtils';
 
 const DEFAULT_BANNER_IMAGE =
@@ -21,12 +19,12 @@ export function preloadImage(src) {
   });
 }
 
-function collectCriticalImages(featuredProducts = [], bannerImage) {
+function collectCriticalImages(products = [], bannerImage) {
   const urls = new Set();
 
   if (bannerImage) urls.add(bannerImage);
 
-  featuredProducts.slice(0, 4).forEach((product) => {
+  products.slice(0, 4).forEach((product) => {
     const image = product?.images?.[0];
     if (image) urls.add(resolveImageUrl(image, 480));
   });
@@ -35,7 +33,7 @@ function collectCriticalImages(featuredProducts = [], bannerImage) {
 }
 
 export async function bootstrapApp(dispatch) {
-  const minSplashMs = 1400;
+  const minSplashMs = 1000;
   const maxWaitMs = 6000;
 
   const minDelay = new Promise((resolve) => {
@@ -43,26 +41,17 @@ export async function bootstrapApp(dispatch) {
   });
 
   const dataPromise = (async () => {
-    const [, , bannersResult] = await Promise.allSettled([
-      dispatch(fetchFeaturedProducts()),
-      dispatch(fetchCategories()),
-      api.get('/banners'),
-    ]);
+    await dispatch(fetchHomeData());
 
-    let bannerImage = DEFAULT_BANNER_IMAGE;
-    if (bannersResult.status === 'fulfilled') {
-      const banners = bannersResult.value?.data?.banners || [];
-      if (banners[0]?.image) {
-        bannerImage = resolveImageUrl(banners[0].image, 1200);
-      }
-    }
+    const state = store.getState();
+    const products = state.products.featuredProducts.length > 0
+      ? state.products.featuredProducts
+      : state.products.newProducts;
 
-    let products = store.getState().products?.featuredProducts || [];
-
-    if (products.length === 0) {
-      await dispatch(fetchNewProducts());
-      products = store.getState().products?.newProducts || [];
-    }
+    const bannerFromApi = state.home.banners[0]?.image;
+    const bannerImage = bannerFromApi
+      ? resolveImageUrl(bannerFromApi, 1200)
+      : DEFAULT_BANNER_IMAGE;
 
     const images = collectCriticalImages(products, bannerImage);
     await Promise.all(images.map((url) => preloadImage(url)));

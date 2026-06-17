@@ -4,27 +4,13 @@ const Category = require('../models/Category');
 const Product = require('../models/Product');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
+const publicCache = require('../middleware/publicCache');
+const {
+  getProductCountsByCategory,
+  enrichCategoriesWithDetails,
+} = require('../utils/catalogHelpers');
 
 const router = express.Router();
-
-async function getProductCountsByCategory(categoryIds) {
-  if (!categoryIds.length) return {};
-
-  const counts = await Product.aggregate([
-    { $match: { category: { $in: categoryIds }, isActive: true } },
-    { $group: { _id: '$category', count: { $sum: 1 } } }
-  ]);
-
-  return Object.fromEntries(counts.map(({ _id, count }) => [_id.toString(), count]));
-}
-
-function enrichCategoriesWithDetails(categories, countMap) {
-  return categories.map((category) => ({
-    ...category,
-    image: category.image ? getImageUrl(category.image) : null,
-    productCount: countMap[category._id.toString()] || 0
-  }));
-}
 
 // Validation pour la création/mise à jour de catégorie
 const categoryValidation = [
@@ -49,7 +35,7 @@ const categoryValidation = [
 // @route   GET /api/categories
 // @desc    Obtenir toutes les catégories
 // @access  Public
-router.get('/', optionalAuth, async (req, res) => {
+router.get('/', publicCache(300), optionalAuth, async (req, res) => {
   try {
     const { includeInactive = false } = req.query;
 
@@ -69,7 +55,7 @@ router.get('/', optionalAuth, async (req, res) => {
       .lean();
 
     const categoryIds = categories.map((category) => category._id);
-    const countMap = await getProductCountsByCategory(categoryIds);
+    const countMap = await getProductCountsByCategory(Product, categoryIds);
     const categoriesWithDetails = enrichCategoriesWithDetails(categories, countMap);
 
     res.json({ categories: categoriesWithDetails });
@@ -92,7 +78,7 @@ router.get('/tree', async (req, res) => {
       category._id,
       ...category.subCategories.map((sub) => sub._id)
     ]);
-    const countMap = await getProductCountsByCategory(allCategoryIds);
+    const countMap = await getProductCountsByCategory(Product, allCategoryIds);
 
     const treeWithDetails = categoryTree.map((category) => ({
       ...category,

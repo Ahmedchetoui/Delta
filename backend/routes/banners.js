@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const Banner = require('../models/Banner');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
+const publicCache = require('../middleware/publicCache');
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ const bannerValidation = [
 // @route   GET /api/banners
 // @desc    Obtenir toutes les bannières (admin) ou actives (public)
 // @access  Public pour les actives, Admin pour toutes
-router.get('/', optionalAuth, async (req, res) => {
+router.get('/', publicCache(300), optionalAuth, async (req, res) => {
   try {
     const { includeInactive = false } = req.query;
     let banners;

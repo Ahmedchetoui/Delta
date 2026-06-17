@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 import { getApiBaseUrl } from '../../config/apiConfig';
+import { fetchHomeData } from './homeSlice';
 
 const API_URL = getApiBaseUrl();
 
@@ -123,7 +124,9 @@ const categorySlice = createSlice({
     builder
       // Fetch Categories
       .addCase(fetchCategories.pending, (state) => {
-        state.isLoading = true;
+        if (state.categories.length === 0) {
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
@@ -135,7 +138,22 @@ const categorySlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      
+
+      .addCase(fetchHomeData.pending, (state) => {
+        if (state.categories.length === 0) {
+          state.isLoading = true;
+        }
+        state.error = null;
+      })
+      .addCase(fetchHomeData.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.categories = action.payload.categories || [];
+        state.error = null;
+      })
+      .addCase(fetchHomeData.rejected, (state) => {
+        state.isLoading = false;
+      })
+
       // Fetch Category Tree
       .addCase(fetchCategoryTree.pending, (state) => {
         state.isLoading = true;

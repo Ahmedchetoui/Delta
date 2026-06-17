@@ -112,14 +112,17 @@ const ProductCard = ({ product, priority = false }) => {
             <span className="text-xs font-semibold text-gray-500">Couleurs:</span>
             {colorItems.length > 0 ? (
               <div className="flex gap-1.5">
-                {colorItems.map((c) => (
+                {colorItems.map((c) => {
+                  const hex = c.code || colorNameToHex(c.name);
+                  return (
                   <span
                     key={c.name}
-                    className="w-5 h-5 rounded-full border-2 border-gray-300 shadow-sm"
-                    style={{ backgroundColor: colorNameToHex(c.name) }}
+                    className="w-5 h-5 rounded-full border-2 border-gray-400 shadow-sm"
+                    style={{ backgroundColor: hex }}
                     title={c.name}
                   />
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <span className="text-xs text-gray-400">-</span>

@@ -1,70 +1,64 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { fetchFeaturedProducts, fetchNewProducts } from '../store/slices/productSlice';
-import { fetchCategories } from '../store/slices/categorySlice';
+import { fetchHomeData } from '../store/slices/homeSlice';
 import Skeleton from '../components/ui/Skeleton';
 import ProductCard from '../components/product/ProductCard';
 import HeroSlider from '../components/ui/HeroSlider';
-import api from '../services/api';
 import { resolveImageUrl } from '../utils/imageUtils';
+
+const DEFAULT_BANNERS = [
+  {
+    _id: 'default-1',
+    title: 'Nouvelle Collection Automne 2026',
+    subtitle: 'Découvrez notre sélection de vêtements tendance et élégants pour toute la famille',
+    image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
+    buttonLink: '/shop',
+    buttonText: 'Découvrir',
+    backgroundColor: '#f8f9fa',
+    textColor: '#ffffff',
+    position: 'center',
+  },
+];
 
 const Home = () => {
   const dispatch = useDispatch();
-  const { featuredProducts = [], newProducts = [] } = useSelector((state) => state.products || {});
-  const { categories = [], isLoading: categoriesLoading } = useSelector((state) => state.categories || {});
-  const [banners, setBanners] = useState([]);
-
-  // ... (defaultBanners and loadBanners remain the same)
-  const defaultBanners = React.useMemo(() => [
-    {
-      _id: 'default-1',
-      title: "Nouvelle Collection Automne 2026",
-      subtitle: "Découvrez notre sélection de vêtements tendance et élégants pour toute la famille",
-      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      buttonLink: "/shop",
-      buttonText: "Découvrir",
-      backgroundColor: "#f8f9fa",
-      textColor: "#ffffff",
-      position: "center"
-    }
-  ], []);
-
-  const loadBanners = React.useCallback(async () => {
-    try {
-      const response = await api.get('/banners');
-      const apiBanners = response.data?.banners || [];
-      setBanners(apiBanners.length > 0 ? apiBanners : defaultBanners);
-    } catch (error) {
-      console.error('Erreur lors du chargement des bannières:', error);
-      setBanners(defaultBanners);
-    }
-  }, [defaultBanners]);
+  const { featuredProducts = [], newProducts = [], isLoading: productsLoading } = useSelector(
+    (state) => state.products || {}
+  );
+  const { categories = [], isLoading: categoriesLoading } = useSelector(
+    (state) => state.categories || {}
+  );
+  const { banners = [], loadedAt, isLoading: homeLoading } = useSelector(
+    (state) => state.home || {}
+  );
 
   useEffect(() => {
-    dispatch(fetchFeaturedProducts());
-    dispatch(fetchCategories());
-    loadBanners();
-  }, [dispatch, loadBanners]);
-
-  useEffect(() => {
-    if (featuredProducts.length === 0) {
-      dispatch(fetchNewProducts());
+    if (!loadedAt) {
+      dispatch(fetchHomeData());
     }
-  }, [dispatch, featuredProducts.length]);
+  }, [dispatch, loadedAt]);
 
-  const heroSlides = (banners.length > 0 ? banners : defaultBanners).map(banner => ({
-    id: banner._id,
-    title: banner.title,
-    subtitle: banner.subtitle,
-    description: banner.description,
-    image: resolveImageUrl(banner.image),
-    link: banner.buttonLink,
-    buttonText: banner.buttonText,
-    backgroundColor: banner.backgroundColor,
-    textColor: banner.textColor,
-    position: banner.position
-  }));
+  const displayProducts = featuredProducts.length > 0 ? featuredProducts : newProducts;
+  const showCategorySkeleton = categoriesLoading && categories.length === 0;
+  const showProductSkeleton =
+    (homeLoading || productsLoading) && displayProducts.length === 0;
+
+  const heroSlides = useMemo(() => {
+    const source = banners.length > 0 ? banners : DEFAULT_BANNERS;
+    return source.map((banner) => ({
+      id: banner._id,
+      title: banner.title,
+      subtitle: banner.subtitle,
+      description: banner.description,
+      image: resolveImageUrl(banner.image),
+      link: banner.buttonLink,
+      buttonText: banner.buttonText,
+      backgroundColor: banner.backgroundColor,
+      textColor: banner.textColor,
+      position: banner.position,
+    }));
+  }, [banners]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -81,8 +75,7 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {categoriesLoading ? (
-              // Skeletons while loading
+            {showCategorySkeleton ? (
               [...Array(4)].map((_, i) => (
                 <div key={i} className="relative h-72 rounded-2xl overflow-hidden shadow-lg">
                   <Skeleton className="w-full h-full" />
@@ -93,24 +86,24 @@ const Home = () => {
                 .filter((c) => !c.parentCategory)
                 .slice(0, 4)
                 .map((category) => (
-                <Link key={category._id} to={`/shop?category=${category._id}`} className="group">
-                  <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
-                    <img
-                      src={resolveImageUrl(category.image)}
-                      alt={category.name}
-                      loading="lazy"
-                      width="600"
-                      height="800"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                    <div className="absolute bottom-6 left-6">
-                      <h3 className="text-white text-2xl font-bold capitalize mb-2">{category.name}</h3>
-                      <span className="text-blue-400 font-medium">Découvrir →</span>
+                  <Link key={category._id} to={`/shop?category=${category._id}`} className="group">
+                    <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
+                      <img
+                        src={resolveImageUrl(category.image)}
+                        alt={category.name}
+                        loading="lazy"
+                        width="600"
+                        height="800"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                      <div className="absolute bottom-6 left-6">
+                        <h3 className="text-white text-2xl font-bold capitalize mb-2">{category.name}</h3>
+                        <span className="text-blue-400 font-medium">Découvrir →</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))
+                  </Link>
+                ))
             )}
           </div>
         </div>
@@ -127,13 +120,29 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {(featuredProducts.length > 0 ? featuredProducts : newProducts).map((product, index) => (
-              <ProductCard key={product._id} product={product} priority={index < 2} />
-            ))}
+            {showProductSkeleton ? (
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                  <Skeleton className="h-64 w-full" />
+                  <div className="p-5 space-y-3">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-8 w-1/3" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              displayProducts.map((product, index) => (
+                <ProductCard key={product._id} product={product} priority={index < 2} />
+              ))
+            )}
           </div>
 
           <div className="text-center mt-16">
-            <Link to="/shop" className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl">
+            <Link
+              to="/shop"
+              className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
+            >
               Voir tous les produits →
             </Link>
           </div>
@@ -173,7 +182,7 @@ const Home = () => {
 
       {/* Newsletter */}
       <section id="newsletter" className="py-20 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 relative overflow-hidden">
-        <div className="absolute inset-0 pattern-overlay opacity-10"></div>
+        <div className="absolute inset-0 pattern-overlay opacity-10" />
         <div className="relative max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Restez Informé</h2>
           <p className="text-xl text-blue-100 mb-10">Recevez nos dernières offres et nouveautés</p>
