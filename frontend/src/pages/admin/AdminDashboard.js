@@ -176,8 +176,8 @@ const AdminDashboard = () => {
                         <ArrowTrendingUpIcon className="w-5 h-5 text-blue-500" />
                         Évolution du Chiffre d'Affaires
                     </h2>
-                    <div className="h-80 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                    <div className="h-80 w-full min-h-[320px]">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                             <AreaChart data={dashboardData?.monthlyStats || []}>
                                 <defs>
                                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -220,8 +220,8 @@ const AdminDashboard = () => {
                         <ChartPieIcon className="w-5 h-5 text-purple-500" />
                         État des Commandes
                     </h2>
-                    <div className="h-64 w-full relative">
-                        <ResponsiveContainer width="100%" height="100%">
+                    <div className="h-64 w-full min-h-[256px] relative">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={256}>
                             <PieChart>
                                 <Pie
                                     data={orderStatusData}

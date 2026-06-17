@@ -137,6 +137,9 @@ const orderSchema = new mongoose.Schema({
   },
   giftMessage: String,
   deliveredAt: Date,
+  confirmedAt: Date,
+  processingAt: Date,
+  shippedAt: Date,
   cancelledAt: Date,
   cancelledBy: {
     type: mongoose.Schema.Types.ObjectId,

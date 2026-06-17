@@ -844,10 +844,10 @@ router.put('/orders/:id/status', [
       order.trackingNumber = trackingNumber;
     }
     if (adminNotes) {
+      if (!order.notes) order.notes = {};
       order.notes.admin = adminNotes;
     }
 
-    // Ajouter des timestamps spécifiques selon le statut
     const now = new Date();
     switch (orderStatus) {
       case 'confirmed':
@@ -864,7 +864,7 @@ router.put('/orders/:id/status', [
         break;
       case 'cancelled':
         order.cancelledAt = now;
-        order.cancelledBy = req.user.id;
+        order.cancelledBy = req.user._id;
         break;
     }
 
@@ -926,7 +926,26 @@ router.post('/orders/:id/cancel', [
     }
 
     // Utiliser la méthode du modèle pour annuler
-    order.cancelOrder(reason, req.user.id);
+    order.cancelOrder(reason, req.user._id);
+
+    for (const item of order.items) {
+      const product = await Product.findById(item.product);
+      if (!product) continue;
+
+      product.totalStock += item.quantity;
+
+      if (item.size && item.color) {
+        const variant = product.variants.find(
+          (v) => v.size === item.size && v.color === item.color
+        );
+        if (variant) {
+          variant.stock += item.quantity;
+        }
+      }
+
+      await product.save();
+    }
+
     await order.save();
 
     res.json({

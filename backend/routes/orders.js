@@ -309,7 +309,16 @@ router.post('/', optionalAuth, orderValidation, async (req, res) => {
       }
 
       // Vérifier le stock
-      if (product.totalStock < item.quantity) {
+      if (item.size && item.color && product.variants?.length) {
+        const variant = product.variants.find(
+          (v) => v.size === item.size && v.color === item.color
+        );
+        if (!variant || variant.stock < item.quantity) {
+          return res.status(400).json({
+            message: `Stock insuffisant pour ${product.name} (${item.size}, ${item.color})`
+          });
+        }
+      } else if (product.totalStock < item.quantity) {
         return res.status(400).json({
           message: `Stock insuffisant pour le produit ${product.name}`
         });
@@ -514,7 +523,7 @@ router.put('/:id/cancel', authenticateToken, [
     }
 
     // Annuler la commande
-    order.cancelOrder(reason || 'Annulée par le client', req.user.role === 'admin' ? 'admin' : 'customer');
+    order.cancelOrder(reason || 'Annulée par le client', req.user._id);
 
     // Restaurer le stock des produits
     for (const item of order.items) {
