@@ -52,7 +52,7 @@ const ProductCard = ({ product, priority = false }) => {
             onLoad={() => setIsImageLoaded(true)}
             width="300"
             height="300"
-            className={`w-full h-full object-cover transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full h-full object-cover ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

@@ -24,9 +24,10 @@
     <meta property="twitter:image" content="%PUBLIC_URL%/og-image.jpg" />
 
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     
-    <!-- Google Fonts avec preload -->
+    <!-- API & images -->
+    <link rel="preconnect" href="https://delta-n5d8.onrender.com" crossorigin>
+    <link rel="dns-prefetch" href="https://delta-n5d8.onrender.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap">
@@ -43,9 +44,53 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
     <title>Delta Fashion - Votre style, notre passion</title>
+    <style>
+      #initial-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        transition: opacity 0.3s ease;
+      }
+      #initial-splash.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #initial-splash .spinner {
+        width: 2.5rem;
+        height: 2.5rem;
+        border: 3px solid #e5e7eb;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
     <noscript>Vous devez activer JavaScript pour utiliser cette application.</noscript>
+    <div id="initial-splash" aria-hidden="true"><div class="spinner"></div></div>
     <div id="root"></div>
+    <script>
+      window.addEventListener('DOMContentLoaded', function () {
+        var splash = document.getElementById('initial-splash');
+        if (!splash) return;
+        var hide = function () {
+          splash.classList.add('hidden');
+          setTimeout(function () { splash.remove(); }, 350);
+        };
+        if (document.getElementById('root').childElementCount > 0) hide();
+        var observer = new MutationObserver(function () {
+          if (document.getElementById('root').childElementCount > 0) {
+            hide();
+            observer.disconnect();
+          }
+        });
+        observer.observe(document.getElementById('root'), { childList: true });
+      });
+    </script>
   </body>
 </html>

@@ -9,6 +9,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import LandingPage from './components/layout/LandingPage';
 import ScrollToTop from './components/ui/ScrollToTop';
+import { bootstrapApp } from './utils/bootstrapApp';
 
 // Protected Route Component
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -54,21 +55,39 @@ const PageLoader = () => (
 
 function App() {
   const dispatch = useDispatch();
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(() => {
+    return !(
+      localStorage.getItem('hasSeenLanding') ||
+      sessionStorage.getItem('hasSeenLanding')
+    );
+  });
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       dispatch(getCurrentUser());
     }
+  }, [dispatch]);
 
-    // Vérifier si la landing page a déjà été affichée dans cette session
-    const hasSeenLanding =
-      localStorage.getItem('hasSeenLanding') ||
-      sessionStorage.getItem('hasSeenLanding');
-    if (hasSeenLanding) {
-      setShowLanding(false);
-    }
+  useEffect(() => {
+    let cancelled = false;
+
+    const runBootstrap = async () => {
+      try {
+        await bootstrapApp(dispatch);
+      } finally {
+        if (!cancelled) {
+          setAppReady(true);
+        }
+      }
+    };
+
+    runBootstrap();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch]);
 
   const handleLandingComplete = () => {
@@ -77,9 +96,8 @@ function App() {
     setShowLanding(false);
   };
 
-  // Afficher la landing page au premier chargement
   if (showLanding) {
-    return <LandingPage onComplete={handleLandingComplete} />;
+    return <LandingPage onComplete={handleLandingComplete} isReady={appReady} />;
   }
 
 
