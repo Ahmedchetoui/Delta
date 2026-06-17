@@ -6,7 +6,7 @@ const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10 secondes timeout
+  timeout: 30000, // 30 secondes — pics de charge / file d'attente commandes
   withCredentials: true, // Inclure les cookies pour CORS
 });
 

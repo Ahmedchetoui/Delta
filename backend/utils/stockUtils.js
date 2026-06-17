@@ -155,6 +155,8 @@ module.exports = {
   getAvailableStock,
   findVariant,
   syncTotalStock,
+  applyStockDeduction,
+  applyStockRestore,
   deductOrderStock,
   restoreOrderStock,
 };

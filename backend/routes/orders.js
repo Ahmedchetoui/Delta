@@ -5,8 +5,10 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const { authenticateToken, requireAdmin, requireOwnerOrAdmin, optionalAuth } = require('../middleware/auth');
 
-const { deductOrderStock, restoreOrderStock, getAvailableStock } = require('../utils/stockUtils');
+const { deductOrderStock, restoreOrderStock } = require('../utils/stockUtils');
 const { guestOrderLimiter, orderCreateLimiter } = require('../middleware/rateLimiters');
+const { processOrder } = require('../services/orderQueue');
+const { OrderServiceError } = require('../services/orderService');
 
 const router = express.Router();
 
@@ -27,11 +29,6 @@ function mapOrderImages(order) {
       image: item.image ? `${base}/uploads/${item.image}` : null,
     })),
   };
-}
-
-function productRequiresColor(product) {
-  if (product.colors?.length > 0) return true;
-  return product.variants?.some((v) => v.color && String(v.color).trim()) ?? false;
 }
 
 // Validation pour la création de commande (utilisateurs connectés et invités)
@@ -336,125 +333,16 @@ router.post('/', orderCreateLimiter, optionalAuth, orderValidation, async (req, 
       });
     }
 
-    const {
-      items,
-      shippingAddress,
-      billingAddress,
-      paymentMethod,
-      notes,
-      isGift,
-      giftMessage
-    } = req.body;
-
-    // Vérifier que tous les produits existent et sont disponibles
-    const productIds = items.map(item => item.product);
-    const products = await Product.find({ 
-      _id: { $in: productIds }, 
-      isActive: true 
-    });
-
-    if (products.length !== productIds.length) {
-      return res.status(400).json({
-        message: 'Un ou plusieurs produits ne sont pas disponibles'
-      });
-    }
-
-    // Vérifier le stock et calculer les prix
-    let subtotal = 0;
-    const orderItems = [];
-
-    for (const item of items) {
-      const product = products.find(p => p._id.toString() === item.product);
-      
-      if (!product) {
-        return res.status(400).json({
-          message: `Produit ${item.product} non trouvé`
-        });
-      }
-
-      if (productRequiresColor(product) && !item.color) {
-        return res.status(400).json({
-          message: `Veuillez sélectionner une couleur pour ${product.name}`
-        });
-      }
-
-      // Vérifier le stock (déduction réelle à la confirmation admin)
-      if (item.size && product.variants?.length) {
-        const available = item.color
-          ? getAvailableStock(product, item.size, item.color)
-          : getAvailableStock(product, item.size, null);
-        if (available < item.quantity) {
-          const label = item.color ? `${item.size}, ${item.color}` : item.size;
-          return res.status(400).json({
-            message: `Stock insuffisant pour ${product.name} (${label})`
-          });
-        }
-      } else if (product.totalStock < item.quantity) {
-        return res.status(400).json({
-          message: `Stock insuffisant pour le produit ${product.name}`
-        });
-      }
-
-      // Calculer le prix final
-      const finalPrice = product.getFinalPrice();
-      const itemTotal = finalPrice * item.quantity;
-      subtotal += itemTotal;
-
-      orderItems.push({
-        product: product._id,
-        name: product.name,
-        price: finalPrice,
-        quantity: item.quantity,
-        size: item.size || null,
-        color: item.color || null,
-        image: product.images[0] || null,
-        sku: product.sku || null
-      });
-    }
-
-    // Calculer les frais de livraison (fixe à 7 DT comme dans le frontend)
-    const shippingCost = 7.0;
-    const tax = 0; // Pas de TVA pour simplifier
-    const total = subtotal + shippingCost + tax;
-
-    // Créer la commande (avec ou sans utilisateur connecté)
-    const order = new Order({
-      user: req.user ? req.user._id : null, // null pour les commandes invités
-      items: orderItems,
-      shippingAddress,
-      billingAddress: billingAddress || shippingAddress,
-      paymentMethod,
-      subtotal,
-      shippingCost,
-      tax,
-      total,
-      notes,
-      isGift: isGift === true,
-      giftMessage,
-      // Pour les invités, stocker l'email pour le suivi
-      guestEmail: req.user ? null : shippingAddress.email
-    });
-
-    await order.save();
-
-    // Populate pour la réponse
-    await order.populate([
-      { path: 'user', select: 'firstName lastName email' },
-      { path: 'items.product', select: 'name images slug' }
-    ]);
+    const order = await processOrder(req.body, req.user ? req.user._id : null);
 
     res.status(201).json({
       message: 'Commande créée avec succès',
-      order: {
-        ...order.toObject(),
-        items: order.items.map(item => ({
-          ...item,
-          image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
-        }))
-      }
+      order,
     });
-
   } catch (error) {
+    if (error instanceof OrderServiceError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     console.error('Erreur lors de la création de la commande:', error);
     res.status(500).json({
       message: 'Erreur lors de la création de la commande'

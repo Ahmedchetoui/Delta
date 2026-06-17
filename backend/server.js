@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config();
 const { enabled: cloudinaryEnabled, mode: storageMode, cloudName, verifyCloudinaryConnection } = require('./config/cloudinary');
+const { initOrderQueue, closeOrderQueue, getQueueMode } = require('./services/orderQueue');
 
 const app = express();
 
@@ -180,7 +181,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     message: 'Delta Fashion API is running! 🛍️',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
+    orderQueue: getQueueMode(),
   });
 });
 
@@ -294,6 +296,7 @@ if (isProduction && !process.env.JWT_SECRET) {
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/delta-fashion', {
   serverSelectionTimeoutMS: 10000,
+  maxPoolSize: parseInt(process.env.MONGODB_MAX_POOL_SIZE || '50', 10),
 })
   .then(() => {
     console.log('✅ Connecté à MongoDB');
@@ -319,11 +322,25 @@ mongoose.connection.on('reconnected', () => {
 // Démarrage du serveur
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
+
+initOrderQueue();
+
 app.listen(PORT, HOST, () => {
   console.log(`🚀 Serveur Delta Fashion démarré sur ${HOST}:${PORT}`);
   console.log(`📱 API disponible sur: http://localhost:${PORT}/api`);
   console.log(`🛍️ Mode: ${process.env.NODE_ENV}`);
   console.log(`📦 Stockage images: ${storageMode}${cloudinaryEnabled ? ` (${cloudName})` : ' — fichiers locaux'}`);
+  console.log(`📋 File commandes: ${getQueueMode()}`);
   console.log(`🔗 CORS configuré pour: ${allowedOrigins.join(', ')}`);
   console.log(`📋 Variables d'environnement chargées: ${Object.keys(process.env).filter(k => k.startsWith('CORS_') || k.startsWith('NODE_') || k.startsWith('MONGODB_')).join(', ')}`);
 });
+
+async function shutdown(signal) {
+  console.log(`\n${signal} reçu — arrêt gracieux...`);
+  await closeOrderQueue();
+  await mongoose.connection.close();
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
