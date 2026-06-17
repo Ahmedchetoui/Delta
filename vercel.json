@@ -6,6 +6,14 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "delta-nine-plum.vercel.app" }],
+      "destination": "https://delta-fashion.vercel.app/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/static/(.*)",
