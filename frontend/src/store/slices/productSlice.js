@@ -181,8 +181,10 @@ const initialState = {
     inStock: false,
   },
   isLoading: false,
+  isRefreshing: false,
   isSearching: false,
   error: null,
+  productCache: {},
 };
 
 const productSlice = createSlice({
@@ -221,32 +223,55 @@ const productSlice = createSlice({
     builder
       // Fetch Products
       .addCase(fetchProducts.pending, (state) => {
-        state.isLoading = true;
+        if (state.products.length === 0) {
+          state.isLoading = true;
+        } else {
+          state.isRefreshing = true;
+        }
         state.error = null;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.isLoading = false;
+        state.isRefreshing = false;
         state.products = action.payload.products;
         state.pagination = action.payload.pagination;
         state.error = null;
+        action.payload.products.forEach((product) => {
+          state.productCache[product._id] = { product, loadedAt: Date.now() };
+        });
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.isLoading = false;
+        state.isRefreshing = false;
         state.error = action.payload;
       })
 
       // Fetch Product
-      .addCase(fetchProduct.pending, (state) => {
-        state.isLoading = true;
+      .addCase(fetchProduct.pending, (state, action) => {
+        const id = action.meta.arg;
+        const cached = state.productCache[id]?.product;
+        if (cached) {
+          state.currentProduct = cached;
+          state.isRefreshing = true;
+          state.isLoading = false;
+        } else {
+          state.currentProduct = null;
+          state.isLoading = true;
+          state.isRefreshing = false;
+        }
         state.error = null;
       })
       .addCase(fetchProduct.fulfilled, (state, action) => {
+        const product = action.payload.product;
         state.isLoading = false;
-        state.currentProduct = action.payload.product;
+        state.isRefreshing = false;
+        state.currentProduct = product;
+        state.productCache[product._id] = { product, loadedAt: Date.now() };
         state.error = null;
       })
       .addCase(fetchProduct.rejected, (state, action) => {
         state.isLoading = false;
+        state.isRefreshing = false;
         state.error = action.payload;
       })
 
@@ -310,6 +335,13 @@ const productSlice = createSlice({
         state.featuredProducts = action.payload.featuredProducts || [];
         state.newProducts = action.payload.newProducts || [];
         state.error = null;
+        const allHomeProducts = [
+          ...(action.payload.featuredProducts || []),
+          ...(action.payload.newProducts || []),
+        ];
+        allHomeProducts.forEach((product) => {
+          state.productCache[product._id] = { product, loadedAt: Date.now() };
+        });
       })
       .addCase(fetchHomeData.rejected, (state) => {
         state.isLoading = false;

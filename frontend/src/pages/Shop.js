@@ -24,6 +24,7 @@ const Shop = () => {
   const {
     products,
     isLoading: loading,
+    isRefreshing,
     pagination: {
       totalProducts = 0,
       currentPage = 1,
@@ -234,6 +235,7 @@ const Shop = () => {
             </div>
 
             {/* Products Grid/List */}
+            <div className={isRefreshing ? 'opacity-90 transition-opacity duration-300' : ''}>
             {loading && products.length === 0 ? (
               <div className={`grid gap-6 ${viewMode === 'grid'
                 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
@@ -326,6 +328,7 @@ const Shop = () => {
                 </button>
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>

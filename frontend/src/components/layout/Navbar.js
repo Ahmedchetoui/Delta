@@ -9,6 +9,7 @@ import {
   UserIcon
 } from '@heroicons/react/24/outline';
 import { logout } from '../../store/slices/authSlice';
+import { prefetchShopProducts } from '../../utils/prefetch';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -55,6 +56,10 @@ const Navbar = () => {
     }
   };
 
+  const handleShopPrefetch = () => {
+    prefetchShopProducts(dispatch);
+  };
+
   const handleNavClick = (e, path) => {
     if (path === '/' && location.pathname === '/') {
       e.preventDefault();
@@ -89,7 +94,12 @@ const Navbar = () => {
             <Link to="/" onClick={(e) => handleNavClick(e, '/')} className={linkClasses}>
               Accueil
             </Link>
-            <Link to="/shop" className={linkClasses}>
+            <Link
+              to="/shop"
+              className={linkClasses}
+              onMouseEnter={handleShopPrefetch}
+              onFocus={handleShopPrefetch}
+            >
               Boutique
             </Link>
             <Link to="/about" className={linkClasses}>
@@ -228,7 +238,11 @@ const Navbar = () => {
               <Link to="/" onClick={(e) => handleNavClick(e, '/')} className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 border-b border-gray-200/50 w-3/4 mx-auto">
                 Accueil
               </Link>
-              <Link to="/shop" className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 border-b border-gray-200/50 w-3/4 mx-auto">
+              <Link
+                to="/shop"
+                className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 border-b border-gray-200/50 w-3/4 mx-auto"
+                onTouchStart={handleShopPrefetch}
+              >
                 Boutique
               </Link>
               <Link to="/about" className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 border-b border-gray-200/50 w-3/4 mx-auto">

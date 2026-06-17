@@ -1,6 +1,7 @@
 import { fetchHomeData } from '../store/slices/homeSlice';
 import { store } from '../store/store';
 import { resolveImageUrl } from './imageUtils';
+import { prefetchShopProducts } from './prefetch';
 
 const DEFAULT_BANNER_IMAGE =
   'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75';
@@ -33,7 +34,7 @@ function collectCriticalImages(products = [], bannerImage) {
 }
 
 export async function bootstrapApp(dispatch) {
-  const minSplashMs = 1000;
+  const minSplashMs = 0;
   const maxWaitMs = 6000;
 
   const minDelay = new Promise((resolve) => {
@@ -42,6 +43,8 @@ export async function bootstrapApp(dispatch) {
 
   const dataPromise = (async () => {
     await dispatch(fetchHomeData());
+
+    prefetchShopProducts(dispatch);
 
     const state = store.getState();
     const products = state.products.featuredProducts.length > 0

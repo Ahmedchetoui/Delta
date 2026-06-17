@@ -20,6 +20,9 @@ export const fetchCategories = createAsyncThunk(
         error.response?.data?.message || 'Erreur lors du chargement des catégories'
       );
     }
+  },
+  {
+    condition: (_, { getState }) => getState().categories.categories.length === 0,
   }
 );
 

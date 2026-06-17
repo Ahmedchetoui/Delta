@@ -1,16 +1,23 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import Skeleton from '../ui/Skeleton';
 import { resolveImageUrl } from '../../utils/imageUtils';
 import { normalizeProductColors, colorNameToHex } from '../../utils/colorUtils';
 import { productHasStock } from '../../utils/productStock';
+import { prefetchProduct } from '../../utils/prefetch';
 
 const CARD_IMAGE_WIDTH = 480;
 
 const ProductCard = ({ product, priority = false }) => {
+  const dispatch = useDispatch();
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+
+  const handlePrefetch = () => {
+    prefetchProduct(dispatch, product._id);
+  };
 
   const handleWishlist = (e) => {
     e.preventDefault();
@@ -38,7 +45,12 @@ const ProductCard = ({ product, priority = false }) => {
 
   return (
     <div className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-transparent hover:border-blue-500">
-      <Link to={`/product/${product._id}`}>
+      <Link
+        to={`/product/${product._id}`}
+        onMouseEnter={handlePrefetch}
+        onFocus={handlePrefetch}
+        onTouchStart={handlePrefetch}
+      >
         <div className="relative h-64 md:h-72 overflow-hidden bg-gray-100">
           {!isImageLoaded && (
             <Skeleton className="absolute inset-0 w-full h-full z-10" />
