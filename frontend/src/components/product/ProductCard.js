@@ -115,8 +115,8 @@ const ProductCard = ({ product, priority = false }) => {
                 {colorItems.map((c) => (
                   <span
                     key={c.name}
-                    className="w-5 h-5 rounded-full border-2 border-gray-200 hover:border-blue-600 transition-colors cursor-pointer shadow-sm"
-                    style={{ backgroundColor: c.code || colorNameToHex(c.name) }}
+                    className="w-5 h-5 rounded-full border-2 border-gray-300 shadow-sm"
+                    style={{ backgroundColor: colorNameToHex(c.name) }}
                     title={c.name}
                   />
                 ))}

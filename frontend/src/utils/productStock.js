@@ -22,6 +22,9 @@ export function variantHasStock(variant) {
 
 export function productHasStock(product) {
   if (!product) return false;
+  if (product.variants?.length) {
+    if (product.variants.some(variantHasStock)) return true;
+  }
   if (typeof product.inStock === 'boolean') return product.inStock;
   return (product.totalStock ?? 0) > 0;
 }

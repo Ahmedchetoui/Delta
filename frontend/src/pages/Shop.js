@@ -43,7 +43,6 @@ const Shop = () => {
   const category = searchParams.get('category') || '';
   const minPrice = searchParams.get('minPrice') || '';
   const maxPrice = searchParams.get('maxPrice') || '';
-  const brand = searchParams.get('brand') || '';
   const color = searchParams.get('color') || '';
   const size = searchParams.get('size') || '';
   const onSale = searchParams.get('onSale') === 'true';
@@ -51,12 +50,18 @@ const Shop = () => {
   const page = parseInt(searchParams.get('page')) || 1;
 
   useEffect(() => {
+    if (!searchParams.get('brand')) return;
+    const params = new URLSearchParams(searchParams);
+    params.delete('brand');
+    setSearchParams(params, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
     const filters = {
       search,
       category,
       minPrice: minPrice ? parseInt(minPrice) : undefined,
       maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
-      brand,
       color,
       size,
       onSale,
@@ -67,7 +72,7 @@ const Shop = () => {
     };
 
     dispatch(fetchProducts(filters));
-  }, [dispatch, search, category, minPrice, maxPrice, brand, color, size, onSale, featured, page, sortBy]);
+  }, [dispatch, search, category, minPrice, maxPrice, color, size, onSale, featured, page, sortBy]);
 
   const handleFilterChange = (newFilters) => {
     const params = new URLSearchParams(searchParams);
@@ -152,7 +157,6 @@ const Shop = () => {
                   category,
                   minPrice,
                   maxPrice,
-                  brand,
                   color,
                   size,
                   onSale,

@@ -36,20 +36,35 @@ function isAdminUser(req) {
 }
 
 function sanitizeProductForClient(product) {
-  const inStock = (product.totalStock || 0) > 0;
+  const variantStockTotal = (product.variants || []).reduce(
+    (sum, v) => sum + (v.stock || 0),
+    0
+  );
+  const hasVariantStock = (product.variants || []).some((v) => (v.stock || 0) > 0);
+  const inStock =
+    (product.totalStock || 0) > 0 || variantStockTotal > 0 || hasVariantStock;
+
   const sanitized = { ...product, inStock };
   delete sanitized.totalStock;
 
   if (sanitized.variants?.length) {
     sanitized.variants = sanitized.variants.map((v) => {
+      const stock = v.stock || 0;
       const entry = {
         size: String(v.size ?? '').trim(),
         color: String(v.color ?? '').trim(),
-        inStock: (v.stock || 0) > 0,
+        inStock: stock > 0,
       };
       if (v.price != null) entry.price = v.price;
       return entry;
     });
+  }
+
+  if (!sanitized.colors?.length && sanitized.variants?.length) {
+    const names = [
+      ...new Set(sanitized.variants.map((v) => v.color).filter(Boolean)),
+    ];
+    sanitized.colors = names.map((name) => ({ name, code: '' }));
   }
 
   return sanitized;

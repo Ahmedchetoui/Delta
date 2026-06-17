@@ -6,14 +6,12 @@ const ProductFilters = ({ categories, onFilterChange, currentFilters }) => {
     category: currentFilters.category || '',
     minPrice: currentFilters.minPrice || '',
     maxPrice: currentFilters.maxPrice || '',
-    brand: currentFilters.brand || '',
     color: currentFilters.color || '',
     size: currentFilters.size || '',
     onSale: currentFilters.onSale || false,
     featured: currentFilters.featured || false
   });
 
-  const brands = ['Nike', 'Adidas', 'Zara', 'H&M', 'Uniqlo', 'Gap', 'Levi\'s', 'Calvin Klein'];
   const colors = ['Noir', 'Blanc', 'Rouge', 'Bleu', 'Vert', 'Jaune', 'Rose', 'Gris', 'Marron'];
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
@@ -28,7 +26,6 @@ const ProductFilters = ({ categories, onFilterChange, currentFilters }) => {
       category: '',
       minPrice: '',
       maxPrice: '',
-      brand: '',
       color: '',
       size: '',
       onSale: false,
@@ -91,23 +88,6 @@ const ProductFilters = ({ categories, onFilterChange, currentFilters }) => {
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-      </div>
-
-      {/* Brand Filter */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Marque</h3>
-        <select
-          value={localFilters.brand}
-          onChange={(e) => handleFilterChange('brand', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">Toutes les marques</option>
-          {brands.map((brand) => (
-            <option key={brand} value={brand}>
-              {brand}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Color Filter */}
