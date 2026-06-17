@@ -85,7 +85,9 @@ const AdminProductNew = () => {
       navigate('/admin/products');
     } catch (err) {
       console.error('Erreur création produit:', err);
-      const msg = err?.response?.data?.message || 'Erreur lors de la création du produit';
+      const msg = err?.response?.data?.message
+        || err?.response?.data?.errors?.join?.(', ')
+        || 'Erreur lors de la création du produit';
       toast.error(msg);
     } finally {
       setSaving(false);

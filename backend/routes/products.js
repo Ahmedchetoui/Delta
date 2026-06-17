@@ -521,8 +521,23 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
 
   } catch (error) {
     console.error('Erreur lors de la création du produit:', error);
+
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        message: 'Données invalides',
+        errors: Object.values(error.errors).map((e) => e.message)
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: 'Un produit avec ce SKU ou ce slug existe déjà'
+      });
+    }
+
     res.status(500).json({
-      message: 'Erreur lors de la création du produit'
+      message: 'Erreur lors de la création du produit',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

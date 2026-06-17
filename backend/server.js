@@ -51,9 +51,11 @@ const corsOptions = {
     const isPrivateNetwork = !isProduction &&
       /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/.test(normalized);
 
-    // En production : uniquement la liste explicite (pas de wildcard *.vercel.app)
+    // En production : liste explicite + déploiements Vercel Delta
+    const isDeltaVercel = /^https:\/\/delta(-[a-z0-9-]+)*\.vercel\.app$/.test(normalized);
+
     if (isProduction) {
-      return callback(null, isAllowed);
+      return callback(null, isAllowed || isDeltaVercel);
     }
 
     if (isAllowed || isLocalhost || isPrivateNetwork) {
