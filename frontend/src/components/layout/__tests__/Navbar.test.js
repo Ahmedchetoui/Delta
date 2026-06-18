@@ -88,10 +88,10 @@ describe('Navbar Component', () => {
   });
 
   describe('État non authentifié', () => {
-    test('affiche les liens de connexion et d\'inscription', () => {
+    test('affiche le lien de connexion', () => {
       renderWithProviders(<Navbar />);
       expect(screen.getByText('Connexion')).toBeInTheDocument();
-      expect(screen.getByText('S\'inscrire')).toBeInTheDocument();
+      expect(screen.queryByText('S\'inscrire')).not.toBeInTheDocument();
     });
 
     test('ne montre pas le menu utilisateur', () => {

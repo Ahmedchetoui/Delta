@@ -182,14 +182,9 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <>
-                <Link to="/login" className={`hidden md:block ${linkClasses}`}>
-                  Connexion
-                </Link>
-                <Link to="/register" className="hidden md:block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-lg font-medium">
-                  S'inscrire
-                </Link>
-              </>
+              <Link to="/login" className={`hidden md:block ${linkClasses}`}>
+                Connexion
+              </Link>
             )}
 
             {/* Mobile Menu Button */}
@@ -245,14 +240,9 @@ const Navbar = () => {
 
               <div className="pt-6 flex flex-col items-center gap-4">
                 {!isAuthenticated && (
-                  <>
-                    <Link to="/login" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
-                      Connexion
-                    </Link>
-                    <Link to="/register" className="bg-blue-600 text-white px-8 py-3 rounded-full hover:bg-blue-700 transition-colors shadow-md text-lg font-medium">
-                      S'inscrire
-                    </Link>
-                  </>
+                  <Link to="/login" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
+                    Connexion
+                  </Link>
                 )}
                 {isAuthenticated && (
                   <>
