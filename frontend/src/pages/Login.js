@@ -63,15 +63,6 @@ const Login = () => {
           <h3 className="text-2xl font-bold text-gray-900">
             Connexion
           </h3>
-          <p className="mt-2 text-sm text-gray-600">
-            Ou{' '}
-            <Link
-              to="/register"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              créez un nouveau compte
-            </Link>
-          </p>
         </div>
       </div>
 
@@ -157,6 +148,17 @@ const Login = () => {
               >
                 {loading ? 'Connexion...' : 'Se connecter'}
               </button>
+            </div>
+
+            {/* Sign up */}
+            <div className="text-center pt-2">
+              <p className="text-sm text-gray-600 mb-3">Pas encore de compte ?</p>
+              <Link
+                to="/register"
+                className="w-full inline-flex justify-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg"
+              >
+                S'inscrire
+              </Link>
             </div>
           </form>
 

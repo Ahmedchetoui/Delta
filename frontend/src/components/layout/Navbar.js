@@ -75,13 +75,13 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 w-full z-50 bg-white shadow-lg border-b border-gray-100 transition-all duration-300">
       <div className="w-full mx-auto px-2 sm:px-4 lg:px-6">
-        <div className="flex justify-between items-center h-16 md:h-20">
+        <div className="flex justify-between items-center h-14 md:h-16">
           {/* Logo */}
           <Link to="/" onClick={(e) => handleNavClick(e, '/')} className="flex items-center cursor-pointer shrink-0">
             <img
               src={require('../../assets/logo/delta.jpg')}
               alt="Delta Fashion"
-              className="h-14 md:h-16 w-auto object-contain object-left"
+              className="h-9 md:h-10 w-auto object-contain object-left"
               loading="eager"
             />
           </Link>
@@ -121,7 +121,7 @@ const Navbar = () => {
           </div>
 
           {/* Right Side Icons */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-8">
             {/* Search Icon (Mobile) */}
             <button
               onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -182,14 +182,14 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <div className="hidden md:flex items-center space-x-2">
-                <Link to="/login" className={linkClasses}>
+              <>
+                <Link to="/login" className={`hidden md:block ${linkClasses}`}>
                   Connexion
                 </Link>
-                <Link to="/register" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-lg">
+                <Link to="/register" className="hidden md:block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-lg font-medium">
                   S'inscrire
                 </Link>
-              </div>
+              </>
             )}
 
             {/* Mobile Menu Button */}
@@ -227,7 +227,7 @@ const Navbar = () => {
 
         {/* Mobile Menu (Professional Gray & Centered) */}
         {isMenuOpen && (
-          <div className="md:hidden fixed top-[64px] inset-x-0 bg-gray-100/95 backdrop-blur-md shadow-xl border-t border-gray-200 animate-slideDown z-40 transition-all duration-300 ease-in-out">
+          <div className="md:hidden fixed top-14 inset-x-0 bg-gray-100/95 backdrop-blur-md shadow-xl border-t border-gray-200 animate-slideDown z-40 transition-all duration-300 ease-in-out">
             <div className="flex flex-col space-y-4 py-8 px-4 text-center">
               <Link to="/" onClick={(e) => handleNavClick(e, '/')} className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 border-b border-gray-200/50 w-3/4 mx-auto">
                 Accueil
