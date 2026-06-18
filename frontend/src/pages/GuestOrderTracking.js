@@ -266,7 +266,7 @@ const GuestOrderTracking = () => {
           </p>
           <div className="space-y-2 text-sm text-blue-600">
             <p>📧 Email: support@deltafashion.tn</p>
-            <p>📞 Téléphone: +216 XX XXX XXX</p>
+            <p>📞 Téléphone: +216 25 807 407</p>
             <p>🕒 Horaires: Lun-Ven 9h-18h, Sam 9h-13h</p>
           </div>
         </div>

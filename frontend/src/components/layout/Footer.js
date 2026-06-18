@@ -85,7 +85,7 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <PhoneIcon className="h-5 w-5 text-blue-400" />
-                <span className="text-gray-300">+216 XX XXX XXX</span>
+                <span className="text-gray-300">+216 25 807 407</span>
               </div>
               <div className="flex items-center space-x-3">
                 <EnvelopeIcon className="h-5 w-5 text-blue-400" />
@@ -94,7 +94,7 @@ const Footer = () => {
               <div className="flex items-start space-x-3">
                 <MapPinIcon className="h-5 w-5 text-blue-400 mt-1" />
                 <span className="text-gray-300">
-                  Manzel ennour
+                  Monastir, Manze ennour
                 </span>
               </div>
             </div>

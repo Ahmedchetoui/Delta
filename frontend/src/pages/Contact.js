@@ -139,7 +139,7 @@ const Contact = () => {
                   <PhoneIcon className="h-6 w-6 text-blue-600 mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Téléphone</h3>
-                    <p className="text-gray-600">+216 XX XXX XXX</p>
+                    <p className="text-gray-600">+216 25 807 407</p>
                     <p className="text-sm text-gray-500">Lun-Ven: 9h-18h</p>
                   </div>
                 </div>
@@ -158,8 +158,8 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900">Adresse</h3>
                     <p className="text-gray-600">
-                      Avenue Habib Bourguiba<br />
-                      Tunis 1000, Tunisie
+                      Monastir, Manze ennour<br />
+                      Tunisie
                     </p>
                   </div>
                 </div>
