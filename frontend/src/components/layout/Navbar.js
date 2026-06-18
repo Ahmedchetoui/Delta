@@ -81,7 +81,7 @@ const Navbar = () => {
             <img
               src={require('../../assets/logo/delta.jpg')}
               alt="Delta Fashion"
-              className="h-12 sm:h-14 md:h-16 w-auto min-w-[140px] sm:min-w-[170px] md:min-w-[200px] object-contain object-left"
+              className="h-14 md:h-16 w-auto object-contain object-left"
               loading="eager"
             />
           </Link>
