@@ -66,7 +66,7 @@ describe('Navbar Component', () => {
   describe('Rendu de base', () => {
     test('affiche le logo Delta Fashion', () => {
       renderWithProviders(<Navbar />);
-      expect(screen.getByText('Delta Fashion')).toBeInTheDocument();
+      expect(screen.getByAltText('Delta Fashion')).toBeInTheDocument();
     });
 
     test('affiche les liens de navigation principaux', () => {

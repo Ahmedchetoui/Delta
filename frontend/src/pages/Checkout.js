@@ -4,6 +4,11 @@ import { selectCartItems, selectCartTotal } from '../store/slices/cartSlice';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import {
+  DEFAULT_CITY,
+  DEFAULT_GOVERNORATE,
+  TUNISIA_GOVERNORATES,
+} from '../constants/tunisiaGovernorates';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -15,6 +20,8 @@ const Checkout = () => {
     fullName: '',
     email: '',
     phone: '',
+    governorate: DEFAULT_GOVERNORATE,
+    city: DEFAULT_CITY,
     address: '',
     color: '',
 
@@ -33,7 +40,9 @@ const Checkout = () => {
           fullName: parsedInfo.fullName || '',
           email: parsedInfo.email || '',
           phone: parsedInfo.phone || '',
-          address: parsedInfo.streetAddress || ''
+          governorate: parsedInfo.governorate || DEFAULT_GOVERNORATE,
+          city: parsedInfo.city || DEFAULT_CITY,
+          address: parsedInfo.streetAddress || parsedInfo.address || ''
         }));
       } catch (error) {
         console.error('Erreur lors du chargement des informations invité:', error);
@@ -53,7 +62,7 @@ const Checkout = () => {
     e.preventDefault();
     
     // Validation
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.address || !formData.city) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -90,7 +99,8 @@ const Checkout = () => {
           email: formData.email, // Utiliser l'email réel de l'invité
           phone: formData.phone,
           street: formData.address,
-          city: 'Tunisie', // Valeur par défaut
+          governorate: formData.governorate,
+          city: formData.city,
           postalCode: '',
           country: 'Tunisie'
         },
@@ -221,6 +231,39 @@ const Checkout = () => {
                     placeholder="Ex: +216 XX XXX XXX"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Gouvernorat *
+                    </label>
+                    <select
+                      name="governorate"
+                      required
+                      value={formData.governorate}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {TUNISIA_GOVERNORATES.map((gov) => (
+                        <option key={gov} value={gov}>{gov}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ville *
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      required
+                      value={formData.city}
+                      onChange={handleChange}
+                      placeholder="Ex: Manze ennour"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
 
                 <div>

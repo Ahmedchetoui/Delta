@@ -77,16 +77,13 @@ const Navbar = () => {
       <div className="w-full mx-auto px-2 sm:px-4 lg:px-6">
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" onClick={(e) => handleNavClick(e, '/')} className="flex items-center space-x-4 cursor-pointer">
+          <Link to="/" onClick={(e) => handleNavClick(e, '/')} className="flex items-center cursor-pointer shrink-0">
             <img
               src={require('../../assets/logo/delta.jpg')}
               alt="Delta Fashion"
-              className="h-12 w-12 md:h-16 md:w-16 rounded object-cover"
+              className="h-12 sm:h-14 md:h-16 w-auto min-w-[140px] sm:min-w-[170px] md:min-w-[200px] object-contain object-left"
               loading="eager"
             />
-            <div className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Delta Fashion
-            </div>
           </Link>
 
           {/* Desktop Navigation */}

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const { createFiabiloShipment } = require('./fiabiloService');
 const {
   getAvailableStock,
   applyStockDeduction,
@@ -85,6 +86,42 @@ async function buildOrderItems(items, products) {
   return { orderItems, subtotal };
 }
 
+async function syncOrderWithFiabilo(orderId) {
+  try {
+    const order = await Order.findById(orderId);
+    if (!order) return;
+
+    const result = await createFiabiloShipment(order);
+    if (!result) return;
+
+    order.fiabilo = {
+      trackingCode: result.trackingCode,
+      labelUrl: result.labelUrl,
+      status: 'En attente',
+      error: null,
+      syncedAt: new Date(),
+    };
+    await order.save();
+  } catch (error) {
+    console.error(`[Fiabilo] Échec sync commande ${orderId}:`, error.message);
+    await Order.findByIdAndUpdate(orderId, {
+      fiabilo: {
+        error: error.message,
+        syncedAt: new Date(),
+      },
+    });
+  }
+}
+
+async function finalizeOrder(order) {
+  await syncOrderWithFiabilo(order._id);
+  const updated = await Order.findById(order._id).populate([
+    { path: 'user', select: 'firstName lastName email' },
+    { path: 'items.product', select: 'name images slug' },
+  ]);
+  return mapOrderResponse(updated || order);
+}
+
 async function deductStockForItems(items, session) {
   for (const item of items) {
     const product = await Product.findById(item.product).session(session);
@@ -158,12 +195,7 @@ async function createOrderWithTransaction(orderData, userId) {
     await order.save({ session });
     await session.commitTransaction();
 
-    await order.populate([
-      { path: 'user', select: 'firstName lastName email' },
-      { path: 'items.product', select: 'name images slug' },
-    ]);
-
-    return mapOrderResponse(order);
+    return finalizeOrder(order);
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -236,12 +268,7 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
 
     await order.save();
 
-    await order.populate([
-      { path: 'user', select: 'firstName lastName email' },
-      { path: 'items.product', select: 'name images slug' },
-    ]);
-
-    return mapOrderResponse(order);
+    return finalizeOrder(order);
   } catch (error) {
     for (const productId of updatedProductIds.reverse()) {
       try {

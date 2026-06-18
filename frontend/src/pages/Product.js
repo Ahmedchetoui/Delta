@@ -17,6 +17,11 @@ import {
   sizeHasAvailableStock,
   sizesEqual,
 } from '../utils/productStock';
+import {
+  DEFAULT_CITY,
+  DEFAULT_GOVERNORATE,
+  TUNISIA_GOVERNORATES,
+} from '../constants/tunisiaGovernorates';
 
 const Product = () => {
   const { id } = useParams();
@@ -34,6 +39,8 @@ const Product = () => {
   // Champs d'informations de livraison
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [governorate, setGovernorate] = useState(DEFAULT_GOVERNORATE);
+  const [city, setCity] = useState(DEFAULT_CITY);
   const [streetAddress, setStreetAddress] = useState('');
 
 
@@ -150,6 +157,10 @@ const Product = () => {
       toast.error('Veuillez saisir votre adresse');
       return;
     }
+    if (!city.trim()) {
+      toast.error('Veuillez saisir votre ville');
+      return;
+    }
     if (hasVariants && !selectedSize) {
       toast.error('Veuillez sélectionner une taille');
       return;
@@ -180,6 +191,8 @@ const Product = () => {
       const guestInfo = {
         fullName: fullName.trim(),
         phone: phone.trim(),
+        governorate: governorate.trim(),
+        city: city.trim(),
         streetAddress: streetAddress.trim()
       };
 
@@ -425,6 +438,35 @@ const Product = () => {
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
                     placeholder="Ex: 22000000"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Gouvernorat:
+                  </label>
+                  <select
+                    value={governorate}
+                    onChange={(e) => setGovernorate(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
+                  >
+                    {TUNISIA_GOVERNORATES.map((gov) => (
+                      <option key={gov} value={gov}>{gov}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Ville:
+                  </label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
+                    placeholder="Ex: Manze ennour"
                   />
                 </div>
               </div>

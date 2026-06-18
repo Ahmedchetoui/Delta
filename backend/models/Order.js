@@ -64,6 +64,10 @@ const orderSchema = new mongoose.Schema({
       type: String,
       required: true
     },
+    governorate: {
+      type: String,
+      default: 'Monastir'
+    },
     postalCode: String,
     country: {
       type: String,
@@ -149,6 +153,13 @@ const orderSchema = new mongoose.Schema({
   stockDeducted: {
     type: Boolean,
     default: false
+  },
+  fiabilo: {
+    trackingCode: String,
+    labelUrl: String,
+    status: String,
+    error: String,
+    syncedAt: Date
   }
 }, {
   timestamps: true

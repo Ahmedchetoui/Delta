@@ -7,6 +7,11 @@ import { toast } from 'react-toastify';
 import api from '../services/api';
 import { resolveImageUrl } from '../utils/imageUtils';
 import { expandCartItemForOrder, formatColorsLabel, normalizeCartColors } from '../utils/cartColors';
+import {
+  DEFAULT_CITY,
+  DEFAULT_GOVERNORATE,
+  TUNISIA_GOVERNORATES,
+} from '../constants/tunisiaGovernorates';
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -17,6 +22,8 @@ const Cart = () => {
   // États pour les informations de livraison
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [governorate, setGovernorate] = useState(DEFAULT_GOVERNORATE);
+  const [city, setCity] = useState(DEFAULT_CITY);
   const [address, setAddress] = useState('');
   const [isOrdering, setIsOrdering] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -29,6 +36,8 @@ const Cart = () => {
         const parsedInfo = JSON.parse(guestInfo);
         setFullName(parsedInfo.fullName || '');
         setPhone(parsedInfo.phone || '');
+        setGovernorate(parsedInfo.governorate || DEFAULT_GOVERNORATE);
+        setCity(parsedInfo.city || DEFAULT_CITY);
         setAddress(parsedInfo.streetAddress || '');
       } catch (error) {
         console.error('Erreur lors du chargement des informations invité:', error);
@@ -63,7 +72,7 @@ const Cart = () => {
   };
 
   const handleDirectOrder = async () => {
-    if (!fullName.trim() || !phone.trim() || !address.trim()) {
+    if (!fullName.trim() || !phone.trim() || !address.trim() || !city.trim()) {
       toast.error('Veuillez remplir toutes les informations de livraison');
       return;
     }
@@ -83,7 +92,8 @@ const Cart = () => {
           email: `guest_${Date.now()}@deltafashion.tn`,
           phone: phone,
           street: address,
-          city: 'Tunisie',
+          governorate: governorate,
+          city: city,
           postalCode: '',
           country: 'Tunisie'
         },
@@ -142,7 +152,7 @@ const Cart = () => {
         <div className="bg-green-100 border border-green-300 rounded-lg p-4 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations de livraison:</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nom:</label>
               <div className="text-right text-gray-900 font-medium">{fullName}</div>
@@ -152,6 +162,14 @@ const Cart = () => {
               <div className="text-right text-gray-900 font-medium">{phone}</div>
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Gouvernorat:</label>
+              <div className="text-right text-gray-900 font-medium">{governorate}</div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ville:</label>
+              <div className="text-right text-gray-900 font-medium">{city}</div>
+            </div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Adresse:</label>
               <div className="text-right text-gray-900 font-medium">{address}</div>
             </div>

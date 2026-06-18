@@ -61,10 +61,14 @@ const orderValidation = [
     .isLength({ min: 3, max: 200 })
     .withMessage('L\'adresse est requise'),
   body('shippingAddress.city')
-    .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('La ville est requise'),
+  body('shippingAddress.governorate')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Le gouvernorat est invalide'),
   body('paymentMethod')
     .isIn(['cash_on_delivery', 'bank_transfer', 'paypal', 'stripe'])
     .withMessage('Méthode de paiement invalide')
