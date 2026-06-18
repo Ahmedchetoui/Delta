@@ -37,7 +37,6 @@ describe('Footer Component', () => {
       expect(screen.getByText('Liens Rapides')).toBeInTheDocument();
       expect(screen.getByText('Accueil')).toBeInTheDocument();
       expect(screen.getByText('Boutique')).toBeInTheDocument();
-      expect(screen.getByText('À propos')).toBeInTheDocument();
       expect(screen.getByText('Contact')).toBeInTheDocument();
       expect(screen.getByText('Livraison')).toBeInTheDocument();
     });
@@ -107,14 +106,12 @@ describe('Footer Component', () => {
       
       const accueilLink = screen.getByText('Accueil').closest('a');
       const boutiqueLink = screen.getByText('Boutique').closest('a');
-      const aboutLink = screen.getByText('À propos').closest('a');
-      const contactLink = screen.getByText('Contact').closest('a');
+      const contactLink = screen.getAllByText('Contact')[0].closest('a');
       const deliveryLink = screen.getByText('Livraison').closest('a');
       const trackingLink = screen.getByText('Suivi de commande').closest('a');
       
       expect(accueilLink).toHaveAttribute('href', '/');
       expect(boutiqueLink).toHaveAttribute('href', '/shop');
-      expect(aboutLink).toHaveAttribute('href', '/about');
       expect(contactLink).toHaveAttribute('href', '/contact');
       expect(deliveryLink).toHaveAttribute('href', '/delivery');
       expect(trackingLink).toHaveAttribute('href', '/order-tracking');

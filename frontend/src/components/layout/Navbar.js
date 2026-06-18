@@ -102,9 +102,6 @@ const Navbar = () => {
             >
               Boutique
             </Link>
-            <Link to="/about" className={linkClasses}>
-              À propos
-            </Link>
             <Link to="/contact" className={linkClasses}>
               Contact
             </Link>
@@ -244,9 +241,6 @@ const Navbar = () => {
                 onTouchStart={handleShopPrefetch}
               >
                 Boutique
-              </Link>
-              <Link to="/about" className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 border-b border-gray-200/50 w-3/4 mx-auto">
-                À propos
               </Link>
               <Link to="/contact" className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 w-3/4 mx-auto">
                 Contact

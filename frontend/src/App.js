@@ -27,7 +27,6 @@ const Register = React.lazy(() => import('./pages/Register'));
 const Profile = React.lazy(() => import('./pages/Profile'));
 const Orders = React.lazy(() => import('./pages/Orders'));
 const OrderTracking = React.lazy(() => import('./pages/OrderTracking'));
-const About = React.lazy(() => import('./pages/About'));
 const Contact = React.lazy(() => import('./pages/Contact'));
 const Delivery = React.lazy(() => import('./pages/Delivery'));
 const OrderConfirmation = React.lazy(() => import('./pages/OrderConfirmation'));
@@ -114,7 +113,6 @@ function App() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<Product />} />
             <Route path="/cart" element={<Cart />} />
-            <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/delivery" element={<Delivery />} />
             <Route path="/order-tracking" element={<OrderTracking />} />

@@ -73,7 +73,6 @@ describe('Navbar Component', () => {
       renderWithProviders(<Navbar />);
       expect(screen.getByText('Accueil')).toBeInTheDocument();
       expect(screen.getByText('Boutique')).toBeInTheDocument();
-      expect(screen.getByText('À propos')).toBeInTheDocument();
       expect(screen.getByText('Contact')).toBeInTheDocument();
     });
 

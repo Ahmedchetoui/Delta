@@ -167,37 +167,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <span className="text-4xl">🚚</span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Livraison Rapide</h3>
-              <p className="text-gray-600">Livraison gratuite dès 100 DT</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <span className="text-4xl">💳</span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Paiement Sécurisé</h3>
-              <p className="text-gray-600">Paiement en ligne ou à la livraison</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <span className="text-4xl">🔄</span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Retours Faciles</h3>
-              <p className="text-gray-600">Retour gratuit sous 14 jours</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Newsletter */}
       <section id="newsletter" className="py-20 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 relative overflow-hidden">
         <div className="absolute inset-0 pattern-overlay opacity-10" />
