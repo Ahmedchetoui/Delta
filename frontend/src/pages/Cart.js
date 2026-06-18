@@ -10,7 +10,6 @@ import { expandCartItemForOrder, formatColorsLabel, normalizeCartColors } from '
 import {
   DEFAULT_CITY,
   DEFAULT_GOVERNORATE,
-  TUNISIA_GOVERNORATES,
 } from '../constants/tunisiaGovernorates';
 
 const Cart = () => {
