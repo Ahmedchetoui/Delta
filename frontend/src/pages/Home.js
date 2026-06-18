@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { fetchHomeData } from '../store/slices/homeSlice';
 import Skeleton from '../components/ui/Skeleton';
 import ProductCard from '../components/product/ProductCard';
 import HeroSlider from '../components/ui/HeroSlider';
 import { resolveImageUrl } from '../utils/imageUtils';
+import { useEnsureHomeData } from '../hooks/useEnsureHomeData';
+import { fetchHomeData, clearHomeError } from '../store/slices/homeSlice';
 
 const DEFAULT_BANNERS = [
   {
@@ -23,26 +24,28 @@ const DEFAULT_BANNERS = [
 
 const Home = () => {
   const dispatch = useDispatch();
+  useEnsureHomeData();
+
   const { featuredProducts = [], newProducts = [], isLoading: productsLoading } = useSelector(
     (state) => state.products || {}
   );
   const { categories = [], isLoading: categoriesLoading } = useSelector(
     (state) => state.categories || {}
   );
-  const { banners = [], loadedAt, isLoading: homeLoading } = useSelector(
+  const { banners = [], isLoading: homeLoading, error: homeError } = useSelector(
     (state) => state.home || {}
   );
 
-  useEffect(() => {
-    if (!loadedAt) {
-      dispatch(fetchHomeData());
-    }
-  }, [dispatch, loadedAt]);
-
   const displayProducts = featuredProducts.length > 0 ? featuredProducts : newProducts;
-  const showCategorySkeleton = categoriesLoading && categories.length === 0;
-  const showProductSkeleton =
-    (homeLoading || productsLoading) && displayProducts.length === 0;
+  const isBootstrapping = homeLoading || categoriesLoading || productsLoading;
+  const showCategorySkeleton = isBootstrapping && categories.length === 0;
+  const showProductSkeleton = isBootstrapping && displayProducts.length === 0;
+  const showLoadError = !isBootstrapping && homeError && categories.length === 0 && displayProducts.length === 0;
+
+  const handleRetry = () => {
+    dispatch(clearHomeError());
+    dispatch(fetchHomeData());
+  };
 
   const heroSlides = useMemo(() => {
     const source = banners.length > 0 ? banners : DEFAULT_BANNERS;
@@ -63,6 +66,21 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white -mt-16 md:-mt-20">
       <HeroSlider slides={heroSlides} />
+
+      {showLoadError && (
+        <div className="max-w-lg mx-auto my-8 p-6 bg-amber-50 border border-amber-200 rounded-xl text-center">
+          <p className="text-amber-900 mb-4">
+            Connexion lente au serveur. Les catégories et produits n&apos;ont pas pu charger.
+          </p>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
 
       {/* Categories */}
       <section id="categories" className="py-20 bg-gray-50">

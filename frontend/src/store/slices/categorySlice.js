@@ -22,7 +22,11 @@ export const fetchCategories = createAsyncThunk(
     }
   },
   {
-    condition: (_, { getState }) => getState().categories.categories.length === 0,
+    condition: (_, { getState }) => {
+      const { categories, isLoading } = getState().categories;
+      if (isLoading) return false;
+      return categories.length === 0;
+    },
   }
 );
 

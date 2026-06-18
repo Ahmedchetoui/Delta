@@ -9,7 +9,7 @@ export const fetchHomeData = createAsyncThunk(
   'home/fetchHomeData',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/home`, { timeout: 15000 });
+      const response = await axios.get(`${API_URL}/home`, { timeout: 30000 });
       return response.data;
     } catch (error) {
       return rejectWithValue(

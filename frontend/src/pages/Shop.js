@@ -31,13 +31,14 @@ const Shop = () => {
       totalPages = 1
     } = {}
   } = useSelector((state) => state.products);
-  const { categories } = useSelector((state) => state.categories);
+  const { categories, isLoading: categoriesLoading, error: categoriesError } = useSelector(
+    (state) => state.categories
+  );
 
   useEffect(() => {
-    if (!categories.length) {
-      dispatch(fetchCategories());
-    }
-  }, [dispatch, categories.length]);
+    if (categories.length > 0 || categoriesLoading) return;
+    dispatch(fetchCategories());
+  }, [dispatch, categories.length, categoriesLoading, categoriesError]);
 
   // Récupérer les paramètres de l'URL
   const search = searchParams.get('search') || '';

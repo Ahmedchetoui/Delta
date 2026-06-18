@@ -6,6 +6,8 @@ import { prefetchShopProducts } from './prefetch';
 const DEFAULT_BANNER_IMAGE =
   'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75';
 
+const IMAGE_PRELOAD_BUDGET_MS = 2500;
+
 export function preloadImage(src) {
   return new Promise((resolve) => {
     if (!src) {
@@ -34,38 +36,30 @@ function collectCriticalImages(products = [], bannerImage) {
 }
 
 export async function bootstrapApp(dispatch) {
-  const minSplashMs = 0;
-  const maxWaitMs = 6000;
+  // Toujours attendre l'API — ne pas couper à 6s (cold start Render sur mobile)
+  const result = await dispatch(fetchHomeData());
 
-  const minDelay = new Promise((resolve) => {
-    setTimeout(resolve, minSplashMs);
-  });
-
-  const dataPromise = (async () => {
-    await dispatch(fetchHomeData());
-
+  if (fetchHomeData.fulfilled.match(result)) {
     prefetchShopProducts(dispatch);
+  }
 
-    const state = store.getState();
-    const products = state.products.featuredProducts.length > 0
-      ? state.products.featuredProducts
-      : state.products.newProducts;
+  const state = store.getState();
+  const products = state.products.featuredProducts.length > 0
+    ? state.products.featuredProducts
+    : state.products.newProducts;
 
-    const bannerFromApi = state.home.banners[0]?.image;
-    const bannerImage = bannerFromApi
-      ? resolveImageUrl(bannerFromApi, 1200)
-      : DEFAULT_BANNER_IMAGE;
+  const bannerFromApi = state.home.banners[0]?.image;
+  const bannerImage = bannerFromApi
+    ? resolveImageUrl(bannerFromApi, 1200)
+    : DEFAULT_BANNER_IMAGE;
 
-    const images = collectCriticalImages(products, bannerImage);
-    await Promise.all(images.map((url) => preloadImage(url)));
-  })();
+  const images = collectCriticalImages(products, bannerImage);
 
-  const timeout = new Promise((resolve) => {
-    setTimeout(resolve, maxWaitMs);
-  });
-
+  // Préchargement images limité — ne bloque pas l'affichage des données
   await Promise.race([
-    Promise.all([minDelay, dataPromise]),
-    timeout,
+    Promise.all(images.map((url) => preloadImage(url))),
+    new Promise((resolve) => {
+      setTimeout(resolve, IMAGE_PRELOAD_BUDGET_MS);
+    }),
   ]);
 }
