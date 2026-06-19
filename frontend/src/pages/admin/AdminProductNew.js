@@ -4,6 +4,7 @@ import { categoryService, productService } from '../../services/api';
 import { toast } from 'react-toastify';
 import ProductColorPicker from '../../components/admin/ProductColorPicker';
 import VariantColorSelect from '../../components/admin/VariantColorSelect';
+import ProductImageManager from '../../components/admin/ProductImageManager';
 
 const AdminProductNew = () => {
   const navigate = useNavigate();
@@ -41,9 +42,18 @@ const AdminProductNew = () => {
     load();
   }, []);
 
-  const onFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    setForm((f) => ({ ...f, images: files }));
+  const onAddImageFiles = (files) => {
+    const entries = files.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      color: form.colors[0]?.name || '',
+      isNew: true,
+    }));
+    setForm((f) => ({ ...f, images: [...f.images, ...entries] }));
+  };
+
+  const updateImages = (images) => {
+    setForm((f) => ({ ...f, images }));
   };
 
   const updateVariant = (idx, patch) => {
@@ -84,7 +94,13 @@ const AdminProductNew = () => {
       if (form.colors.length > 0) {
         fd.append('colors', JSON.stringify(form.colors));
       }
-      for (const file of form.images) fd.append('images', file);
+      fd.append(
+        'imageColors',
+        JSON.stringify(form.images.map((img) => img.color || ''))
+      );
+      for (const image of form.images) {
+        if (image.file) fd.append('images', image.file);
+      }
 
       await productService.createProduct(fd);
       toast.success('Produit créé');
@@ -181,11 +197,15 @@ const AdminProductNew = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Images (au moins une)</label>
-          <input type="file" multiple accept="image/*" className="mt-1" onChange={onFileChange} />
-          {form.images.length > 0 && (
-            <p className="text-sm text-gray-500 mt-1">{form.images.length} image(s) sélectionnée(s)</p>
-          )}
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Images du produit (au moins une)
+          </label>
+          <ProductImageManager
+            images={form.images}
+            productColors={form.colors}
+            onChange={updateImages}
+            onAddFiles={onAddImageFiles}
+          />
         </div>
 
         <div className="pt-4 flex items-center gap-3">

@@ -9,6 +9,8 @@ import {
   DEFAULT_GOVERNORATE,
   TUNISIA_GOVERNORATES,
 } from '../constants/tunisiaGovernorates';
+import { getImagesForColor, getProductImageUrl } from '../utils/productImages';
+import { normalizeCartColors } from '../utils/cartColors';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -367,7 +369,12 @@ const Checkout = () => {
                 {items.map((item) => (
                   <div key={item.id} className="flex items-center space-x-3">
                     <img
-                      src={item.product?.images?.[0]}
+                      src={getProductImageUrl(
+                        getImagesForColor(
+                          item.product?.images,
+                          normalizeCartColors(item)[0]
+                        )[0] || item.product?.images?.[0]
+                      )}
                       alt={item.product?.name}
                       className="w-12 h-12 object-cover rounded"
                     />

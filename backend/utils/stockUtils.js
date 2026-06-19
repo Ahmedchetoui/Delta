@@ -39,6 +39,15 @@ function getAvailableStock(product, size, color) {
   if (variants.length > 0) {
     return variants.reduce((sum, v) => sum + (variantInStock(v) ? (v.stock || 0) : 0), 0);
   }
+
+  // Couleurs catalogue : stock par taille si pas de variante couleur exacte
+  if (product.colors?.length > 0 && size && product.variants?.length) {
+    const forSize = product.variants.filter((v) => sizesMatch(v.size, size));
+    if (forSize.length > 0) {
+      return forSize.reduce((sum, v) => sum + (variantInStock(v) ? (v.stock || 0) : 0), 0);
+    }
+  }
+
   return product.totalStock || 0;
 }
 

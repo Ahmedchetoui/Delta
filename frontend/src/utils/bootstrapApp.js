@@ -1,5 +1,6 @@
 import { fetchHomeData } from '../store/slices/homeSlice';
 import { store } from '../store/store';
+import { getFirstProductImageUrl } from './productImages';
 import { resolveImageUrl } from './imageUtils';
 import { prefetchShopProducts } from './prefetch';
 
@@ -28,8 +29,8 @@ function collectCriticalImages(products = [], bannerImage) {
   if (bannerImage) urls.add(bannerImage);
 
   products.slice(0, 4).forEach((product) => {
-    const image = product?.images?.[0];
-    if (image) urls.add(resolveImageUrl(image, 480));
+    const image = getFirstProductImageUrl(product?.images, 480);
+    if (image) urls.add(image);
   });
 
   return [...urls];

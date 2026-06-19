@@ -1,4 +1,5 @@
 const { getImageUrl } = require('../middleware/upload');
+const { normalizeProductImages } = require('./productImages');
 
 function sanitizeProductForClient(product) {
   const variantStockTotal = (product.variants || []).reduce(
@@ -36,9 +37,14 @@ function sanitizeProductForClient(product) {
 }
 
 function enrichProduct(product) {
+  const normalizedImages = normalizeProductImages(product.images).map((image) => ({
+    url: getImageUrl(image.url),
+    color: image.color || '',
+  }));
+
   return {
     ...product,
-    images: (product.images || []).map((image) => getImageUrl(image)),
+    images: normalizedImages,
     finalPrice: product.discount > 0 && product.originalPrice
       ? product.originalPrice * (1 - product.discount / 100)
       : product.price,

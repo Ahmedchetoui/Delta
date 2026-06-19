@@ -51,9 +51,24 @@ export function sizeHasAvailableStock(product, size) {
   );
 }
 
+function productHasExplicitColors(product) {
+  return Array.isArray(product?.colors) && product.colors.length > 0;
+}
+
+function isColorInProductList(product, colorName) {
+  return product.colors.some((color) =>
+    colorsEqual(typeof color === 'string' ? color : color.name, colorName)
+  );
+}
+
 export function isColorAvailableForSize(product, size, colorName) {
   if (!product?.variants?.length) return true;
   if (!size) return false;
+
+  // Couleurs définies au niveau produit : toutes sélectionnables si la taille a du stock
+  if (productHasExplicitColors(product)) {
+    return isColorInProductList(product, colorName) && sizeHasAvailableStock(product, size);
+  }
 
   return product.variants.some(
     (v) =>
@@ -66,6 +81,10 @@ export function isColorAvailableForSize(product, size, colorName) {
 export function getAvailableColorsForSize(displayColors, product, size) {
   if (!size) return [];
   if (!product?.variants?.length) return displayColors;
+
+  if (productHasExplicitColors(product) && sizeHasAvailableStock(product, size)) {
+    return displayColors;
+  }
 
   return displayColors.filter((color) =>
     isColorAvailableForSize(product, size, color.name)

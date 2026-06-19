@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
-import { resolveImageUrl } from '../../utils/imageUtils';
 import ProductColorPicker from '../../components/admin/ProductColorPicker';
 import VariantColorSelect from '../../components/admin/VariantColorSelect';
+import ProductImageManager from '../../components/admin/ProductImageManager';
 import { normalizeProductColors } from '../../utils/colorUtils';
+import { normalizeProductImages } from '../../utils/productImages';
 
 const AdminProductEdit = () => {
   const { id } = useParams();
@@ -27,7 +28,6 @@ const AdminProductEdit = () => {
     variants: []
   });
 
-  const [newImages, setNewImages] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
 
   useEffect(() => {
@@ -48,7 +48,11 @@ const AdminProductEdit = () => {
           originalPrice: product.originalPrice || product.price || '',
           category: product.category?._id || '',
           isActive: product.isActive !== false,
-          images: product.images || [],
+          images: normalizeProductImages(product.images).map((img) => ({
+            ...img,
+            preview: img.url,
+            isNew: false,
+          })),
           colors: normalizeProductColors(product.colors, product.variants),
           variants: product.variants || []
         });
@@ -75,21 +79,29 @@ const AdminProductEdit = () => {
     }));
   };
 
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    setNewImages(prev => [...prev, ...files]);
-  };
-
-  const removeExistingImage = (imageUrl) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter(img => img !== imageUrl)
+  const handleAddImageFiles = (files) => {
+    const entries = files.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      color: formData.colors[0]?.name || '',
+      isNew: true,
     }));
-    setImagesToDelete(prev => [...prev, imageUrl]);
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, ...entries],
+    }));
   };
 
-  const removeNewImage = (index) => {
-    setNewImages(prev => prev.filter((_, i) => i !== index));
+  const handleImagesChange = (images) => {
+    const removed = formData.images.filter(
+      (existing) =>
+        !existing.isNew &&
+        !images.some((img) => img.url === existing.url)
+    );
+    if (removed.length > 0) {
+      setImagesToDelete((prev) => [...prev, ...removed.map((img) => img.url)]);
+    }
+    setFormData((prev) => ({ ...prev, images }));
   };
 
   const addVariant = () => {
@@ -137,7 +149,10 @@ const AdminProductEdit = () => {
       submitData.append('isActive', formData.isActive);
       
       // Images existantes à conserver
-      submitData.append('existingImages', JSON.stringify(formData.images));
+      const existingImages = formData.images
+        .filter((img) => !img.isNew)
+        .map(({ url, color }) => ({ url, color: color || '' }));
+      submitData.append('existingImages', JSON.stringify(existingImages));
       
       // Images à supprimer
       if (imagesToDelete.length > 0) {
@@ -145,8 +160,13 @@ const AdminProductEdit = () => {
       }
       
       // Nouvelles images
-      newImages.forEach((file, index) => {
-        submitData.append(`images`, file);
+      const newImages = formData.images.filter((img) => img.isNew && img.file);
+      submitData.append(
+        'newImageColors',
+        JSON.stringify(newImages.map((img) => img.color || ''))
+      );
+      newImages.forEach((image) => {
+        submitData.append('images', image.file);
       });
       
       // Variantes
@@ -280,66 +300,17 @@ const AdminProductEdit = () => {
           </div>
         </div>
 
-        {/* Images existantes */}
-        {formData.images.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Images actuelles
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {formData.images.map((image, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={resolveImageUrl(image)}
-                    alt={`Produit ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeExistingImage(image)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Nouvelles images */}
+        {/* Images */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Ajouter de nouvelles images
+            Images du produit
           </label>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          <ProductImageManager
+            images={formData.images}
+            productColors={formData.colors}
+            onChange={handleImagesChange}
+            onAddFiles={handleAddImageFiles}
           />
-          
-          {newImages.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-              {newImages.map((file, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`Nouvelle ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeNewImage(index)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Couleurs */}

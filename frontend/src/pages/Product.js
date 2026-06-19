@@ -6,8 +6,11 @@ import { addToCart } from '../store/slices/cartSlice';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import Loading from '../components/ui/Loading';
 import { toast } from 'react-toastify';
-import { resolveImageUrl } from '../utils/imageUtils';
 import { normalizeProductColors, colorNameToHex } from '../utils/colorUtils';
+import {
+  getImagesForColor,
+  getProductImageUrl,
+} from '../utils/productImages';
 import {
   colorsEqual,
   getAvailableColorsForSize,
@@ -30,6 +33,7 @@ const Product = () => {
 
   const { currentProduct, isLoading, isRefreshing } = useSelector((state) => state.products);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [autoPlayPaused, setAutoPlayPaused] = useState(false);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColors, setSelectedColors] = useState(['']);
   const [quantity, setQuantity] = useState(1);
@@ -70,6 +74,46 @@ const Product = () => {
 
   const colorRequired = displayColors.length > 0;
 
+  const activeColorForImage = useMemo(
+    () => selectedColors.find((color) => color) || '',
+    [selectedColors]
+  );
+
+  const galleryImages = useMemo(() => {
+    if (!currentProduct) return [];
+    return getImagesForColor(currentProduct.images, activeColorForImage);
+  }, [currentProduct, activeColorForImage]);
+
+  useEffect(() => {
+    setSelectedImage(0);
+  }, [activeColorForImage, galleryImages.length]);
+
+  useEffect(() => {
+    if (galleryImages.length <= 1 || autoPlayPaused) return undefined;
+
+    const timer = setInterval(() => {
+      setSelectedImage((prev) => (prev + 1) % galleryImages.length);
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [galleryImages.length, autoPlayPaused]);
+
+  const handleThumbnailClick = (index) => {
+    setSelectedImage(index);
+    setAutoPlayPaused(true);
+    window.setTimeout(() => setAutoPlayPaused(false), 12000);
+  };
+
+  const setColorAtIndex = (index, colorName) => {
+    setSelectedColors((prev) => {
+      const next = [...prev];
+      next[index] = colorName;
+      return next;
+    });
+    if (index === 0 || !selectedColors[0]) {
+      setAutoPlayPaused(false);
+    }
+  };
   useEffect(() => {
     setSelectedColors((prev) => {
       if (quantity > prev.length) {
@@ -97,14 +141,6 @@ const Product = () => {
       Array.from({ length: quantity }, (_, index) => prev[index] || onlyColor)
     );
   }, [selectedSize, colorRequired, availableColorsForSize, quantity]);
-
-  const setColorAtIndex = (index, colorName) => {
-    setSelectedColors((prev) => {
-      const next = [...prev];
-      next[index] = colorName;
-      return next;
-    });
-  };
 
   const renderColorSwatches = (selected, onSelect, keyPrefix = '', allowPick = true) => (
     <div className="flex flex-wrap gap-4">
@@ -257,32 +293,39 @@ const Product = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Colonne gauche: Image principale */}
           <div>
-            <div className="aspect-square bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="aspect-square bg-white rounded-lg shadow-md overflow-hidden relative">
+              {galleryImages.length > 1 && (
+                <div className="absolute top-3 right-3 z-10 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                  {selectedImage + 1} / {galleryImages.length}
+                </div>
+              )}
               <img
-                src={resolveImageUrl(currentProduct.images[selectedImage], 720)}
+                src={getProductImageUrl(galleryImages[selectedImage] || galleryImages[0], 720)}
                 alt={currentProduct.name}
                 loading="eager"
                 fetchPriority="high"
                 width="600"
                 height="600"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-opacity duration-500"
               />
             </div>
 
             {/* Thumbnail Images */}
-            {currentProduct.images.length > 1 && (
+            {galleryImages.length > 1 && (
               <div className="grid grid-cols-4 gap-2 mt-4">
-                {currentProduct.images.map((image, index) => (
+                {galleryImages.map((image, index) => (
                   <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`aspect-square bg-white rounded-lg shadow-sm overflow-hidden border-2 ${selectedImage === index
-                      ? 'border-blue-500'
-                      : 'border-gray-200'
-                      }`}
+                    key={`${image.url}-${index}`}
+                    type="button"
+                    onClick={() => handleThumbnailClick(index)}
+                    className={`aspect-square bg-white rounded-lg shadow-sm overflow-hidden border-2 ${
+                      selectedImage === index
+                        ? 'border-blue-500'
+                        : 'border-gray-200'
+                    }`}
                   >
                     <img
-                      src={resolveImageUrl(image, 150)}
+                      src={getProductImageUrl(image, 150)}
                       alt={`${currentProduct.name} ${index + 1}`}
                       loading="lazy"
                       width="150"

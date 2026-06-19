@@ -6,6 +6,12 @@ const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware
 const { uploadProductImages, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
 const publicCache = require('../middleware/publicCache');
 const {
+  normalizeProductImages,
+  buildImagesFromUploads,
+  parseImageColors,
+  mergeExistingAndNewImages,
+} = require('../utils/productImages');
+const {
   sanitizeProductForClient,
   enrichProduct,
   mapProductsForClient,
@@ -414,9 +420,11 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
     }
 
     // Traiter les images uploadées (Cloudinary si dispo, sinon fichiers locaux)
-    const images = req.uploadedImages
+    const uploadedUrls = req.uploadedImages
       ? req.uploadedImages.map(u => u.url)
       : (req.files ? req.files.map(file => file.filename) : []);
+    const imageColors = parseImageColors(req.body.imageColors);
+    const images = buildImagesFromUploads(uploadedUrls, imageColors);
 
     if (images.length === 0) {
       return res.status(400).json({
@@ -513,10 +521,7 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
 
     res.status(201).json({
       message: 'Produit créé avec succès',
-      product: {
-        ...product.toObject(),
-        images: product.images.map(image => getImageUrl(image))
-      }
+      product: enrichProduct(product.toObject()),
     });
 
   } catch (error) {
@@ -637,9 +642,8 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     // Récupérer les images existantes à conserver
     if (req.body.existingImages) {
       try {
-        const existingImages = JSON.parse(req.body.existingImages);
-        console.log('Images existantes à conserver:', existingImages);
-        finalImages = [...existingImages];
+        finalImages = normalizeProductImages(JSON.parse(req.body.existingImages));
+        console.log('Images existantes à conserver:', finalImages);
       } catch (error) {
         console.error('Erreur lors du parsing des images existantes:', error);
       }
@@ -649,10 +653,11 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     if (req.body.imagesToDelete) {
       try {
         const imagesToDelete = JSON.parse(req.body.imagesToDelete);
-        // Supprimer physiquement les fichiers
-        await Promise.all(imagesToDelete.map((img) => deleteFile(img)));
-        // Retirer des images finales
-        finalImages = finalImages.filter(img => !imagesToDelete.includes(img));
+        const deleteUrls = imagesToDelete.map((img) =>
+          typeof img === 'string' ? img : img.url
+        );
+        await Promise.all(deleteUrls.map((img) => deleteFile(img)));
+        finalImages = finalImages.filter((img) => !deleteUrls.includes(img.url));
       } catch (error) {
         console.error('Erreur lors de la suppression des images:', error);
       }
@@ -660,10 +665,11 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
 
     // Ajouter les nouvelles images
     if ((req.files && req.files.length > 0) || (req.uploadedImages && req.uploadedImages.length > 0)) {
-      const newImages = req.uploadedImages
+      const newUrls = req.uploadedImages
         ? req.uploadedImages.map(u => u.url)
         : (req.files ? req.files.map(file => file.filename) : []);
-      finalImages = [...finalImages, ...newImages];
+      const newImageColors = parseImageColors(req.body.newImageColors);
+      finalImages = [...finalImages, ...buildImagesFromUploads(newUrls, newImageColors)];
     }
 
     // Mettre à jour les images du produit
@@ -767,10 +773,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     console.log('=== SUCCÈS MISE À JOUR ===');
     res.json({
       message: 'Produit mis à jour avec succès',
-      product: {
-        ...product.toObject(),
-        images: product.images.map(image => getImageUrl(image))
-      }
+      product: enrichProduct(product.toObject()),
     });
 
   } catch (error) {

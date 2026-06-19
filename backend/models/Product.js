@@ -38,8 +38,8 @@ const productSchema = new mongoose.Schema({
     default: 0
   },
   images: [{
-    type: String,
-    required: [true, 'Au moins une image est requise']
+    type: mongoose.Schema.Types.Mixed,
+    required: true
   }],
   category: {
     type: mongoose.Schema.Types.ObjectId,
