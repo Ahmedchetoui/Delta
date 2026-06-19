@@ -27,21 +27,17 @@ const LandingPage = ({ onComplete, isReady = false }) => {
               stiffness: 200,
               damping: 15,
             }}
-            className="relative z-10 mb-10"
+            className="relative z-10 mb-10 px-6"
           >
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full border-[6px] border-black" />
-              <img
-                src={deltaLogo}
-                alt="Delta Fashion"
-                width="224"
-                height="224"
-                decoding="sync"
-                fetchPriority="high"
-                className="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover border-[6px] border-white relative"
-                style={{ boxShadow: '0 0 0 6px black' }}
-              />
-            </div>
+            <img
+              src={deltaLogo}
+              alt="Delta Fashion"
+              width="320"
+              height="80"
+              decoding="sync"
+              fetchPriority="high"
+              className="h-20 md:h-24 w-auto max-w-[280px] md:max-w-[320px] object-contain object-center"
+            />
           </motion.div>
 
           <motion.div

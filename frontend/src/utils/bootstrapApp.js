@@ -7,7 +7,8 @@ import { prefetchShopProducts } from './prefetch';
 const DEFAULT_BANNER_IMAGE =
   'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75';
 
-const IMAGE_PRELOAD_BUDGET_MS = 2500;
+const IMAGE_PRELOAD_BUDGET_MS = 1500;
+const BOOTSTRAP_MAX_WAIT_MS = 6000;
 
 export function preloadImage(src) {
   return new Promise((resolve) => {
@@ -37,10 +38,15 @@ function collectCriticalImages(products = [], bannerImage) {
 }
 
 export async function bootstrapApp(dispatch) {
-  // Toujours attendre l'API — ne pas couper à 6s (cold start Render sur mobile)
-  const result = await dispatch(fetchHomeData());
+  // Ne pas bloquer la landing plus de 6s (cold start Render peut prendre 30s+)
+  const result = await Promise.race([
+    dispatch(fetchHomeData()),
+    new Promise((resolve) => {
+      setTimeout(() => resolve(null), BOOTSTRAP_MAX_WAIT_MS);
+    }),
+  ]);
 
-  if (fetchHomeData.fulfilled.match(result)) {
+  if (result && fetchHomeData.fulfilled.match(result)) {
     prefetchShopProducts(dispatch);
   }
 

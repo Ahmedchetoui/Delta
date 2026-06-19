@@ -71,6 +71,9 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    const maxLandingWait = setTimeout(() => {
+      if (!cancelled) setAppReady(true);
+    }, 8000);
 
     const runBootstrap = async () => {
       try {
@@ -86,6 +89,7 @@ function App() {
 
     return () => {
       cancelled = true;
+      clearTimeout(maxLandingWait);
     };
   }, [dispatch]);
 
