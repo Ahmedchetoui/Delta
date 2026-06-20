@@ -57,16 +57,16 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
     const folder = getCloudinaryFolder();
 
     const uploads = await Promise.all(files.map(async file => {
-      // Optimisation d'image avec Sharp
       let processedBuffer = file.buffer;
       try {
-        processedBuffer = await sharp(file.buffer)
-          .resize(1200, 1200, {
-            fit: 'inside',
-            withoutEnlargement: true
-          })
-          .jpeg({ quality: 80, mozjpeg: true })
-          .toBuffer();
+        const isPng = file.mimetype === 'image/png' || /\.png$/i.test(file.originalname || '');
+        const pipeline = sharp(file.buffer).resize(1200, 1200, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        });
+        processedBuffer = isPng
+          ? await pipeline.png({ quality: 80, compressionLevel: 8 }).toBuffer()
+          : await pipeline.jpeg({ quality: 80, mozjpeg: true }).toBuffer();
         console.log(`Image optimisée: ${file.originalname} (${(file.buffer.length / 1024).toFixed(2)}KB -> ${(processedBuffer.length / 1024).toFixed(2)}KB)`);
       } catch (sharpError) {
         console.warn('Erreur lors de l\'optimisation Sharp, utilisation de l\'original:', sharpError.message);

@@ -16,6 +16,7 @@ const AdminCategories = () => {
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editImage, setEditImage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadCategories = async () => {
     try {
@@ -81,6 +82,7 @@ const AdminCategories = () => {
       return;
     }
     try {
+      setIsSubmitting(true);
       const fd = new FormData();
       fd.append('name', editName.trim());
       if (editImage) fd.append('image', editImage);
@@ -89,8 +91,14 @@ const AdminCategories = () => {
       cancelEdit();
       loadCategories();
     } catch (e) {
-      const msg = e?.response?.data?.message || 'Erreur lors de la mise à jour';
+      const apiErrors = e?.response?.data?.errors;
+      const details = Array.isArray(apiErrors)
+        ? apiErrors.map((entry) => entry.msg).join(', ')
+        : null;
+      const msg = details || e?.response?.data?.message || e?.message || 'Erreur lors de la mise à jour';
       toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -211,7 +219,9 @@ const AdminCategories = () => {
             <input type="file" accept="image/*" onChange={(e)=>setEditImage(e.target.files?.[0] || null)} className="w-full" />
           </div>
           <div className="flex gap-3">
-            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Mettre à jour</button>
+            <button type="submit" disabled={isSubmitting} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50">
+              {isSubmitting ? 'Mise à jour...' : 'Mettre à jour'}
+            </button>
             <button type="button" onClick={cancelEdit} className="px-4 py-2 border rounded">Annuler</button>
           </div>
         </form>

@@ -91,7 +91,8 @@ export const categoryService = {
   getCategories: (params) => api.get('/categories', { params }),
   getCategory: (id) => api.get(`/categories/${id}`),
   createCategory: (categoryData) => api.post('/categories', categoryData),
-  updateCategory: (id, categoryData) => api.put(`/categories/${id}`, categoryData),
+  updateCategory: (id, categoryData) =>
+    api.post(`/categories/${id}/update`, categoryData, { timeout: 120000 }),
   deleteCategory: (id) => api.delete(`/categories/${id}`),
   getCategoryTree: () => api.get('/categories/tree'),
 };

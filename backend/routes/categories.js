@@ -19,18 +19,119 @@ const categoryValidation = [
     .isLength({ min: 2, max: 50 })
     .withMessage('Le nom doit contenir entre 2 et 50 caractères'),
   body('description')
-    .optional()
+    .optional({ values: 'falsy' })
     .isLength({ max: 500 })
     .withMessage('La description ne peut pas dépasser 500 caractères'),
   body('parentCategory')
-    .optional()
+    .optional({ values: 'falsy' })
     .isMongoId()
     .withMessage('ID de catégorie parent invalide'),
   body('order')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 0 })
-    .withMessage('L\'ordre doit être un nombre entier positif')
+    .withMessage('L\'ordre doit être un nombre entier positif'),
 ];
+
+const categoryUploadMiddleware = [
+  uploadSingleImage,
+  uploadBuffersToCloudinary,
+  handleUploadError,
+  categoryValidation,
+];
+
+function formatCategoryError(error) {
+  if (error?.code === 11000) {
+    const field = Object.keys(error.keyPattern || {})[0] || 'nom';
+    return `Une catégorie avec ce ${field} existe déjà`;
+  }
+  if (error?.name === 'ValidationError') {
+    return Object.values(error.errors || {})
+      .map((entry) => entry.message)
+      .join(', ');
+  }
+  return null;
+}
+
+async function updateCategoryHandler(req, res) {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Données invalides',
+        errors: errors.array(),
+      });
+    }
+
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({
+        message: 'Catégorie non trouvée',
+      });
+    }
+
+    const {
+      name,
+      description,
+      parentCategory,
+      order,
+      icon,
+      isActive,
+      metaTitle,
+      metaDescription,
+    } = req.body;
+
+    if (parentCategory) {
+      const parentExists = await Category.findById(parentCategory);
+      if (!parentExists) {
+        return res.status(400).json({
+          message: 'Catégorie parent non trouvée',
+        });
+      }
+
+      if (parentCategory === req.params.id) {
+        return res.status(400).json({
+          message: 'Une catégorie ne peut pas être parent d\'elle-même',
+        });
+      }
+    }
+
+    if (req.uploadedImages && req.uploadedImages.length > 0) {
+      if (category.image) {
+        await deleteFile(category.image);
+      }
+      category.image = req.uploadedImages[0].url;
+    } else if (req.file) {
+      if (category.image) {
+        await deleteFile(category.image);
+      }
+      category.image = req.file.filename;
+    }
+
+    if (name) category.name = name;
+    if (description !== undefined) category.description = description;
+    if (parentCategory !== undefined) category.parentCategory = parentCategory || null;
+    if (order !== undefined) category.order = parseInt(order, 10);
+    if (icon !== undefined) category.icon = icon;
+    if (isActive !== undefined) category.isActive = isActive === 'true' || isActive === true;
+    if (metaTitle !== undefined) category.metaTitle = metaTitle;
+    if (metaDescription !== undefined) category.metaDescription = metaDescription;
+
+    await category.save();
+    await category.populate('parentCategory', 'name slug');
+
+    res.json({
+      message: 'Catégorie mise à jour avec succès',
+      category: {
+        ...category.toObject(),
+        image: category.image ? getImageUrl(category.image) : null,
+      },
+    });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de la catégorie:', error);
+    const message = formatCategoryError(error) || 'Erreur lors de la mise à jour de la catégorie';
+    res.status(error?.code === 11000 ? 400 : 500).json({ message });
+  }
+}
 
 // @route   GET /api/categories
 // @desc    Obtenir toutes les catégories
@@ -366,98 +467,11 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffe
 });
 
 // @route   PUT /api/categories/:id
+// @route   POST /api/categories/:id/update
 // @desc    Mettre à jour une catégorie
 // @access  Private (Admin)
-router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, categoryValidation, async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        message: 'Données invalides',
-        errors: errors.array()
-      });
-    }
-
-    const category = await Category.findById(req.params.id);
-    if (!category) {
-      return res.status(404).json({
-        message: 'Catégorie non trouvée'
-      });
-    }
-
-    const {
-      name,
-      description,
-      parentCategory,
-      order,
-      icon,
-      isActive,
-      metaTitle,
-      metaDescription
-    } = req.body;
-
-    // Vérifier que la catégorie parent existe si fournie
-    if (parentCategory) {
-      const parentExists = await Category.findById(parentCategory);
-      if (!parentExists) {
-        return res.status(400).json({
-          message: 'Catégorie parent non trouvée'
-        });
-      }
-
-      // Vérifier qu'on ne crée pas une boucle (catégorie parent de sa propre catégorie parent)
-      if (parentCategory === req.params.id) {
-        return res.status(400).json({
-          message: 'Une catégorie ne peut pas être parent d\'elle-même'
-        });
-      }
-    }
-
-    // Traiter la nouvelle image si fournie (Cloudinary ou local)
-    if (req.uploadedImages && req.uploadedImages.length > 0) {
-      // Supprimer l'ancienne image
-      if (category.image) {
-        deleteFile(category.image);
-      }
-      // Image uploadée sur Cloudinary
-      category.image = req.uploadedImages[0].url;
-    } else if (req.file) {
-      // Supprimer l'ancienne image
-      if (category.image) {
-        deleteFile(category.image);
-      }
-      // Image uploadée localement (fallback)
-      category.image = req.file.filename;
-    }
-
-    // Mettre à jour les champs
-    if (name) category.name = name;
-    if (description !== undefined) category.description = description;
-    if (parentCategory !== undefined) category.parentCategory = parentCategory;
-    if (order !== undefined) category.order = parseInt(order);
-    if (icon !== undefined) category.icon = icon;
-    if (isActive !== undefined) category.isActive = isActive === 'true';
-    if (metaTitle !== undefined) category.metaTitle = metaTitle;
-    if (metaDescription !== undefined) category.metaDescription = metaDescription;
-
-    await category.save();
-    await category.populate('parentCategory', 'name slug');
-
-    res.json({
-      message: 'Catégorie mise à jour avec succès',
-      category: {
-        ...category.toObject(),
-        image: category.image ? getImageUrl(category.image) : null
-      }
-    });
-
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour de la catégorie:', error);
-    res.status(500).json({
-      message: 'Erreur lors de la mise à jour de la catégorie'
-    });
-  }
-});
+router.put('/:id', authenticateToken, requireAdmin, ...categoryUploadMiddleware, updateCategoryHandler);
+router.post('/:id/update', authenticateToken, requireAdmin, ...categoryUploadMiddleware, updateCategoryHandler);
 
 // @route   DELETE /api/categories/:id
 // @desc    Supprimer une catégorie
