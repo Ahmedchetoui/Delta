@@ -6,7 +6,8 @@ const User = require('../models/User');
 const { authenticateToken, requireAdmin, requireOwnerOrAdmin, optionalAuth } = require('../middleware/auth');
 
 const { deductOrderStock, restoreOrderStock } = require('../utils/stockUtils');
-const { guestOrderLimiter, orderCreateLimiter } = require('../middleware/rateLimiters');
+const { guestOrderLimiter, orderCreateLimiter, orderEmailLimiter } = require('../middleware/rateLimiters');
+const { MAX_ITEM_QUANTITY, MAX_ORDER_ITEMS, PAYMENT_METHOD_COD } = require('../utils/orderConstants');
 const { processOrder } = require('../services/orderQueue');
 const { OrderServiceError } = require('../services/orderService');
 
@@ -34,14 +35,14 @@ function mapOrderImages(order) {
 // Validation pour la création de commande (utilisateurs connectés et invités)
 const orderValidation = [
   body('items')
-    .isArray({ min: 1 })
-    .withMessage('Au moins un article est requis'),
+    .isArray({ min: 1, max: MAX_ORDER_ITEMS })
+    .withMessage(`Entre 1 et ${MAX_ORDER_ITEMS} articles par commande`),
   body('items.*.product')
     .isMongoId()
     .withMessage('ID de produit invalide'),
   body('items.*.quantity')
-    .isInt({ min: 1 })
-    .withMessage('La quantité doit être un nombre entier positif'),
+    .isInt({ min: 1, max: MAX_ITEM_QUANTITY })
+    .withMessage(`La quantité doit être entre 1 et ${MAX_ITEM_QUANTITY}`),
   body('shippingAddress.firstName')
     .trim()
     .isLength({ min: 1, max: 50 })
@@ -70,8 +71,13 @@ const orderValidation = [
     .isLength({ min: 2, max: 50 })
     .withMessage('Le gouvernorat est invalide'),
   body('paymentMethod')
-    .isIn(['cash_on_delivery', 'bank_transfer', 'paypal', 'stripe'])
-    .withMessage('Méthode de paiement invalide')
+    .optional()
+    .custom((value) => {
+      if (value && value !== PAYMENT_METHOD_COD) {
+        throw new Error('Seul le paiement à la livraison est accepté pour le moment');
+      }
+      return true;
+    }),
 ];
 
 // @route   GET /api/orders
@@ -327,7 +333,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // @route   POST /api/orders
 // @desc    Créer une nouvelle commande (utilisateurs connectés et invités)
 // @access  Public/Private
-router.post('/', orderCreateLimiter, optionalAuth, orderValidation, async (req, res) => {
+router.post('/', orderCreateLimiter, orderEmailLimiter, optionalAuth, orderValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -337,6 +343,7 @@ router.post('/', orderCreateLimiter, optionalAuth, orderValidation, async (req, 
       });
     }
 
+    req.body.paymentMethod = PAYMENT_METHOD_COD;
     const order = await processOrder(req.body, req.user ? req.user._id : null);
 
     res.status(201).json({

@@ -8,7 +8,16 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config();
 const { enabled: cloudinaryEnabled, mode: storageMode, cloudName, verifyCloudinaryConnection } = require('./config/cloudinary');
-const { initOrderQueue, closeOrderQueue, getQueueMode } = require('./services/orderQueue');
+const {
+  initOrderQueue,
+  closeOrderQueue,
+  getQueueMode,
+} = require('./services/orderQueue');
+const {
+  adminLoginLimiter,
+  loginLimiter,
+  registerLimiter,
+} = require('./middleware/rateLimiters');
 
 const app = express();
 
@@ -39,27 +48,21 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Autoriser les requêtes sans origin (Postman, serveurs, mobile apps)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      return callback(null, !isProduction);
+    }
 
-    // Normaliser en supprimant un éventuel trailing slash
     const normalized = origin.replace(/\/$/, '');
 
-    // Vérifier si l'origin est dans la liste autorisée
     const isAllowed = allowedOrigins.some(o => normalized === o.replace(/\/$/, ''));
 
-    // En développement, autoriser localhost avec n'importe quel port
     const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized);
 
-    // En développement, autoriser les IP du réseau local (ex: 192.168.x.x:3000)
     const isPrivateNetwork = !isProduction &&
       /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/.test(normalized);
 
-    // En production : liste explicite + déploiements Vercel Delta
-    const isDeltaVercel = /^https:\/\/delta(-[a-z0-9-]+)*\.vercel\.app$/.test(normalized);
-
     if (isProduction) {
-      return callback(null, isAllowed || isDeltaVercel);
+      return callback(null, isAllowed);
     }
 
     if (isAllowed || isLocalhost || isPrivateNetwork) {
@@ -94,15 +97,8 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: isProduction ? 15 : 100,
-  message: { message: 'Trop de tentatives. Réessayez dans 15 minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/login', adminLoginLimiter, loginLimiter);
+app.use('/api/auth/register', registerLimiter);
 
 // Logging
 app.use(morgan('combined'));
@@ -237,6 +233,10 @@ app.get('/api/storage-health', async (req, res) => {
 
 // Route sécurisée pour peupler la base de données
 app.get('/api/seed-database', async (req, res) => {
+  if (isProduction) {
+    return res.status(404).json({ message: 'Route non trouvée' });
+  }
+
   try {
     const seedSecret = req.headers['x-seed-secret'];
     const expectedSecret = process.env.SEED_SECRET;

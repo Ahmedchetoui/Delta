@@ -6,7 +6,7 @@ const { deductOrderStock, restoreOrderStock } = require('../utils/stockUtils');
 const Category = require('../models/Category');
 const Order = require('../models/Order');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { getImageUrl } = require('../middleware/upload');
+const { escapeRegex } = require('../utils/escapeRegex');
 
 const router = express.Router();
 
@@ -685,12 +685,13 @@ router.get('/orders', [
     }
 
     if (search) {
+      const safeSearch = escapeRegex(search);
       filter.$or = [
-        { orderNumber: { $regex: search, $options: 'i' } },
-        { guestEmail: { $regex: search, $options: 'i' } },
-        { 'shippingAddress.firstName': { $regex: search, $options: 'i' } },
-        { 'shippingAddress.lastName': { $regex: search, $options: 'i' } },
-        { 'shippingAddress.email': { $regex: search, $options: 'i' } }
+        { orderNumber: { $regex: safeSearch, $options: 'i' } },
+        { guestEmail: { $regex: safeSearch, $options: 'i' } },
+        { 'shippingAddress.firstName': { $regex: safeSearch, $options: 'i' } },
+        { 'shippingAddress.lastName': { $regex: safeSearch, $options: 'i' } },
+        { 'shippingAddress.email': { $regex: safeSearch, $options: 'i' } }
       ];
     }
 

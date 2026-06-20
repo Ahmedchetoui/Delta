@@ -11,6 +11,7 @@ import {
 } from '../constants/tunisiaGovernorates';
 import { getImagesForColor, getProductImageUrl } from '../utils/productImages';
 import { normalizeCartColors } from '../utils/cartColors';
+import { calculateShippingCost, FREE_SHIPPING_THRESHOLD } from '../constants/shipping';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -144,7 +145,7 @@ const Checkout = () => {
     }
   };
 
-  const shippingCost = totalAmount >= 100 ? 0 : 8;
+  const shippingCost = calculateShippingCost(totalAmount);
   const finalTotal = totalAmount + shippingCost;
 
   return (
@@ -297,54 +298,17 @@ const Checkout = () => {
                   />
                 </div>
 
-                {/* Payment Method */}
+                {/* Paiement à la livraison uniquement */}
                 <div className="border-t border-gray-200 pt-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Mode de paiement</h3>
-                  
-                  <div className="space-y-3">
-                    <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cash_on_delivery"
-                        checked={formData.paymentMethod === 'cash_on_delivery'}
-                        onChange={handleChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      />
-                      <div className="ml-3">
-                        <div className="font-medium text-gray-900">Paiement à la livraison</div>
-                        <div className="text-sm text-gray-500">Payez en espèces à la réception</div>
-                      </div>
-                    </label>
-                    
-                    <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="bank_transfer"
-                        checked={formData.paymentMethod === 'bank_transfer'}
-                        onChange={handleChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      />
-                      <div className="ml-3">
-                        <div className="font-medium text-gray-900">Virement bancaire</div>
-                        <div className="text-sm text-gray-500">Paiement par virement (à venir)</div>
-                      </div>
-                    </label>
-                    
-                    <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 opacity-50">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="card"
-                        disabled
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      />
-                      <div className="ml-3">
-                        <div className="font-medium text-gray-900">Carte bancaire</div>
-                        <div className="text-sm text-gray-500">Bientôt disponible</div>
-                      </div>
-                    </label>
+                  <div className="flex items-center p-4 border border-green-200 bg-green-50 rounded-lg">
+                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4 text-green-700 font-bold text-sm">
+                      DT
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Paiement à la livraison</div>
+                      <div className="text-sm text-gray-600">Payez en espèces à la réception de votre commande</div>
+                    </div>
                   </div>
                 </div>
 
@@ -407,9 +371,9 @@ const Checkout = () => {
                   </span>
                 </div>
                 
-                {totalAmount < 100 && (
+                {totalAmount < FREE_SHIPPING_THRESHOLD && (
                   <div className="text-xs text-blue-600">
-                    Ajoutez {(100 - totalAmount).toFixed(2)} DT pour la livraison gratuite
+                    Ajoutez {(FREE_SHIPPING_THRESHOLD - totalAmount).toFixed(2)} DT pour la livraison gratuite
                   </div>
                 )}
                 

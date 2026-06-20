@@ -7,6 +7,7 @@ const {
   applyStockDeduction,
   syncTotalStock,
 } = require('../utils/stockUtils');
+const { calculateShippingCost, PAYMENT_METHOD_COD } = require('../utils/orderConstants');
 
 class OrderServiceError extends Error {
   constructor(message, statusCode = 500) {
@@ -152,7 +153,6 @@ async function createOrderWithTransaction(orderData, userId) {
       items,
       shippingAddress,
       billingAddress,
-      paymentMethod,
       notes,
       isGift,
       giftMessage,
@@ -169,7 +169,7 @@ async function createOrderWithTransaction(orderData, userId) {
     }
 
     const { orderItems, subtotal } = await buildOrderItems(items, products);
-    const shippingCost = 8.0;
+    const shippingCost = calculateShippingCost(subtotal);
     const tax = 0;
     const total = subtotal + shippingCost + tax;
 
@@ -180,7 +180,7 @@ async function createOrderWithTransaction(orderData, userId) {
       items: orderItems,
       shippingAddress,
       billingAddress: billingAddress || shippingAddress,
-      paymentMethod,
+      paymentMethod: PAYMENT_METHOD_COD,
       subtotal,
       shippingCost,
       tax,
@@ -209,7 +209,6 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
     items,
     shippingAddress,
     billingAddress,
-    paymentMethod,
     notes,
     isGift,
     giftMessage,
@@ -226,7 +225,7 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
   }
 
   const { orderItems, subtotal } = await buildOrderItems(items, products);
-  const shippingCost = 8.0;
+  const shippingCost = calculateShippingCost(subtotal);
   const tax = 0;
   const total = subtotal + shippingCost + tax;
 
@@ -254,7 +253,7 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
       items: orderItems,
       shippingAddress,
       billingAddress: billingAddress || shippingAddress,
-      paymentMethod,
+      paymentMethod: PAYMENT_METHOD_COD,
       subtotal,
       shippingCost,
       tax,
