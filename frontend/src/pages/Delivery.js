@@ -34,7 +34,7 @@ const Delivery = () => {
                 Gratuite dès 100 DT
               </div>
               <div className="text-sm text-gray-500">
-                Sinon 10 DT
+                Sinon 8 DT
               </div>
             </div>
             
@@ -184,7 +184,7 @@ const Delivery = () => {
             
             <div className="bg-white rounded-lg shadow-md p-8">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                Livraison Payante (10 DT)
+                Livraison Payante (8 DT)
               </h3>
               <ul className="space-y-2 text-gray-600">
                 <li>• Tataouine</li>

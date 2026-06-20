@@ -44,7 +44,7 @@ const Cart = () => {
     }
   }, []);
 
-  const deliveryCost = 7.0;
+  const deliveryCost = 8.0;
   const total = totalAmount + deliveryCost;
 
   const handleQuantityChange = (itemId, newQuantity) => {

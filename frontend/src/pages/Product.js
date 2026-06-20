@@ -48,7 +48,7 @@ const Product = () => {
   const [streetAddress, setStreetAddress] = useState('');
 
 
-  const deliveryCost = 7.0; // Coût de livraison affiché dans la maquette
+  const deliveryCost = 8.0;
   const productPrice = currentProduct
     ? (currentProduct.finalPrice ?? currentProduct.price ?? 0)
     : 0;

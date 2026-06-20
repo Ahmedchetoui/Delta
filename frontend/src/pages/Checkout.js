@@ -144,7 +144,7 @@ const Checkout = () => {
     }
   };
 
-  const shippingCost = totalAmount >= 100 ? 0 : 10;
+  const shippingCost = totalAmount >= 100 ? 0 : 8;
   const finalTotal = totalAmount + shippingCost;
 
   return (

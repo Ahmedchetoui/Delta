@@ -169,7 +169,7 @@ async function createOrderWithTransaction(orderData, userId) {
     }
 
     const { orderItems, subtotal } = await buildOrderItems(items, products);
-    const shippingCost = 7.0;
+    const shippingCost = 8.0;
     const tax = 0;
     const total = subtotal + shippingCost + tax;
 
@@ -226,7 +226,7 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
   }
 
   const { orderItems, subtotal } = await buildOrderItems(items, products);
-  const shippingCost = 7.0;
+  const shippingCost = 8.0;
   const tax = 0;
   const total = subtotal + shippingCost + tax;
 
