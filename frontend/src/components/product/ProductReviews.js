@@ -98,10 +98,7 @@ const ProductReviews = ({ productId, reviews = [], rating = { average: 0, count:
 
   return (
     <div className="mt-16">
-      <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">Avis clients</h2>
-      <p className="text-center text-gray-500 text-sm mb-8">
-        Les avis sont facultatifs — aucun compte requis pour commander ni pour laisser un avis.
-      </p>
+      <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Avis clients</h2>
 
       <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-gray-100">
