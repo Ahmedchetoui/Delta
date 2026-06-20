@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
@@ -7,6 +7,11 @@ import VariantColorSelect from '../../components/admin/VariantColorSelect';
 import ProductImageManager from '../../components/admin/ProductImageManager';
 import { normalizeProductColors } from '../../utils/colorUtils';
 import { normalizeProductImages } from '../../utils/productImages';
+import {
+  getVariantColorNames,
+  hasImageForColor,
+  syncProductColorsChange,
+} from '../../utils/adminProductHelpers';
 
 const AdminProductEdit = () => {
   const { id } = useParams();
@@ -29,6 +34,16 @@ const AdminProductEdit = () => {
   });
 
   const [imagesToDelete, setImagesToDelete] = useState([]);
+
+  const variantColors = useMemo(
+    () => getVariantColorNames(formData.variants),
+    [formData.variants]
+  );
+
+  const openColorPhotoUpload = (colorName) => {
+    if (!colorName) return;
+    document.getElementById(`color-upload-${colorName}`)?.click();
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -79,11 +94,11 @@ const AdminProductEdit = () => {
     }));
   };
 
-  const handleAddImageFiles = (files) => {
+  const handleAddImageFiles = (files, color = '') => {
     const entries = files.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
-      color: formData.colors[0]?.name || '',
+      color,
       isNew: true,
     }));
     setFormData((prev) => ({
@@ -300,19 +315,6 @@ const AdminProductEdit = () => {
           </div>
         </div>
 
-        {/* Images */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Images du produit
-          </label>
-          <ProductImageManager
-            images={formData.images}
-            productColors={formData.colors}
-            onChange={handleImagesChange}
-            onAddFiles={handleAddImageFiles}
-          />
-        </div>
-
         {/* Couleurs */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -320,7 +322,9 @@ const AdminProductEdit = () => {
           </label>
           <ProductColorPicker
             colors={formData.colors}
-            onChange={(colors) => setFormData((prev) => ({ ...prev, colors }))}
+            onChange={(colors) =>
+              setFormData((prev) => syncProductColorsChange(prev, colors))
+            }
           />
         </div>
 
@@ -340,7 +344,7 @@ const AdminProductEdit = () => {
           </div>
           
           {formData.variants.map((variant, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 border rounded-lg">
+            <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 p-4 border rounded-lg items-center">
               <input
                 type="text"
                 placeholder="Taille (ex: M, L, XL)"
@@ -361,6 +365,21 @@ const AdminProductEdit = () => {
                 onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              {variant.color ? (
+                <button
+                  type="button"
+                  onClick={() => openColorPhotoUpload(variant.color)}
+                  className={`text-sm px-3 py-2 rounded-lg border ${
+                    hasImageForColor(formData.images, variant.color)
+                      ? 'border-green-500 text-green-700 bg-green-50'
+                      : 'border-amber-500 text-amber-700 bg-amber-50'
+                  }`}
+                >
+                  {hasImageForColor(formData.images, variant.color) ? '✓ Photo' : '+ Photo'}
+                </button>
+              ) : (
+                <span className="text-xs text-gray-400">Couleur → photo</span>
+              )}
               <button
                 type="button"
                 onClick={() => removeVariant(index)}
@@ -370,6 +389,20 @@ const AdminProductEdit = () => {
               </button>
             </div>
           ))}
+        </div>
+
+        {/* Images */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Images du produit par couleur
+          </label>
+          <ProductImageManager
+            images={formData.images}
+            productColors={formData.colors}
+            variantColors={variantColors}
+            onChange={handleImagesChange}
+            onAddFiles={handleAddImageFiles}
+          />
         </div>
 
         {/* Statut */}

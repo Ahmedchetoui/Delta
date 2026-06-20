@@ -5,6 +5,11 @@ import { toast } from 'react-toastify';
 import ProductColorPicker from '../../components/admin/ProductColorPicker';
 import VariantColorSelect from '../../components/admin/VariantColorSelect';
 import ProductImageManager from '../../components/admin/ProductImageManager';
+import {
+  getVariantColorNames,
+  hasImageForColor,
+  syncProductColorsChange,
+} from '../../utils/adminProductHelpers';
 
 const AdminProductNew = () => {
   const navigate = useNavigate();
@@ -42,14 +47,24 @@ const AdminProductNew = () => {
     load();
   }, []);
 
-  const onAddImageFiles = (files) => {
+  const variantColors = useMemo(
+    () => getVariantColorNames(form.variants),
+    [form.variants]
+  );
+
+  const onAddImageFiles = (files, color = '') => {
     const entries = files.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
-      color: form.colors[0]?.name || '',
+      color,
       isNew: true,
     }));
     setForm((f) => ({ ...f, images: [...f.images, ...entries] }));
+  };
+
+  const openColorPhotoUpload = (colorName) => {
+    if (!colorName) return;
+    document.getElementById(`color-upload-${colorName}`)?.click();
   };
 
   const updateImages = (images) => {
@@ -170,7 +185,7 @@ const AdminProductNew = () => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Couleurs du produit</label>
           <ProductColorPicker
             colors={form.colors}
-            onChange={(colors) => setForm((f) => ({ ...f, colors }))}
+            onChange={(colors) => setForm((f) => syncProductColorsChange(f, colors))}
           />
         </div>
 
@@ -180,7 +195,7 @@ const AdminProductNew = () => {
           </label>
           <div className="space-y-3">
             {form.variants.map((v, idx) => (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
                 <input placeholder="Taille (ex: 8, M, 42)" className="border rounded px-3 py-2" value={v.size} onChange={(e) => updateVariant(idx, { size: e.target.value })} />
                 <VariantColorSelect
                   value={v.color}
@@ -189,6 +204,21 @@ const AdminProductNew = () => {
                   className="border rounded px-3 py-2 w-full"
                 />
                 <input type="number" placeholder="Stock" className="border rounded px-3 py-2" value={v.stock} onChange={(e) => updateVariant(idx, { stock: e.target.value })} />
+                {v.color ? (
+                  <button
+                    type="button"
+                    onClick={() => openColorPhotoUpload(v.color)}
+                    className={`text-sm px-2 py-1 rounded border ${
+                      hasImageForColor(form.images, v.color)
+                        ? 'border-green-500 text-green-700 bg-green-50'
+                        : 'border-amber-500 text-amber-700 bg-amber-50'
+                    }`}
+                  >
+                    {hasImageForColor(form.images, v.color) ? '✓ Photo' : '+ Photo'}
+                  </button>
+                ) : (
+                  <span className="text-xs text-gray-400">Couleur → photo</span>
+                )}
                 <button type="button" className="text-red-600" onClick={() => removeVariant(idx)}>Supprimer</button>
               </div>
             ))}
@@ -198,11 +228,12 @@ const AdminProductNew = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Images du produit (au moins une)
+            Images du produit par couleur
           </label>
           <ProductImageManager
             images={form.images}
             productColors={form.colors}
+            variantColors={variantColors}
             onChange={updateImages}
             onAddFiles={onAddImageFiles}
           />
