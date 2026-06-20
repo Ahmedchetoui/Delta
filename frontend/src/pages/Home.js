@@ -8,20 +8,6 @@ import { resolveImageUrl } from '../utils/imageUtils';
 import { useEnsureHomeData } from '../hooks/useEnsureHomeData';
 import { fetchHomeData, clearHomeError } from '../store/slices/homeSlice';
 
-const DEFAULT_BANNERS = [
-  {
-    _id: 'default-1',
-    title: 'Nouvelle Collection Automne 2026',
-    subtitle: 'Découvrez notre sélection de vêtements tendance et élégants pour toute la famille',
-    image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
-    buttonLink: '/shop',
-    buttonText: 'Découvrir',
-    backgroundColor: '#f8f9fa',
-    textColor: '#ffffff',
-    position: 'center',
-  },
-];
-
 const Home = () => {
   const dispatch = useDispatch();
   useEnsureHomeData();
@@ -48,8 +34,7 @@ const Home = () => {
   };
 
   const heroSlides = useMemo(() => {
-    const source = banners.length > 0 ? banners : DEFAULT_BANNERS;
-    return source.map((banner) => ({
+    return banners.map((banner) => ({
       id: banner._id,
       title: banner.title,
       subtitle: banner.subtitle,
@@ -63,9 +48,15 @@ const Home = () => {
     }));
   }, [banners]);
 
+  const showHeroSkeleton = homeLoading && banners.length === 0;
+
   return (
-    <div className="min-h-screen bg-white -mt-16 md:-mt-20">
-      <HeroSlider slides={heroSlides} />
+    <div className="min-h-screen bg-white -mt-14 md:-mt-16">
+      {showHeroSkeleton ? (
+        <div className="relative h-[500px] md:h-[600px] lg:h-[700px] bg-gray-200 animate-pulse" />
+      ) : (
+        heroSlides.length > 0 && <HeroSlider slides={heroSlides} />
+      )}
 
       {showLoadError && (
         <div className="max-w-lg mx-auto my-8 p-6 bg-amber-50 border border-amber-200 rounded-xl text-center">

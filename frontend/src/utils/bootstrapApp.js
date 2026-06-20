@@ -4,11 +4,9 @@ import { getFirstProductImageUrl } from './productImages';
 import { resolveImageUrl } from './imageUtils';
 import { prefetchShopProducts } from './prefetch';
 
-const DEFAULT_BANNER_IMAGE =
-  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75';
-
-const IMAGE_PRELOAD_BUDGET_MS = 1500;
-const BOOTSTRAP_MAX_WAIT_MS = 6000;
+const IMAGE_PRELOAD_BUDGET_MS = 2000;
+/** Attendre l'API au démarrage, sans bloquer indéfiniment (cold start Render) */
+const BOOTSTRAP_MAX_WAIT_MS = 15000;
 
 export function preloadImage(src) {
   return new Promise((resolve) => {
@@ -38,35 +36,39 @@ function collectCriticalImages(products = [], bannerImage) {
 }
 
 export async function bootstrapApp(dispatch) {
-  // Ne pas bloquer la landing plus de 6s (cold start Render peut prendre 30s+)
-  const result = await Promise.race([
-    dispatch(fetchHomeData()),
+  const fetchPromise = dispatch(fetchHomeData());
+
+  // Attendre la réponse API (ou échec), max 15s — évite d'ouvrir sans données
+  await Promise.race([
+    fetchPromise,
     new Promise((resolve) => {
-      setTimeout(() => resolve(null), BOOTSTRAP_MAX_WAIT_MS);
+      setTimeout(resolve, BOOTSTRAP_MAX_WAIT_MS);
     }),
   ]);
-
-  if (result && fetchHomeData.fulfilled.match(result)) {
-    prefetchShopProducts(dispatch);
-  }
 
   const state = store.getState();
-  const products = state.products.featuredProducts.length > 0
-    ? state.products.featuredProducts
-    : state.products.newProducts;
 
-  const bannerFromApi = state.home.banners[0]?.image;
-  const bannerImage = bannerFromApi
-    ? resolveImageUrl(bannerFromApi, 1200)
-    : DEFAULT_BANNER_IMAGE;
+  if (state.home.loadedAt) {
+    prefetchShopProducts(dispatch);
 
-  const images = collectCriticalImages(products, bannerImage);
+    const products = state.products.featuredProducts.length > 0
+      ? state.products.featuredProducts
+      : state.products.newProducts;
 
-  // Préchargement images limité — ne bloque pas l'affichage des données
-  await Promise.race([
-    Promise.all(images.map((url) => preloadImage(url))),
-    new Promise((resolve) => {
-      setTimeout(resolve, IMAGE_PRELOAD_BUDGET_MS);
-    }),
-  ]);
+    const bannerFromApi = state.home.banners[0]?.image;
+    const bannerImage = bannerFromApi
+      ? resolveImageUrl(bannerFromApi, 1200)
+      : null;
+
+    const images = collectCriticalImages(products, bannerImage);
+
+    if (images.length > 0) {
+      await Promise.race([
+        Promise.all(images.map((url) => preloadImage(url))),
+        new Promise((resolve) => {
+          setTimeout(resolve, IMAGE_PRELOAD_BUDGET_MS);
+        }),
+      ]);
+    }
+  }
 }
