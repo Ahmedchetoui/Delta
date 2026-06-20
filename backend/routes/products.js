@@ -87,6 +87,8 @@ router.get('/', [
   query('category').optional().isMongoId().withMessage('ID de catégorie invalide'),
   query('minPrice').optional().isFloat({ min: 0 }).withMessage('Prix minimum invalide'),
   query('maxPrice').optional().isFloat({ min: 0 }).withMessage('Prix maximum invalide'),
+  query('color').optional().isLength({ min: 1, max: 50 }).withMessage('Couleur invalide'),
+  query('size').optional().isLength({ min: 1, max: 20 }).withMessage('Taille invalide'),
   query('search').optional().isLength({ min: 1, max: 100 }).withMessage('Recherche invalide'),
   query('sort').optional().isIn([
     'price_asc', 'price_desc', 'newest', 'oldest', 'rating', 'popular',
@@ -108,6 +110,8 @@ router.get('/', [
       category,
       minPrice,
       maxPrice,
+      color,
+      size,
       search,
       sort = 'newest',
       featured,
@@ -130,14 +134,40 @@ router.get('/', [
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
 
+    const andFilters = [];
+
     if (search) {
       const safeSearch = escapeRegex(search);
-      filter.$or = [
+      andFilters.push({
+        $or: [
         { name: { $regex: safeSearch, $options: 'i' } },
         { description: { $regex: safeSearch, $options: 'i' } },
         { brand: { $regex: safeSearch, $options: 'i' } },
         { tags: { $in: [new RegExp(safeSearch, 'i')] } }
-      ];
+        ]
+      });
+    }
+
+    if (color) {
+      const safeColor = escapeRegex(String(color).trim());
+      const colorRegex = new RegExp(`^${safeColor}$`, 'i');
+      andFilters.push({
+        $or: [
+          { 'colors.name': colorRegex },
+          { 'variants.color': colorRegex },
+        ],
+      });
+    }
+
+    if (size) {
+      const safeSize = escapeRegex(String(size).trim());
+      const sizeRegex = new RegExp(`^${safeSize}$`, 'i');
+      andFilters.push({
+        $or: [
+          { sizes: sizeRegex },
+          { 'variants.size': sizeRegex },
+        ],
+      });
     }
 
     if (featured === 'true') {
@@ -150,6 +180,10 @@ router.get('/', [
 
     if (inStock === 'true') {
       filter.totalStock = { $gt: 0 };
+    }
+
+    if (andFilters.length > 0) {
+      filter.$and = andFilters;
     }
 
     // Construire le tri

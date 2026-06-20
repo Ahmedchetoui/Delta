@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const ProductFilters = ({ categories, onFilterChange, currentFilters }) => {
@@ -13,7 +13,20 @@ const ProductFilters = ({ categories, onFilterChange, currentFilters }) => {
   });
 
   const colors = ['Noir', 'Blanc', 'Rouge', 'Bleu', 'Vert', 'Jaune', 'Rose', 'Gris', 'Marron'];
-  const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  const adultSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  const childSizes = ['6', '8', '10', '12', '14', '16'];
+
+  useEffect(() => {
+    setLocalFilters({
+      category: currentFilters.category || '',
+      minPrice: currentFilters.minPrice || '',
+      maxPrice: currentFilters.maxPrice || '',
+      color: currentFilters.color || '',
+      size: currentFilters.size || '',
+      onSale: currentFilters.onSale || false,
+      featured: currentFilters.featured || false,
+    });
+  }, [currentFilters]);
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...localFilters, [key]: value };
@@ -112,21 +125,44 @@ const ProductFilters = ({ categories, onFilterChange, currentFilters }) => {
 
       {/* Size Filter */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Taille</h3>
-        <div className="grid grid-cols-3 gap-2">
-          {sizes.map((size) => (
-            <button
-              key={size}
-              onClick={() => handleFilterChange('size', localFilters.size === size ? '' : size)}
-              className={`px-3 py-2 text-xs rounded-lg border transition-colors ${
-                localFilters.size === size
-                  ? 'bg-blue-100 border-blue-300 text-blue-700'
-                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {size}
-            </button>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Taille</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {adultSizes.map((size) => (
+                <button
+                  key={size}
+                  onClick={() => handleFilterChange('size', localFilters.size === size ? '' : size)}
+                  className={`px-3 py-2 text-xs rounded-lg border transition-colors ${
+                    localFilters.size === size
+                      ? 'bg-blue-100 border-blue-300 text-blue-700'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Taille d'enfant</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {childSizes.map((size) => (
+                <button
+                  key={size}
+                  onClick={() => handleFilterChange('size', localFilters.size === size ? '' : size)}
+                  className={`px-3 py-2 text-xs rounded-lg border transition-colors ${
+                    localFilters.size === size
+                      ? 'bg-blue-100 border-blue-300 text-blue-700'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
