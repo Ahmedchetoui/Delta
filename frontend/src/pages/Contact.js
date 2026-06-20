@@ -158,7 +158,7 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900">Adresse</h3>
                     <p className="text-gray-600">
-                      Monastir, Manze ennour<br />
+                      Monastir, Manzel ennour<br />
                       Tunisie
                     </p>
                   </div>

@@ -26,4 +26,4 @@ export const TUNISIA_GOVERNORATES = [
 ];
 
 export const DEFAULT_GOVERNORATE = 'Monastir';
-export const DEFAULT_CITY = 'Manze ennour';
+export const DEFAULT_CITY = 'Manzel ennour';

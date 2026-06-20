@@ -263,7 +263,7 @@ const Checkout = () => {
                       required
                       value={formData.city}
                       onChange={handleChange}
-                      placeholder="Ex: Manze ennour"
+                      placeholder="Ex: Manzel ennour"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>

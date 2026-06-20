@@ -94,7 +94,7 @@ const Footer = () => {
               <div className="flex items-start space-x-3">
                 <MapPinIcon className="h-5 w-5 text-blue-400 mt-1" />
                 <span className="text-gray-300">
-                  Monastir, Manze ennour
+                  Monastir, Manzel ennour
                 </span>
               </div>
             </div>

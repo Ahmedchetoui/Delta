@@ -509,7 +509,7 @@ const Product = () => {
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
-                    placeholder="Ex: Manze ennour"
+                    placeholder="Ex: Manzel ennour"
                   />
                 </div>
               </div>

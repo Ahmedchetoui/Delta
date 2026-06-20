@@ -35,7 +35,7 @@ function buildShipmentPayload(order) {
     prix: String(order.total),
     nom,
     gouvernerat: addr.governorate || 'Monastir',
-    ville: addr.city || 'Manze ennour',
+    ville: addr.city || 'Manzel ennour',
     adresse: addr.street || '',
     cp: addr.postalCode || '5000',
     tel: normalizePhone(addr.phone),
