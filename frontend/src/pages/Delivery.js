@@ -1,5 +1,6 @@
 import React from 'react';
-import { TruckIcon, ClockIcon, ShieldCheckIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { TruckIcon, ClockIcon, ShieldCheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { TUNISIA_GOVERNORATES } from '../constants/tunisiaGovernorates';
 
 const Delivery = () => {
   return (
@@ -47,7 +48,7 @@ const Delivery = () => {
                 Livraison en 24h pour Tunis et banlieue
               </p>
               <div className="text-2xl font-bold text-blue-600 mb-2">
-                15 DT
+                8 DT
               </div>
               <div className="text-sm text-gray-500">
                 Disponible 7j/7
@@ -55,18 +56,15 @@ const Delivery = () => {
             </div>
             
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
-              <MapPinIcon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+              <ArrowPathIcon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Retrait en Magasin
+                Possibilité d&apos;échange
               </h3>
               <p className="text-gray-600 mb-4">
-                Retirez votre commande dans notre magasin
+                Échangez votre article contre une autre taille ou couleur selon disponibilité
               </p>
-              <div className="text-2xl font-bold text-green-600 mb-2">
-                Gratuit
-              </div>
               <div className="text-sm text-gray-500">
-                Prêt en 2h
+                Contactez-nous dans les 14 jours suivant la réception
               </div>
             </div>
           </div>
@@ -161,42 +159,22 @@ const Delivery = () => {
 
         {/* Coverage Areas */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-4">
             Zones de Livraison
           </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                Livraison Gratuite (100 DT+)
-              </h3>
-              <ul className="space-y-2 text-gray-600">
-                <li>• Tunis et banlieue</li>
-                <li>• Sfax</li>
-                <li>• Sousse</li>
-                <li>• Monastir</li>
-                <li>• Bizerte</li>
-                <li>• Gabès</li>
-                <li>• Kairouan</li>
-                <li>• Gafsa</li>
-              </ul>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                Livraison Payante (8 DT)
-              </h3>
-              <ul className="space-y-2 text-gray-600">
-                <li>• Tataouine</li>
-                <li>• Médenine</li>
-                <li>• Tozeur</li>
-                <li>• Kebili</li>
-                <li>• Béja</li>
-                <li>• Jendouba</li>
-                <li>• Kef</li>
-                <li>• Siliana</li>
-              </ul>
-            </div>
+          <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+            Nous livrons dans toute la Tunisie — 24 gouvernorats.
+          </p>
+
+          <div className="bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto">
+            <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-3 text-gray-700">
+              {TUNISIA_GOVERNORATES.map((governorate) => (
+                <li key={governorate} className="flex items-center gap-2">
+                  <span className="text-blue-600">•</span>
+                  <span>{governorate}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
