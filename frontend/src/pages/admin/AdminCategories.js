@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import { 
   PlusIcon, 
   PencilIcon, 
   TrashIcon 
 } from '@heroicons/react/24/outline';
 import { categoryService } from '../../services/api';
+import { fetchHomeData, invalidateHomeData } from '../../store/slices/homeSlice';
 import { toast } from 'react-toastify';
 
 const AdminCategories = () => {
+  const dispatch = useDispatch();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -40,6 +43,11 @@ const AdminCategories = () => {
     loadCategories();
   }, []);
 
+  const refreshPublicCatalog = () => {
+    dispatch(invalidateHomeData());
+    dispatch(fetchHomeData({ force: true }));
+  };
+
   const handleAdd = async (e) => {
     e?.preventDefault?.();
     if (!newName.trim()) {
@@ -56,6 +64,7 @@ const AdminCategories = () => {
       setNewImage(null);
       setShowAdd(false);
       loadCategories();
+      refreshPublicCatalog();
     } catch (e) {
       const msg = e?.response?.data?.message || 'Erreur lors de la création';
       toast.error(msg);
@@ -90,6 +99,7 @@ const AdminCategories = () => {
       toast.success('Catégorie mise à jour');
       cancelEdit();
       loadCategories();
+      refreshPublicCatalog();
     } catch (e) {
       const apiErrors = e?.response?.data?.errors;
       const details = Array.isArray(apiErrors)
@@ -108,6 +118,7 @@ const AdminCategories = () => {
       await categoryService.deleteCategory(id);
       toast.success('Catégorie supprimée');
       setCategories(cs => cs.filter(c => c.id !== id));
+      refreshPublicCatalog();
     } catch (e) {
       const msg = e?.response?.data?.message || 'Erreur lors de la suppression';
       toast.error(msg);

@@ -4,7 +4,7 @@ const Category = require('../models/Category');
 const Product = require('../models/Product');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
-const publicCache = require('../middleware/publicCache');
+const { publicCacheRevalidate } = require('../middleware/publicCache');
 const {
   getProductCountsByCategory,
   enrichCategoriesWithDetails,
@@ -136,7 +136,7 @@ async function updateCategoryHandler(req, res) {
 // @route   GET /api/categories
 // @desc    Obtenir toutes les catégories
 // @access  Public
-router.get('/', publicCache(300), optionalAuth, async (req, res) => {
+router.get('/', publicCacheRevalidate(60), optionalAuth, async (req, res) => {
   try {
     const { includeInactive = false } = req.query;
 

@@ -7,9 +7,12 @@ const HOME_STALE_MS = 5 * 60 * 1000;
 
 export const fetchHomeData = createAsyncThunk(
   'home/fetchHomeData',
-  async (_, { rejectWithValue }) => {
+  async (options = {}, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/home`, { timeout: 90000 });
+      const response = await axios.get(`${API_URL}/home`, {
+        timeout: 90000,
+        params: options.force ? { _t: Date.now() } : undefined,
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -18,7 +21,8 @@ export const fetchHomeData = createAsyncThunk(
     }
   },
   {
-    condition: (_, { getState }) => {
+    condition: (options = {}, { getState }) => {
+      if (options.force) return true;
       const { home } = getState();
       if (home.isLoading) return false;
       if (home.loadedAt && Date.now() - home.loadedAt < HOME_STALE_MS) {
@@ -43,6 +47,9 @@ const homeSlice = createSlice({
     clearHomeError: (state) => {
       state.error = null;
     },
+    invalidateHomeData: (state) => {
+      state.loadedAt = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -65,5 +72,5 @@ const homeSlice = createSlice({
   },
 });
 
-export const { clearHomeError } = homeSlice.actions;
+export const { clearHomeError, invalidateHomeData } = homeSlice.actions;
 export default homeSlice.reducer;

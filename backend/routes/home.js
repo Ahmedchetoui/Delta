@@ -2,7 +2,7 @@ const express = require('express');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Banner = require('../models/Banner');
-const publicCache = require('../middleware/publicCache');
+const { publicCacheRevalidate } = require('../middleware/publicCache');
 const { getImageUrl } = require('../middleware/upload');
 const {
   mapProductsForClient,
@@ -15,7 +15,7 @@ const router = express.Router();
 // @route   GET /api/home
 // @desc    Données page d'accueil en un seul appel
 // @access  Public
-router.get('/', publicCache(300), async (req, res) => {
+router.get('/', publicCacheRevalidate(60), async (req, res) => {
   try {
     const [categories, featuredRaw, newRaw, banners] = await Promise.all([
       Category.find({ isActive: true })

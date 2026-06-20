@@ -18,11 +18,22 @@ export function optimizeImageUrl(src, width = 800) {
   return src;
 }
 
-export function resolveImageUrl(src, width = 800) {
+function appendCacheBuster(url, cacheKey) {
+  if (!url || !cacheKey) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}v=${encodeURIComponent(cacheKey)}`;
+}
+
+export function resolveImageUrl(src, width = 800, cacheKey) {
   if (!src) return PLACEHOLDER_IMAGE;
-  if (/^https?:\/\//i.test(src)) return optimizeImageUrl(src, width);
-  const origin = getApiOrigin();
-  if (src.startsWith('/uploads/')) return `${origin}${src}`;
-  if (src.startsWith('uploads/')) return `${origin}/${src}`;
-  return `${origin}/uploads/${src}`;
+  let url;
+  if (/^https?:\/\//i.test(src)) {
+    url = optimizeImageUrl(src, width);
+  } else {
+    const origin = getApiOrigin();
+    if (src.startsWith('/uploads/')) url = `${origin}${src}`;
+    else if (src.startsWith('uploads/')) url = `${origin}/${src}`;
+    else url = `${origin}/uploads/${src}`;
+  }
+  return appendCacheBuster(url, cacheKey);
 }

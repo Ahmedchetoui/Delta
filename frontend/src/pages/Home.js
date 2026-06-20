@@ -98,7 +98,8 @@ const Home = () => {
                   <Link key={category._id} to={`/shop?category=${category._id}`} className="group">
                     <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
                       <img
-                        src={resolveImageUrl(category.image)}
+                        key={`${category._id}-${category.updatedAt || ''}`}
+                        src={resolveImageUrl(category.image, 800, category.updatedAt)}
                         alt={category.name}
                         loading="lazy"
                         width="600"
