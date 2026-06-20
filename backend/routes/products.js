@@ -5,6 +5,7 @@ const Category = require('../models/Category');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadProductImages, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
 const publicCache = require('../middleware/publicCache');
+const { reviewCreateLimiter } = require('../middleware/rateLimiters');
 const {
   normalizeProductImages,
   buildImagesFromUploads,
@@ -818,68 +819,119 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // @route   POST /api/products/:id/reviews
-// @desc    Ajouter une review à un produit
-// @access  Private
-router.post('/:id/reviews', authenticateToken, [
+// @desc    Ajouter un avis (visiteur ou client connecté)
+// @access  Public
+router.post('/:id/reviews', reviewCreateLimiter, optionalAuth, [
   body('rating')
     .isInt({ min: 1, max: 5 })
     .withMessage('La note doit être entre 1 et 5'),
   body('comment')
-    .optional()
+    .optional({ values: 'falsy' })
     .isLength({ max: 500 })
-    .withMessage('Le commentaire ne peut pas dépasser 500 caractères')
+    .withMessage('Le commentaire ne peut pas dépasser 500 caractères'),
+  body('guestName')
+    .optional({ values: 'falsy' })
+    .trim()
+    .isLength({ min: 2, max: 80 })
+    .withMessage('Le nom doit contenir entre 2 et 80 caractères'),
+  body('guestEmail')
+    .optional({ values: 'falsy' })
+    .isEmail()
+    .withMessage('Email invalide'),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
         message: 'Données invalides',
-        errors: errors.array()
+        errors: errors.array(),
       });
     }
 
-    const { rating, comment } = req.body;
+    const { rating, comment, guestName, guestEmail } = req.body;
     const product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).json({
-        message: 'Produit non trouvé'
+        message: 'Produit non trouvé',
       });
     }
 
-    // Vérifier si l'utilisateur a déjà laissé une review
-    const existingReview = product.reviews.find(
-      review => review.user.toString() === req.user._id.toString()
-    );
+    let reviewEntry;
+    let reviewResponse;
 
-    if (existingReview) {
-      return res.status(400).json({
-        message: 'Vous avez déjà laissé une review pour ce produit'
-      });
-    }
+    if (req.user) {
+      const existingReview = product.reviews.find(
+        (review) => review.user && review.user.toString() === req.user._id.toString()
+      );
 
-    // Ajouter la review
-    product.addReview(req.user._id, rating, comment);
-    await product.save();
+      if (existingReview) {
+        return res.status(400).json({
+          message: 'Vous avez déjà laissé un avis pour ce produit',
+        });
+      }
 
-    res.json({
-      message: 'Review ajoutée avec succès',
-      review: {
+      reviewEntry = {
+        user: req.user._id,
+        rating,
+        comment: comment || '',
+      };
+      reviewResponse = {
         user: {
           id: req.user._id,
           firstName: req.user.firstName,
-          lastName: req.user.lastName
+          lastName: req.user.lastName,
         },
         rating,
-        comment,
-        createdAt: new Date()
+        comment: comment || '',
+        createdAt: new Date(),
+      };
+    } else {
+      const name = String(guestName || '').trim();
+      if (!name) {
+        return res.status(400).json({
+          message: 'Veuillez indiquer votre prénom pour laisser un avis',
+        });
       }
-    });
 
+      const email = guestEmail ? String(guestEmail).trim().toLowerCase() : '';
+      if (email) {
+        const existingGuestReview = product.reviews.find(
+          (review) => review.guestEmail && review.guestEmail === email
+        );
+        if (existingGuestReview) {
+          return res.status(400).json({
+            message: 'Un avis a déjà été laissé avec cet email pour ce produit',
+          });
+        }
+      }
+
+      reviewEntry = {
+        guestName: name,
+        guestEmail: email || undefined,
+        rating,
+        comment: comment || '',
+      };
+      reviewResponse = {
+        guestName: name,
+        rating,
+        comment: comment || '',
+        createdAt: new Date(),
+      };
+    }
+
+    product.addReview(reviewEntry);
+    await product.save();
+
+    res.json({
+      message: 'Avis publié avec succès',
+      review: reviewResponse,
+      rating: product.rating,
+    });
   } catch (error) {
-    console.error('Erreur lors de l\'ajout de la review:', error);
+    console.error('Erreur lors de l\'ajout de l\'avis:', error);
     res.status(500).json({
-      message: 'Erreur lors de l\'ajout de la review'
+      message: 'Erreur lors de l\'ajout de l\'avis',
     });
   }
 });

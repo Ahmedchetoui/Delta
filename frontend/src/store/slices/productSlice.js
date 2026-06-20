@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { getApiBaseUrl } from '../../config/apiConfig';
 import { fetchHomeData } from './homeSlice';
+import { productService } from '../../services/api';
 
 const API_URL = getApiBaseUrl();
 const REQUEST_TIMEOUT = 15000;
@@ -138,16 +139,7 @@ export const addProductReview = createAsyncThunk(
   'products/addProductReview',
   async ({ productId, reviewData }, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_URL}/products/${productId}/reviews`,
-        reviewData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const response = await productService.addReview(productId, reviewData);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -386,7 +378,11 @@ const productSlice = createSlice({
       .addCase(addProductReview.fulfilled, (state, action) => {
         state.isLoading = false;
         if (state.currentProduct) {
+          state.currentProduct.reviews = state.currentProduct.reviews || [];
           state.currentProduct.reviews.push(action.payload.review);
+          if (action.payload.rating) {
+            state.currentProduct.rating = action.payload.rating;
+          }
         }
         state.error = null;
       })

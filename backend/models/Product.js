@@ -126,22 +126,32 @@ const productSchema = new mongoose.Schema({
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      default: null,
+    },
+    guestName: {
+      type: String,
+      trim: true,
+      maxlength: [80, 'Le nom ne peut pas dépasser 80 caractères'],
+    },
+    guestEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
     },
     rating: {
       type: Number,
       required: true,
       min: 1,
-      max: 5
+      max: 5,
     },
     comment: {
       type: String,
-      maxlength: [500, 'Le commentaire ne peut pas dépasser 500 caractères']
+      maxlength: [500, 'Le commentaire ne peut pas dépasser 500 caractères'],
     },
     createdAt: {
       type: Date,
-      default: Date.now
-    }
+      default: Date.now,
+    },
   }],
   tags: [String],
   weight: Number,
@@ -251,11 +261,10 @@ productSchema.methods.updateStock = function(size, color, quantity) {
   return false;
 };
 
-// Méthode pour ajouter une review
-productSchema.methods.addReview = function(userId, rating, comment) {
-  this.reviews.push({ user: userId, rating, comment });
-  
-  // Recalculer la moyenne des notes
+// Méthode pour ajouter une review (client connecté ou visiteur)
+productSchema.methods.addReview = function(reviewEntry) {
+  this.reviews.push(reviewEntry);
+
   const totalRating = this.reviews.reduce((sum, review) => sum + review.rating, 0);
   this.rating.average = totalRating / this.reviews.length;
   this.rating.count = this.reviews.length;

@@ -50,7 +50,6 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-/** Connexion admin : 3 tentatives / 15 min (email admin + IP). */
 const adminLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isProduction ? 3 : 20,
@@ -71,6 +70,14 @@ const adminLoginLimiter = rateLimit({
   },
 });
 
+const reviewCreateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isProduction ? 10 : 50,
+  message: { message: 'Trop d\'avis envoyés. Réessayez plus tard.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 module.exports = {
   guestOrderLimiter,
   orderCreateLimiter,
@@ -78,4 +85,5 @@ module.exports = {
   loginLimiter,
   registerLimiter,
   adminLoginLimiter,
+  reviewCreateLimiter,
 };

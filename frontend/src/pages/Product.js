@@ -25,6 +25,7 @@ import {
   DEFAULT_GOVERNORATE,
   TUNISIA_GOVERNORATES,
 } from '../constants/tunisiaGovernorates';
+import ProductReviews from '../components/product/ProductReviews';
 
 const Product = () => {
   const { id } = useParams();
@@ -612,13 +613,11 @@ const Product = () => {
           </div>
         )}
 
-        {/* Avis clients */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Avis clients</h2>
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <p className="text-gray-500 italic">Section des avis à implémenter...</p>
-          </div>
-        </div>
+        <ProductReviews
+          productId={currentProduct._id}
+          reviews={currentProduct.reviews || []}
+          rating={currentProduct.rating || { average: 0, count: 0 }}
+        />
       </div>
     </div>
   );

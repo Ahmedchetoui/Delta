@@ -41,9 +41,9 @@ api.interceptors.response.use(
 
     // Gestion des erreurs d'authentification
     if (error.response?.status === 401) {
-      // Ne supprimer le token que si ce n'est pas une tentative de login
       const isLoginAttempt = error.config?.url?.includes('/auth/login');
-      if (!isLoginAttempt) {
+      const isOptionalAuthRoute = /\/products\/[^/]+\/reviews/.test(error.config?.url || '');
+      if (!isLoginAttempt && !isOptionalAuthRoute) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';
@@ -84,6 +84,7 @@ export const productService = {
   getNewProducts: () => api.get('/products/new'),
   getOnSaleProducts: () => api.get('/products/sale'),
   getHomeData: () => api.get('/home'),
+  addReview: (productId, reviewData) => api.post(`/products/${productId}/reviews`, reviewData),
 };
 
 // Services des catégories
