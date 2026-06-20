@@ -125,7 +125,7 @@ const ProductFilters = ({ categories, onFilterChange, currentFilters }) => {
 
       {/* Size Filter */}
       <div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Taille</h3>
             <div className="grid grid-cols-3 gap-2">
