@@ -10,6 +10,7 @@ const { guestOrderLimiter, orderCreateLimiter, orderEmailLimiter } = require('..
 const { MAX_ITEM_QUANTITY, MAX_ORDER_ITEMS, PAYMENT_METHOD_COD } = require('../utils/orderConstants');
 const { processOrder } = require('../services/orderQueue');
 const { OrderServiceError } = require('../services/orderService');
+const { getImageUrl } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -22,12 +23,11 @@ function canAccessOrder(order, user) {
 }
 
 function mapOrderImages(order) {
-  const base = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
   return {
     ...order,
     items: order.items.map((item) => ({
       ...item,
-      image: item.image ? `${base}/uploads/${item.image}` : null,
+      image: getImageUrl(item.image),
     })),
   };
 }
@@ -436,7 +436,7 @@ router.put('/:id/status', authenticateToken, requireAdmin, [
         ...order.toObject(),
         items: order.items.map(item => ({
           ...item,
-          image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
+          image: getImageUrl(item.image),
         }))
       }
     });
@@ -508,7 +508,7 @@ router.put('/:id/cancel', authenticateToken, [
         ...order.toObject(),
         items: order.items.map(item => ({
           ...item,
-          image: item.image ? `${process.env.PUBLIC_BASE_URL || 'http://localhost:5000'}/uploads/${item.image}` : null
+          image: getImageUrl(item.image),
         }))
       }
     });

@@ -22,7 +22,7 @@ function buildShipmentPayload(order) {
   const addr = order.shippingAddress || {};
   const nom = `${addr.firstName || ''} ${addr.lastName || ''}`.trim();
   const nbArticle = order.items.reduce((sum, item) => sum + item.quantity, 0);
-  const designation = order.items
+  const itemsText = order.items
     .map((item) => {
       const parts = [item.name];
       if (item.size) parts.push(item.size);
@@ -30,6 +30,7 @@ function buildShipmentPayload(order) {
       return parts.join(' - ');
     })
     .join(', ');
+  const designation = `totale ${nbArticle || 1} : ${itemsText}`;
 
   return {
     prix: String(order.total),

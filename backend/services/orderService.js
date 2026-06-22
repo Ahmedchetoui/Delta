@@ -8,6 +8,8 @@ const {
   syncTotalStock,
 } = require('../utils/stockUtils');
 const { calculateShippingCost, PAYMENT_METHOD_COD } = require('../utils/orderConstants');
+const { getOrderItemImage } = require('../utils/productImages');
+const { getImageUrl } = require('../middleware/upload');
 
 class OrderServiceError extends Error {
   constructor(message, statusCode = 500) {
@@ -23,12 +25,11 @@ function productRequiresColor(product) {
 }
 
 function mapOrderResponse(order) {
-  const base = process.env.PUBLIC_BASE_URL || 'http://localhost:5000';
   return {
     ...order.toObject(),
     items: order.items.map((item) => ({
       ...item,
-      image: item.image ? `${base}/uploads/${item.image}` : null,
+      image: getImageUrl(item.image),
     })),
   };
 }
@@ -79,7 +80,7 @@ async function buildOrderItems(items, products) {
       quantity: item.quantity,
       size: item.size || null,
       color: item.color || null,
-      image: product.images[0] || null,
+      image: getOrderItemImage(product.images, item.color),
       sku: product.sku || null,
     });
   }

@@ -43,10 +43,30 @@ function mergeExistingAndNewImages(existingRaw, newUrls, newColors = []) {
   return [...existing, ...uploaded];
 }
 
+function colorsEqual(a, b) {
+  return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+}
+
+/** URL ou nom de fichier à enregistrer sur une ligne de commande */
+function getOrderItemImage(productImages = [], color = '') {
+  const normalized = normalizeProductImages(productImages);
+  if (!normalized.length) return null;
+
+  if (color) {
+    const match = normalized.find((img) => colorsEqual(img.color, color));
+    if (match) return match.url;
+    const general = normalized.find((img) => !img.color);
+    if (general) return general.url;
+  }
+
+  return normalized[0].url;
+}
+
 module.exports = {
   normalizeProductImageEntry,
   normalizeProductImages,
   buildImagesFromUploads,
   parseImageColors,
   mergeExistingAndNewImages,
+  getOrderItemImage,
 };
