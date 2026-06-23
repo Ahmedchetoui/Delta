@@ -134,6 +134,7 @@ export const adminService = {
   getOrder: (id) => api.get(`/admin/orders/${id}`),
   updateOrderStatus: (id, data) => api.put(`/admin/orders/${id}/status`, data),
   cancelOrder: (id, reason) => api.post(`/admin/orders/${id}/cancel`, { reason }),
+  deleteOrder: (id) => api.delete(`/admin/orders/${id}`),
 
   // Autres services
   getCustomers: (params) => api.get('/admin/customers', { params }),

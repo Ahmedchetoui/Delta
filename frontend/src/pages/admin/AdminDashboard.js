@@ -277,7 +277,7 @@ const AdminDashboard = () => {
                                 {dashboardData?.topProducts?.slice(0, 5).map((product, idx) => (
                                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                            {product.name}
+                                            {product.name || product.productName}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
                                             {product.totalSold}
@@ -308,27 +308,32 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {dashboardData?.topUsers?.slice(0, 5).map((user, idx) => (
+                                {dashboardData?.topUsers?.slice(0, 5).map((user, idx) => {
+                                    const displayFirst = user.firstName || user.userName?.split(' ')[0] || '';
+                                    const displayLast = user.lastName || user.userName?.split(' ').slice(1).join(' ') || '';
+                                    const displayEmail = user.email || user.userEmail || user.phone || '';
+                                    return (
                                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
-                                                    {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                                                    {displayFirst?.charAt(0)}{displayLast?.charAt(0)}
                                                 </div>
                                                 <div className="ml-3">
-                                                    <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
-                                                    <p className="text-xs text-gray-500">{user.email}</p>
+                                                    <p className="text-sm font-medium text-gray-900">{displayFirst} {displayLast}</p>
+                                                    <p className="text-xs text-gray-500">{displayEmail}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
-                                            {user.orderCount}
+                                            {user.orderCount ?? user.totalOrders}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
                                             {formatCurrency(user.totalSpent)}
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

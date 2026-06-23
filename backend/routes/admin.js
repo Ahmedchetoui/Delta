@@ -252,12 +252,19 @@ router.get('/dashboard', async (req, res) => {
         return acc;
       }, {}),
       monthlyStats,
-      topProducts: topProducts.map(product => ({
+      topProducts: topProducts.map((product) => ({
         ...product,
-        productImage: getImageUrl(product.productImage)
+        name: product.productName,
+        productImage: getImageUrl(product.productImage),
       })),
       topCategories,
-      topUsers
+      topUsers: topUsers.map((user) => ({
+        ...user,
+        firstName: user.userName?.split(' ')[0] || '',
+        lastName: user.userName?.split(' ').slice(1).join(' ') || '',
+        email: user.userEmail,
+        orderCount: user.totalOrders,
+      })),
     });
 
   } catch (error) {
@@ -644,6 +651,89 @@ router.get('/analytics/customers', async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/customers
+// @desc    Meilleurs clients (invités + comptes) avec leurs commandes
+// @access  Private (Admin)
+router.get('/customers', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+
+    const customers = await Order.aggregate([
+      {
+        $addFields: {
+          customerKey: {
+            $cond: [
+              { $ifNull: ['$user', false] },
+              { $concat: ['user:', { $toString: '$user' }] },
+              {
+                $concat: [
+                  'guest:',
+                  {
+                    $ifNull: [
+                      '$guestEmail',
+                      { $ifNull: ['$shippingAddress.phone', 'unknown'] },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$customerKey',
+          userId: { $first: '$user' },
+          firstName: { $first: '$shippingAddress.firstName' },
+          lastName: { $first: '$shippingAddress.lastName' },
+          phone: { $first: '$shippingAddress.phone' },
+          orderCount: { $sum: 1 },
+          totalSpent: { $sum: '$total' },
+          orders: {
+            $push: {
+              _id: '$_id',
+              orderNumber: '$orderNumber',
+              total: '$total',
+              orderStatus: '$orderStatus',
+              createdAt: '$createdAt',
+            },
+          },
+        },
+      },
+      { $sort: { totalSpent: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userDoc',
+        },
+      },
+      {
+        $project: {
+          userId: 1,
+          firstName: 1,
+          lastName: 1,
+          phone: 1,
+          orderCount: 1,
+          totalSpent: 1,
+          orders: 1,
+          email: { $arrayElemAt: ['$userDoc.email', 0] },
+          isGuest: { $eq: [{ $size: '$userDoc' }, 0] },
+        },
+      },
+    ]);
+
+    res.json({ customers });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des clients:', error);
+    res.status(500).json({
+      message: 'Erreur lors de la récupération des clients',
+    });
+  }
+});
+
 // @route   GET /api/admin/orders
 // @desc    Obtenir toutes les commandes avec filtres et pagination
 // @access  Private (Admin)
@@ -972,6 +1062,35 @@ router.post('/orders/:id/cancel', [
     console.error('Erreur lors de l\'annulation de la commande:', error);
     res.status(500).json({
       message: 'Erreur lors de l\'annulation de la commande'
+    });
+  }
+});
+
+// @route   DELETE /api/admin/orders/:id
+// @desc    Supprimer définitivement une commande
+// @access  Private (Admin)
+router.delete('/orders/:id', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        message: 'Commande non trouvée',
+      });
+    }
+
+    if (order.stockDeducted && !['cancelled', 'refunded'].includes(order.orderStatus)) {
+      await restoreOrderStock(order);
+    }
+
+    await Order.findByIdAndDelete(req.params.id);
+
+    res.json({
+      message: 'Commande supprimée avec succès',
+    });
+  } catch (error) {
+    console.error('Erreur lors de la suppression de la commande:', error);
+    res.status(500).json({
+      message: 'Erreur lors de la suppression de la commande',
     });
   }
 });
