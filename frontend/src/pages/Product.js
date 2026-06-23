@@ -2,10 +2,10 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProduct } from '../store/slices/productSlice';
-import { addToCart } from '../store/slices/cartSlice';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import Loading from '../components/ui/Loading';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 import { normalizeProductColors, colorNameToHex } from '../utils/colorUtils';
 import {
   getImagesForColor,
@@ -40,6 +40,7 @@ const Product = () => {
   const [quantity, setQuantity] = useState(1);
 
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [isOrdering, setIsOrdering] = useState(false);
 
   // Champs d'informations de livraison
   const [fullName, setFullName] = useState('');
@@ -180,8 +181,7 @@ const Product = () => {
     }
   }, [dispatch, id]);
 
-  const handleAddToCart = async () => {
-    // Validation des champs obligatoires
+  const handleAddToCart = () => {
     if (!fullName.trim()) {
       toast.error('Veuillez saisir votre nom complet');
       return;
@@ -214,39 +214,71 @@ const Product = () => {
       }
     }
 
-    try {
-      const colorsForCart = colorRequired ? selectedColors.slice(0, quantity) : [];
-      const cartItem = {
-        product: currentProduct,
-        quantity: parseInt(quantity, 10),
+    setShowOrderModal(true);
+  };
+
+  const buildOrderItemsFromProduct = () => {
+    const colorsForOrder = colorRequired ? selectedColors.slice(0, quantity) : [];
+    if (colorsForOrder.length > 0) {
+      const byColor = colorsForOrder.reduce((acc, color) => {
+        acc[color] = (acc[color] || 0) + 1;
+        return acc;
+      }, {});
+      return Object.entries(byColor).map(([color, qty]) => ({
+        product: currentProduct._id,
+        quantity: qty,
         size: selectedSize || null,
-        colors: colorsForCart,
-        color: colorsForCart[0] || null,
+        color,
+      }));
+    }
+    return [{
+      product: currentProduct._id,
+      quantity: parseInt(quantity, 10),
+      size: selectedSize || null,
+      color: null,
+    }];
+  };
+
+  const handleConfirmOrder = async () => {
+    setIsOrdering(true);
+
+    try {
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || firstName;
+
+      const orderData = {
+        items: buildOrderItemsFromProduct(),
+        shippingAddress: {
+          firstName,
+          lastName,
+          email: `guest_${Date.now()}@deltafashion.tn`,
+          phone: phone.trim(),
+          street: streetAddress.trim(),
+          governorate: governorate.trim(),
+          city: city.trim(),
+          postalCode: '',
+          country: 'Tunisie',
+        },
+        paymentMethod: 'cash_on_delivery',
       };
 
-      // Stocker les informations de livraison pour la confirmation finale
-      const guestInfo = {
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        governorate: governorate.trim(),
-        city: city.trim(),
-        streetAddress: streetAddress.trim()
-      };
+      const response = await api.post('/orders', orderData);
 
-      // Sauvegarder les infos invité dans le localStorage
-      localStorage.setItem('guestOrderInfo', JSON.stringify(guestInfo));
+      toast.success('Commande enregistrée avec succès !');
+      setShowOrderModal(false);
 
-      // Ajouter au panier
-      dispatch(addToCart(cartItem));
-
-      toast.success('Produit ajouté au panier !');
-
-      // Afficher la modal de confirmation
-      setShowOrderModal(true);
-
+      navigate('/order-confirmation', {
+        state: {
+          orderId: response.data.order._id,
+          orderNumber: response.data.order.orderNumber,
+        },
+      });
     } catch (error) {
-      console.error('Erreur lors de l\'ajout au panier:', error);
-      toast.error('Erreur lors de l\'ajout au panier');
+      console.error('Erreur lors de la commande:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+    } finally {
+      setIsOrdering(false);
     }
   };
 
@@ -561,54 +593,65 @@ const Product = () => {
         {/* Modal de confirmation de commande */}
         {showOrderModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-6 relative">
-              {/* Bouton fermer */}
+            <div className="bg-white rounded-lg max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
               <button
-                onClick={() => setShowOrderModal(false)}
+                onClick={() => !isOrdering && setShowOrderModal(false)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                disabled={isOrdering}
               >
                 ✕
               </button>
 
-              {/* Titre */}
               <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ShoppingCartIcon className="w-8 h-8 text-yellow-600" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Produit ajouté au panier !</h2>
-                <p className="text-gray-600">Votre produit a été ajouté au panier pour confirmation finale.</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Confirmer votre commande</h2>
+                <p className="text-gray-600 text-sm">Vérifiez les informations avant de confirmer.</p>
               </div>
 
-              {/* Boutons d'action */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={() => {
-                    setShowOrderModal(false);
-                    navigate('/cart');
-                  }}
-                  className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Voir le panier
-                </button>
-                <button
-                  onClick={() => {
-                    setShowOrderModal(false);
-                    // Réinitialiser le formulaire
-                    setFullName('');
-                    setPhone('');
-                    setStreetAddress('');
-                    setSelectedSize('');
-                    setSelectedColors(['']);
-                    setQuantity(1);
-                  }}
-                  className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Continuer mes achats
-                </button>
+              <div className="space-y-3 mb-6 text-sm">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="font-semibold text-gray-900 mb-1">{currentProduct.name}</p>
+                  {selectedSize && <p className="text-gray-600">Taille : {selectedSize}</p>}
+                  {colorRequired && (
+                    <p className="text-gray-600">
+                      Couleur(s) : {selectedColors.slice(0, quantity).filter(Boolean).join(', ')}
+                    </p>
+                  )}
+                  <p className="text-gray-600">Quantité : {quantity}</p>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="font-semibold text-gray-900 mb-1">Livraison</p>
+                  <p className="text-gray-600">{fullName}</p>
+                  <p className="text-gray-600">{phone}</p>
+                  <p className="text-gray-600">{streetAddress}</p>
+                  <p className="text-gray-600">{city}, {governorate}</p>
+                </div>
+
+                <div className="flex justify-between font-bold text-base pt-1">
+                  <span>Total</span>
+                  <span>{total.toFixed(2)} DT</span>
+                </div>
               </div>
 
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleConfirmOrder}
+                  disabled={isOrdering}
+                  className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50"
+                >
+                  {isOrdering ? 'Enregistrement...' : `Confirmer la commande - ${total.toFixed(2)} DT`}
+                </button>
+                <button
+                  onClick={() => setShowOrderModal(false)}
+                  disabled={isOrdering}
+                  className="w-full bg-gray-200 text-gray-800 py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+              </div>
             </div>
           </div>
         )}

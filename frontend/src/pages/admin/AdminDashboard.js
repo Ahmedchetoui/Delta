@@ -10,7 +10,8 @@ import {
     TagIcon,
     MegaphoneIcon,
     ClipboardDocumentCheckIcon,
-    ChartPieIcon
+    ChartPieIcon,
+    TruckIcon,
 } from '@heroicons/react/24/outline';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { toast } from 'react-toastify';
@@ -340,6 +341,7 @@ const AdminDashboard = () => {
                 {[
                     { to: "/admin/products/new", icon: ShoppingBagIcon, label: "Nouveau Produit", color: "bg-blue-600" },
                     { to: "/admin/orders", icon: ClipboardDocumentCheckIcon, label: "Gérer Commandes", color: "bg-green-600" },
+                    { to: "/admin/fiabilo", icon: TruckIcon, label: "Fiabilo", color: "bg-orange-600" },
                     { to: "/admin/categories", icon: TagIcon, label: "Catégories", color: "bg-purple-600" },
                     { to: "/admin/banners", icon: MegaphoneIcon, label: "Bannières", color: "bg-pink-600" },
                     { to: "/admin/customers", icon: UserGroupIcon, label: "Clients", color: "bg-indigo-600" },

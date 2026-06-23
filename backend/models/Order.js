@@ -158,8 +158,18 @@ const orderSchema = new mongoose.Schema({
     trackingCode: String,
     labelUrl: String,
     status: String,
+    syncStatus: {
+      type: String,
+      enum: ['pending', 'synced', 'error'],
+      default: 'pending',
+    },
     error: String,
-    syncedAt: Date
+    syncedAt: Date,
+    confirmedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    confirmedAt: Date,
   }
 }, {
   timestamps: true

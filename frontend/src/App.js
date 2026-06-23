@@ -42,6 +42,7 @@ const AdminCategories = React.lazy(() => import('./pages/admin/AdminCategories')
 const AdminBanners = React.lazy(() => import('./pages/admin/AdminBanners'));
 const AdminCustomers = React.lazy(() => import('./pages/admin/AdminCustomers'));
 const AdminOrders = React.lazy(() => import('./pages/admin/AdminOrders'));
+const AdminFiabilo = React.lazy(() => import('./pages/admin/AdminFiabilo'));
 const AdminRequests = React.lazy(() => import('./pages/admin/AdminRequests'));
 const AdminAnalytics = React.lazy(() => import('./pages/admin/AdminAnalytics'));
 
@@ -181,6 +182,11 @@ function App() {
             <Route path="/admin/orders" element={
               <AdminRoute>
                 <AdminOrders />
+              </AdminRoute>
+            } />
+            <Route path="/admin/fiabilo" element={
+              <AdminRoute>
+                <AdminFiabilo />
               </AdminRoute>
             } />
             <Route path="/admin/requests" element={

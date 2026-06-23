@@ -7,6 +7,8 @@ const Category = require('../models/Category');
 const Order = require('../models/Order');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { escapeRegex } = require('../utils/escapeRegex');
+const { syncOrderWithFiabilo } = require('../services/orderService');
+const { getImageUrl } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -1062,6 +1064,220 @@ router.get('/system/health', async (req, res) => {
     res.status(500).json({
       message: 'Erreur lors de la vérification de la santé du système'
     });
+  }
+});
+
+function buildFiabiloPendingFilter() {
+  return {
+    orderStatus: { $ne: 'cancelled' },
+    $or: [
+      { 'fiabilo.syncStatus': 'pending' },
+      { 'fiabilo.syncStatus': 'error' },
+      {
+        'fiabilo.syncStatus': { $exists: false },
+        'fiabilo.trackingCode': { $exists: false },
+      },
+    ],
+  };
+}
+
+function formatFiabiloOrder(order) {
+  const obj = order.toObject ? order.toObject() : order;
+  return {
+    ...obj,
+    items: (obj.items || []).map((item) => ({
+      ...item,
+      image: getImageUrl(item.image),
+    })),
+    customerName: obj.user
+      ? `${obj.user.firstName} ${obj.user.lastName}`
+      : `${obj.shippingAddress?.firstName || ''} ${obj.shippingAddress?.lastName || ''}`.trim(),
+    customerPhone: obj.shippingAddress?.phone || '',
+  };
+}
+
+// @route   GET /api/admin/fiabilo/orders
+// @desc    Commandes en attente de validation Fiabilo
+// @access  Private (Admin)
+router.get('/fiabilo/orders', [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('search').optional().isLength({ max: 100 }),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Paramètres invalides', errors: errors.array() });
+    }
+
+    const { page = 1, limit = 20, search } = req.query;
+    const filter = buildFiabiloPendingFilter();
+
+    if (search) {
+      const safeSearch = escapeRegex(search);
+      filter.$and = [
+        {
+          $or: [
+            { orderNumber: { $regex: safeSearch, $options: 'i' } },
+            { 'shippingAddress.firstName': { $regex: safeSearch, $options: 'i' } },
+            { 'shippingAddress.lastName': { $regex: safeSearch, $options: 'i' } },
+            { 'shippingAddress.phone': { $regex: safeSearch, $options: 'i' } },
+          ],
+        },
+      ];
+    }
+
+    const orders = await Order.find(filter)
+      .populate('user', 'firstName lastName email')
+      .populate('items.product', 'name images slug')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Order.countDocuments(filter);
+
+    res.json({
+      orders: orders.map(formatFiabiloOrder),
+      pagination: {
+        currentPage: parseInt(page, 10),
+        totalPages: Math.ceil(total / limit),
+        totalOrders: total,
+      },
+    });
+  } catch (error) {
+    console.error('Erreur liste Fiabilo:', error);
+    res.status(500).json({ message: 'Erreur lors de la récupération des commandes Fiabilo' });
+  }
+});
+
+// @route   GET /api/admin/fiabilo/orders/:id
+router.get('/fiabilo/orders/:id', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'firstName lastName email')
+      .populate('items.product', 'name images slug');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Commande non trouvée' });
+    }
+
+    res.json({ order: formatFiabiloOrder(order) });
+  } catch (error) {
+    console.error('Erreur détail Fiabilo:', error);
+    res.status(500).json({ message: 'Erreur lors de la récupération de la commande' });
+  }
+});
+
+// @route   POST /api/admin/fiabilo/orders/:id/confirm
+router.post('/fiabilo/orders/:id/confirm', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Commande non trouvée' });
+    }
+    if (order.orderStatus === 'cancelled') {
+      return res.status(400).json({ message: 'Cette commande est annulée' });
+    }
+    if (order.fiabilo?.syncStatus === 'synced' || order.fiabilo?.trackingCode) {
+      return res.status(400).json({ message: 'Cette commande est déjà enregistrée sur Fiabilo' });
+    }
+
+    await syncOrderWithFiabilo(order._id, req.user._id);
+
+    const updated = await Order.findById(order._id)
+      .populate('user', 'firstName lastName email')
+      .populate('items.product', 'name images slug');
+
+    res.json({
+      message: 'Commande enregistrée sur Fiabilo avec succès',
+      order: formatFiabiloOrder(updated),
+    });
+  } catch (error) {
+    console.error('Erreur confirmation Fiabilo:', error);
+    res.status(500).json({
+      message: error.message || 'Erreur lors de l\'enregistrement sur Fiabilo',
+    });
+  }
+});
+
+// @route   PUT /api/admin/fiabilo/orders/:id
+router.put('/fiabilo/orders/:id', [
+  body('shippingAddress.firstName').optional().trim().notEmpty(),
+  body('shippingAddress.lastName').optional().trim().notEmpty(),
+  body('shippingAddress.phone').optional().trim().notEmpty(),
+  body('shippingAddress.street').optional().trim().notEmpty(),
+  body('shippingAddress.governorate').optional().trim().notEmpty(),
+  body('shippingAddress.city').optional().trim().notEmpty(),
+  body('shippingAddress.postalCode').optional().trim(),
+  body('notes.customer').optional().isLength({ max: 500 }),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Données invalides', errors: errors.array() });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Commande non trouvée' });
+    }
+    if (order.fiabilo?.syncStatus === 'synced' || order.fiabilo?.trackingCode) {
+      return res.status(400).json({ message: 'Impossible de modifier une commande déjà envoyée à Fiabilo' });
+    }
+
+    const { shippingAddress, notes } = req.body;
+    if (shippingAddress) {
+      order.shippingAddress = {
+        ...order.shippingAddress.toObject?.() || order.shippingAddress,
+        ...shippingAddress,
+      };
+    }
+    if (notes?.customer !== undefined) {
+      order.notes = { ...order.notes?.toObject?.() || order.notes || {}, customer: notes.customer };
+    }
+
+    await order.save();
+
+    const updated = await Order.findById(order._id)
+      .populate('user', 'firstName lastName email')
+      .populate('items.product', 'name images slug');
+
+    res.json({
+      message: 'Commande mise à jour',
+      order: formatFiabiloOrder(updated),
+    });
+  } catch (error) {
+    console.error('Erreur modification Fiabilo:', error);
+    res.status(500).json({ message: 'Erreur lors de la modification de la commande' });
+  }
+});
+
+// @route   DELETE /api/admin/fiabilo/orders/:id
+router.delete('/fiabilo/orders/:id', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Commande non trouvée' });
+    }
+    if (order.fiabilo?.syncStatus === 'synced' || order.fiabilo?.trackingCode) {
+      return res.status(400).json({ message: 'Impossible de supprimer une commande déjà envoyée à Fiabilo' });
+    }
+
+    if (order.stockDeducted) {
+      await restoreOrderStock(order);
+      order.stockDeducted = false;
+    }
+
+    order.orderStatus = 'cancelled';
+    order.cancellationReason = 'Supprimée par l\'admin (Fiabilo)';
+    order.cancelledBy = req.user._id;
+    order.cancelledAt = new Date();
+    await order.save();
+
+    res.json({ message: 'Commande supprimée avec succès' });
+  } catch (error) {
+    console.error('Erreur suppression Fiabilo:', error);
+    res.status(500).json({ message: 'Erreur lors de la suppression de la commande' });
   }
 });
 

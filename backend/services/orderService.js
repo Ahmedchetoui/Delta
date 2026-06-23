@@ -88,7 +88,7 @@ async function buildOrderItems(items, products) {
   return { orderItems, subtotal };
 }
 
-async function syncOrderWithFiabilo(orderId) {
+async function syncOrderWithFiabilo(orderId, adminUserId = null) {
   try {
     const order = await Order.findById(orderId);
     if (!order) return;
@@ -100,23 +100,30 @@ async function syncOrderWithFiabilo(orderId) {
       trackingCode: result.trackingCode,
       labelUrl: result.labelUrl,
       status: 'En attente',
+      syncStatus: 'synced',
       error: null,
       syncedAt: new Date(),
+      confirmedBy: adminUserId || order.fiabilo?.confirmedBy || null,
+      confirmedAt: adminUserId ? new Date() : order.fiabilo?.confirmedAt || null,
     };
+    if (order.orderStatus === 'pending') {
+      order.orderStatus = 'confirmed';
+    }
     await order.save();
   } catch (error) {
     console.error(`[Fiabilo] Échec sync commande ${orderId}:`, error.message);
     await Order.findByIdAndUpdate(orderId, {
-      fiabilo: {
-        error: error.message,
-        syncedAt: new Date(),
+      $set: {
+        'fiabilo.syncStatus': 'error',
+        'fiabilo.error': error.message,
+        'fiabilo.syncedAt': new Date(),
       },
     });
+    throw error;
   }
 }
 
 async function finalizeOrder(order) {
-  await syncOrderWithFiabilo(order._id);
   const updated = await Order.findById(order._id).populate([
     { path: 'user', select: 'firstName lastName email' },
     { path: 'items.product', select: 'name images slug' },
@@ -191,6 +198,7 @@ async function createOrderWithTransaction(orderData, userId) {
       giftMessage,
       guestEmail: userId ? null : shippingAddress.email,
       stockDeducted: true,
+      fiabilo: { syncStatus: 'pending' },
     });
 
     await order.save({ session });
@@ -264,6 +272,7 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
       giftMessage,
       guestEmail: userId ? null : shippingAddress.email,
       stockDeducted: true,
+      fiabilo: { syncStatus: 'pending' },
     });
 
     await order.save();
@@ -347,4 +356,5 @@ module.exports = {
   OrderServiceError,
   createOrder,
   mapOrderResponse,
+  syncOrderWithFiabilo,
 };
