@@ -5,7 +5,7 @@ import api from '../services/api';
 const GuestOrderTracking = () => {
   const [formData, setFormData] = useState({
     orderNumber: '',
-    email: ''
+    phone: ''
   });
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -20,14 +20,15 @@ const GuestOrderTracking = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.orderNumber || !formData.email) {
+    if (!formData.orderNumber || !formData.phone) {
       toast.error('Veuillez remplir tous les champs');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await api.get(`/orders/guest/${formData.orderNumber}/${formData.email}`);
+      const encodedPhone = encodeURIComponent(formData.phone.trim());
+      const response = await api.get(`/orders/guest/${formData.orderNumber.trim()}/${encodedPhone}`);
       setOrder(response.data.order);
       toast.success('Commande trouvée !');
     } catch (error) {
@@ -80,10 +81,9 @@ const GuestOrderTracking = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Suivi de commande</h1>
-          <p className="text-gray-600">Suivez votre commande en saisissant votre numéro de commande et votre email</p>
+          <p className="text-gray-600">Suivez votre commande avec votre numéro de commande et votre téléphone</p>
         </div>
 
-        {/* Search Form */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -96,7 +96,7 @@ const GuestOrderTracking = () => {
                   name="orderNumber"
                   value={formData.orderNumber}
                   onChange={handleChange}
-                  placeholder="Ex: DF12345678901"
+                  placeholder="Ex: CMD-250623-00001"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -104,14 +104,14 @@ const GuestOrderTracking = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email de commande
+                  Numéro de téléphone
                 </label>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
                   onChange={handleChange}
-                  placeholder="votre@email.com"
+                  placeholder="Ex: +216 XX XXX XXX"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -128,7 +128,6 @@ const GuestOrderTracking = () => {
           </form>
         </div>
 
-        {/* Order Details */}
         {order && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="border-b border-gray-200 pb-6 mb-6">
@@ -153,7 +152,6 @@ const GuestOrderTracking = () => {
               </div>
             </div>
 
-            {/* Order Items */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Articles commandés</h3>
               <div className="space-y-4">
@@ -183,9 +181,7 @@ const GuestOrderTracking = () => {
               </div>
             </div>
 
-            {/* Order Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Shipping Address */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Adresse de livraison</h3>
                 <div className="text-gray-600 space-y-1">
@@ -194,11 +190,9 @@ const GuestOrderTracking = () => {
                   <p>{order.shippingAddress.city} {order.shippingAddress.postalCode}</p>
                   <p>{order.shippingAddress.country}</p>
                   <p>📞 {order.shippingAddress.phone}</p>
-                  <p>✉️ {order.shippingAddress.email}</p>
                 </div>
               </div>
 
-              {/* Order Totals */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Résumé financier</h3>
                 <div className="space-y-2">
@@ -238,7 +232,6 @@ const GuestOrderTracking = () => {
               </div>
             </div>
 
-            {/* Tracking Information */}
             {order.trackingNumber && (
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                 <h3 className="text-lg font-semibold text-blue-900 mb-2">Informations de suivi</h3>
@@ -248,7 +241,6 @@ const GuestOrderTracking = () => {
               </div>
             )}
 
-            {/* Order Notes */}
             {order.notes?.customer && (
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Notes de commande</h3>
@@ -258,14 +250,12 @@ const GuestOrderTracking = () => {
           </div>
         )}
 
-        {/* Help Section */}
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-blue-900 mb-2">Besoin d'aide ?</h3>
           <p className="text-blue-700 mb-4">
             Si vous avez des questions concernant votre commande, n'hésitez pas à nous contacter.
           </p>
           <div className="space-y-2 text-sm text-blue-600">
-            <p>📧 Email: support@deltafashion.tn</p>
             <p>📞 Téléphone: +216 25 807 407</p>
             <p>🕒 Horaires: Lun-Ven 9h-18h, Sam 9h-13h</p>
           </div>

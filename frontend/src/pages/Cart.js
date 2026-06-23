@@ -11,6 +11,7 @@ import {
   DEFAULT_CITY,
   DEFAULT_GOVERNORATE,
 } from '../constants/tunisiaGovernorates';
+import { calculateShippingCost } from '../constants/shipping';
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -37,14 +38,14 @@ const Cart = () => {
         setPhone(parsedInfo.phone || '');
         setGovernorate(parsedInfo.governorate || DEFAULT_GOVERNORATE);
         setCity(parsedInfo.city || DEFAULT_CITY);
-        setAddress(parsedInfo.streetAddress || '');
+        setAddress(parsedInfo.streetAddress || parsedInfo.address || '');
       } catch (error) {
         console.error('Erreur lors du chargement des informations invité:', error);
       }
     }
   }, []);
 
-  const deliveryCost = 8.0;
+  const deliveryCost = calculateShippingCost();
   const total = totalAmount + deliveryCost;
 
   const handleQuantityChange = (itemId, newQuantity) => {
@@ -88,7 +89,6 @@ const Cart = () => {
         shippingAddress: {
           firstName: firstName,
           lastName: lastName,
-          email: `guest_${Date.now()}@deltafashion.tn`,
           phone: phone,
           street: address,
           governorate: governorate,

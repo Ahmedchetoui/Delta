@@ -32,10 +32,10 @@ const Delivery = () => {
                 Livraison en 2-3 jours ouvrés dans toute la Tunisie
               </p>
               <div className="text-2xl font-bold text-blue-600 mb-2">
-                Gratuite dès 100 DT
+                8 DT
               </div>
               <div className="text-sm text-gray-500">
-                Sinon 8 DT
+                Sur toutes les commandes
               </div>
             </div>
             

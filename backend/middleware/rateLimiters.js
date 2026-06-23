@@ -1,12 +1,9 @@
 const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const { createRateLimitStore } = require('./rateLimitStore');
+const { normalizeGuestPhone } = require('../utils/phoneUtils');
 
 const isProduction = process.env.NODE_ENV === 'production';
-
-function normalizePhone(phone) {
-  return String(phone || '').replace(/\D/g, '');
-}
 
 const guestOrderLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -58,7 +55,7 @@ const orderPhoneLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isProduction ? 5 : 50,
   keyGenerator: (req) => {
-    const phone = normalizePhone(req.body?.shippingAddress?.phone);
+    const phone = normalizeGuestPhone(req.body?.shippingAddress?.phone);
     if (phone.length >= 8) {
       return `order-phone:${phone}`;
     }

@@ -13,7 +13,7 @@ const orderSchema = new mongoose.Schema({
   },
   guestEmail: {
     type: String,
-    required: false // Email pour les commandes invités
+    required: false // Identifiant invité : téléphone normalisé (8 derniers chiffres)
   },
   items: [{
     product: {
@@ -54,7 +54,7 @@ const orderSchema = new mongoose.Schema({
     },
     email: {
       type: String,
-      required: true
+      default: ''
     },
     street: {
       type: String,
@@ -223,10 +223,10 @@ orderSchema.post('save', async function(error, doc, next) {
   next(error); // Autre type d'erreur, on la propage
 });
 
-// Validation personnalisée : soit un utilisateur connecté, soit un email invité
+// Validation : utilisateur connecté ou téléphone invité (stocké dans guestEmail)
 orderSchema.pre('validate', function(next) {
   if (!this.user && !this.guestEmail) {
-    next(new Error('Une commande doit avoir soit un utilisateur connecté, soit un email invité'));
+    next(new Error('Une commande doit avoir soit un utilisateur connecté, soit un numéro de téléphone invité'));
   } else {
     next();
   }

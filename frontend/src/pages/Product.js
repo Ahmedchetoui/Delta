@@ -25,6 +25,7 @@ import {
   DEFAULT_GOVERNORATE,
   TUNISIA_GOVERNORATES,
 } from '../constants/tunisiaGovernorates';
+import { calculateShippingCost } from '../constants/shipping';
 import ProductReviews from '../components/product/ProductReviews';
 
 const Product = () => {
@@ -43,14 +44,15 @@ const Product = () => {
   const [isOrdering, setIsOrdering] = useState(false);
 
   // Champs d'informations de livraison
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [governorate, setGovernorate] = useState(DEFAULT_GOVERNORATE);
   const [city, setCity] = useState(DEFAULT_CITY);
   const [streetAddress, setStreetAddress] = useState('');
 
 
-  const deliveryCost = 8.0;
+  const deliveryCost = calculateShippingCost();
   const productPrice = currentProduct
     ? (currentProduct.finalPrice ?? currentProduct.price ?? 0)
     : 0;
@@ -181,26 +183,39 @@ const Product = () => {
     }
   }, [dispatch, id]);
 
-  const handleAddToCart = () => {
-    if (!fullName.trim()) {
-      toast.error('Veuillez saisir votre nom complet');
-      return;
+  const validateOrderForm = () => {
+    if (!firstName.trim()) {
+      toast.error('Veuillez saisir votre prénom');
+      return false;
+    }
+    if (!lastName.trim()) {
+      toast.error('Veuillez saisir votre nom');
+      return false;
     }
     if (!phone.trim()) {
       toast.error('Veuillez saisir votre numéro de téléphone');
-      return;
+      return false;
     }
-    if (!streetAddress.trim()) {
-      toast.error('Veuillez saisir votre adresse');
-      return;
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length < 8) {
+      toast.error('Numéro de téléphone invalide (8 chiffres minimum)');
+      return false;
+    }
+    if (!governorate.trim()) {
+      toast.error('Veuillez sélectionner un gouvernorat');
+      return false;
     }
     if (!city.trim()) {
       toast.error('Veuillez saisir votre ville');
-      return;
+      return false;
+    }
+    if (!streetAddress.trim()) {
+      toast.error('Veuillez saisir votre adresse complète');
+      return false;
     }
     if (hasVariants && !selectedSize) {
       toast.error('Veuillez sélectionner une taille');
-      return;
+      return false;
     }
     if (colorRequired) {
       const colorsForOrder = selectedColors.slice(0, quantity);
@@ -210,10 +225,14 @@ const Product = () => {
             ? 'Veuillez sélectionner une couleur'
             : `Veuillez sélectionner une couleur pour chaque article (${quantity} couleurs)`
         );
-        return;
+        return false;
       }
     }
+    return true;
+  };
 
+  const handleAddToCart = () => {
+    if (!validateOrderForm()) return;
     setShowOrderModal(true);
   };
 
@@ -240,19 +259,16 @@ const Product = () => {
   };
 
   const handleConfirmOrder = async () => {
+    if (!validateOrderForm()) return;
+
     setIsOrdering(true);
 
     try {
-      const nameParts = fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || firstName;
-
       const orderData = {
         items: buildOrderItemsFromProduct(),
         shippingAddress: {
-          firstName,
-          lastName,
-          email: `guest_${Date.now()}@deltafashion.tn`,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
           phone: phone.trim(),
           street: streetAddress.trim(),
           governorate: governorate.trim(),
@@ -422,9 +438,9 @@ const Product = () => {
               </div>
             )}
 
-            {/* Quantité */}
+            {/* Quantité (défaut : 1) */}
             <div className="bg-white border border-gray-300 rounded-lg p-3">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Quantité:</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Quantité</h3>
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
@@ -494,26 +510,28 @@ const Product = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Nom complet:
+                    Prénom <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
-                    placeholder="Votre nom complet"
+                    placeholder="Prénom"
                   />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Téléphone:
+                    Nom <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
-                    placeholder="Ex: 22000000"
+                    placeholder="Nom"
                   />
                 </div>
               </div>
@@ -521,11 +539,25 @@ const Product = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Gouvernorat:
+                    Téléphone <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
+                    placeholder="Ex: 22000000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Gouvernorat <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={governorate}
                     onChange={(e) => setGovernorate(e.target.value)}
+                    required
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
                   >
                     {TUNISIA_GOVERNORATES.map((gov) => (
@@ -533,14 +565,18 @@ const Product = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Ville:
+                    Ville <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
+                    required
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
                     placeholder="Votre ville"
                   />
@@ -549,14 +585,15 @@ const Product = () => {
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">
-                  Adresse:
+                  Adresse complète <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={streetAddress}
                   onChange={(e) => setStreetAddress(e.target.value)}
                   rows={2}
+                  required
                   className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
-                  placeholder="Votre adresse complète"
+                  placeholder="Rue, numéro, quartier..."
                 />
               </div>
             </div>
@@ -584,7 +621,7 @@ const Product = () => {
               className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               <ShoppingCartIcon className="h-5 w-5 mr-2" />
-              Ajouter au Panier - {total.toFixed(2)} DT
+              Commander - {total.toFixed(2)} DT
             </button>
 
           </div>
@@ -624,7 +661,7 @@ const Product = () => {
 
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="font-semibold text-gray-900 mb-1">Livraison</p>
-                  <p className="text-gray-600">{fullName}</p>
+                  <p className="text-gray-600">{firstName} {lastName}</p>
                   <p className="text-gray-600">{phone}</p>
                   <p className="text-gray-600">{streetAddress}</p>
                   <p className="text-gray-600">{city}, {governorate}</p>

@@ -13,6 +13,7 @@ const {
   orderEmailLimiter,
   orderPhoneLimiter,
 } = require('../middleware/rateLimiters');
+const { normalizeGuestPhone } = require('../utils/phoneUtils');
 const { MAX_ITEM_QUANTITY, MAX_ORDER_ITEMS, PAYMENT_METHOD_COD } = require('../utils/orderConstants');
 const { processOrder } = require('../services/orderQueue');
 const { OrderServiceError } = require('../services/orderService');
@@ -58,11 +59,19 @@ const orderValidation = [
     .isLength({ min: 1, max: 50 })
     .withMessage('Le nom est requis'),
   body('shippingAddress.email')
+    .optional({ values: 'falsy' })
     .isEmail()
-    .withMessage('Email valide requis'),
+    .withMessage('Email invalide'),
   body('shippingAddress.phone')
     .matches(/^[0-9+\-\s()]+$/)
-    .withMessage('Numéro de téléphone invalide'),
+    .withMessage('Numéro de téléphone invalide')
+    .custom((value) => {
+      const digits = String(value || '').replace(/\D/g, '');
+      if (digits.length < 8) {
+        throw new Error('Le numéro de téléphone doit contenir au moins 8 chiffres');
+      }
+      return true;
+    }),
   body('shippingAddress.street')
     .trim()
     .isLength({ min: 3, max: 200 })
@@ -72,10 +81,9 @@ const orderValidation = [
     .isLength({ min: 2, max: 50 })
     .withMessage('La ville est requise'),
   body('shippingAddress.governorate')
-    .optional()
     .trim()
     .isLength({ min: 2, max: 50 })
-    .withMessage('Le gouvernorat est invalide'),
+    .withMessage('Le gouvernorat est requis'),
   body('paymentMethod')
     .optional()
     .custom((value) => {
@@ -237,30 +245,30 @@ router.get('/stats/summary', authenticateToken, requireAdmin, async (req, res) =
   }
 });
 
-// @route   GET /api/orders/guest/:orderNumber/:email
-// @desc    Obtenir une commande invité par numéro et email
+// @route   GET /api/orders/guest/:orderNumber/:phone
+// @desc    Obtenir une commande invité par numéro et téléphone
 // @access  Public (rate limited)
-router.get('/guest/:orderNumber/:email', guestOrderLimiter, async (req, res) => {
+router.get('/guest/:orderNumber/:phone', guestOrderLimiter, async (req, res) => {
   try {
     const orderNumber = String(req.params.orderNumber || '').trim();
-    const email = String(req.params.email || '').trim().toLowerCase();
+    const phone = normalizeGuestPhone(req.params.phone);
 
-    if (!orderNumber || !email) {
+    if (!orderNumber || !phone) {
       return res.status(400).json({
-        message: 'Numéro de commande et email requis.',
+        message: 'Numéro de commande et téléphone requis.',
       });
     }
 
     const order = await Order.findOne({
       orderNumber,
-      guestEmail: email,
+      guestEmail: phone,
     })
       .populate('items.product', 'name images slug')
       .lean();
 
     if (!order) {
       return res.status(404).json({
-        message: 'Commande non trouvée. Vérifiez le numéro de commande et l\'email.',
+        message: 'Commande non trouvée. Vérifiez le numéro de commande et le téléphone.',
       });
     }
 

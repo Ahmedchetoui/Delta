@@ -11,7 +11,7 @@ import {
 } from '../constants/tunisiaGovernorates';
 import { getImagesForColor, getProductImageUrl } from '../utils/productImages';
 import { normalizeCartColors } from '../utils/cartColors';
-import { calculateShippingCost, FREE_SHIPPING_THRESHOLD } from '../constants/shipping';
+import { calculateShippingCost } from '../constants/shipping';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -21,16 +21,12 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
-    // Informations essentielles
-    fullName: '',
-    email: '',
+    firstName: '',
+    lastName: '',
     phone: '',
     governorate: DEFAULT_GOVERNORATE,
     city: DEFAULT_CITY,
     address: '',
-    color: '',
-
-    // Payment
     paymentMethod: 'cash_on_delivery'
   });
 
@@ -40,10 +36,12 @@ const Checkout = () => {
     if (guestInfo) {
       try {
         const parsedInfo = JSON.parse(guestInfo);
+        const legacyName = String(parsedInfo.fullName || '').trim();
+        const legacyParts = legacyName ? legacyName.split(' ') : [];
         setFormData(prev => ({
           ...prev,
-          fullName: parsedInfo.fullName || '',
-          email: parsedInfo.email || '',
+          firstName: parsedInfo.firstName || legacyParts[0] || '',
+          lastName: parsedInfo.lastName || legacyParts.slice(1).join(' ') || '',
           phone: parsedInfo.phone || '',
           governorate: parsedInfo.governorate || DEFAULT_GOVERNORATE,
           city: parsedInfo.city || DEFAULT_CITY,
@@ -69,8 +67,14 @@ const Checkout = () => {
     if (isSubmitting) return;
     
     // Validation
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.address || !formData.city) {
+    if (!formData.firstName || !formData.lastName || !formData.phone || !formData.address || !formData.city) {
       toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (phoneDigits.length < 8) {
+      toast.error('Numéro de téléphone invalide (8 chiffres minimum)');
       return;
     }
 
@@ -79,33 +83,19 @@ const Checkout = () => {
       return;
     }
 
-    // Validation email basique
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error('Veuillez entrer une adresse email valide');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      // Séparer le nom complet en prénom et nom
-      const nameParts = formData.fullName.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || firstName;
-
-      // Préparer les données de commande
       const orderData = {
         items: items.map(item => ({
           product: item.product._id,
           quantity: item.quantity,
           size: item.size || null,
-          color: formData.color || item.color || null
+          color: item.color || null
         })),
         shippingAddress: {
-          firstName: firstName,
-          lastName: lastName,
-          email: formData.email, // Utiliser l'email réel de l'invité
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
           phone: formData.phone,
           street: formData.address,
           governorate: formData.governorate,
@@ -125,8 +115,8 @@ const Checkout = () => {
       const orderInfo = {
         orderNumber: response.data.order.orderNumber,
         orderId: response.data.order._id,
-        email: formData.email,
-        fullName: formData.fullName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         phone: formData.phone,
         address: formData.address,
         total: response.data.order.total,
@@ -134,14 +124,21 @@ const Checkout = () => {
       };
       
       localStorage.setItem('lastGuestOrder', JSON.stringify(orderInfo));
-      localStorage.setItem('guestOrderInfo', JSON.stringify(formData));
+      localStorage.setItem('guestOrderInfo', JSON.stringify({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        governorate: formData.governorate,
+        city: formData.city,
+        streetAddress: formData.address,
+        address: formData.address,
+      }));
       
-      // Rediriger vers une page de confirmation
       navigate('/order-confirmation', { 
         state: { 
           orderId: response.data.order._id,
           orderNumber: response.data.order.orderNumber,
-          email: formData.email
+          phone: formData.phone
         } 
       });
 
@@ -153,7 +150,7 @@ const Checkout = () => {
     }
   };
 
-  const shippingCost = calculateShippingCost(totalAmount);
+  const shippingCost = calculateShippingCost();
   const finalTotal = totalAmount + shippingCost;
 
   return (
@@ -198,35 +195,35 @@ const Checkout = () => {
               </div>
               
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nom complet *
-                  </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    required
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    placeholder="Votre nom complet"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Adresse email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="votre.email@exemple.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Nécessaire pour suivre votre commande</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prénom *
+                    </label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      required
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      placeholder="Prénom"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nom *
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      required
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      placeholder="Nom"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -242,6 +239,7 @@ const Checkout = () => {
                     placeholder="Ex: +216 XX XXX XXX"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Nécessaire pour suivre votre commande</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -288,20 +286,6 @@ const Checkout = () => {
                     value={formData.address}
                     onChange={handleChange}
                     placeholder="Adresse complète de livraison"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Couleur préférée (facultatif)
-                  </label>
-                  <input
-                    type="text"
-                    name="color"
-                    value={formData.color}
-                    onChange={handleChange}
-                    placeholder="Ex: Rouge, Bleu, Vert..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -382,16 +366,8 @@ const Checkout = () => {
                 
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Livraison</span>
-                  <span className="font-medium">
-                    {shippingCost === 0 ? 'Gratuite' : `${shippingCost.toFixed(2)} DT`}
-                  </span>
+                  <span className="font-medium">{shippingCost.toFixed(2)} DT</span>
                 </div>
-                
-                {totalAmount < FREE_SHIPPING_THRESHOLD && (
-                  <div className="text-xs text-blue-600">
-                    Ajoutez {(FREE_SHIPPING_THRESHOLD - totalAmount).toFixed(2)} DT pour la livraison gratuite
-                  </div>
-                )}
                 
                 <div className="border-t border-gray-200 pt-2">
                   <div className="flex justify-between">

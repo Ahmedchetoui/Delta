@@ -61,10 +61,10 @@ const OrderConfirmation = () => {
               Que se passe-t-il maintenant ?
             </h3>
             <ul className="text-left text-blue-800 space-y-2">
-              <li>• Vous recevrez un email de confirmation sous peu</li>
               <li>• Nous traiterons votre commande dans les 24h</li>
-              <li>• Vous serez notifié lors de l'expédition</li>
-              <li>• Livraison gratuite pour les commandes de plus de 100 DT</li>
+              <li>• Vous serez contacté par téléphone pour la livraison</li>
+              <li>• Frais de livraison : 8 DT sur toutes les commandes</li>
+              <li>• Conservez votre numéro de commande et votre téléphone pour le suivi</li>
             </ul>
           </div>
 
@@ -102,7 +102,7 @@ const OrderConfirmation = () => {
                 <h3 className="text-lg font-semibold text-yellow-800 mb-2">Important - Conservez ces informations</h3>
                 <div className="text-sm text-yellow-700 space-y-2">
                   <p><strong>Numéro de commande :</strong> {orderNumber}</p>
-                  <p><strong>Email utilisé :</strong> Celui que vous avez saisi lors de la commande</p>
+                  <p><strong>Téléphone utilisé :</strong> Celui que vous avez saisi lors de la commande</p>
                   <p className="mt-3 font-medium">
                     Ces informations sont nécessaires pour suivre votre commande. 
                     <Link to="/guest-order-tracking" className="text-yellow-900 underline ml-1">

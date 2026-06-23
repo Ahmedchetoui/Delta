@@ -8,6 +8,7 @@ const {
   syncTotalStock,
 } = require('../utils/stockUtils');
 const { calculateShippingCost, PAYMENT_METHOD_COD } = require('../utils/orderConstants');
+const { normalizeGuestPhone } = require('../utils/phoneUtils');
 const { getOrderItemImage } = require('../utils/productImages');
 const { getImageUrl } = require('../middleware/upload');
 
@@ -152,6 +153,18 @@ async function deductStockForItems(items, session) {
   }
 }
 
+function prepareShippingAddress(shippingAddress) {
+  return {
+    ...shippingAddress,
+    email: String(shippingAddress?.email || '').trim(),
+  };
+}
+
+function resolveGuestIdentifier(userId, shippingAddress) {
+  if (userId) return null;
+  return normalizeGuestPhone(shippingAddress.phone);
+}
+
 async function createOrderWithTransaction(orderData, userId) {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -177,17 +190,19 @@ async function createOrderWithTransaction(orderData, userId) {
     }
 
     const { orderItems, subtotal } = await buildOrderItems(items, products);
-    const shippingCost = calculateShippingCost(subtotal);
+    const shippingCost = calculateShippingCost();
     const tax = 0;
     const total = subtotal + shippingCost + tax;
 
     await deductStockForItems(orderItems, session);
 
+    const normalizedShipping = prepareShippingAddress(shippingAddress);
+
     const order = new Order({
       user: userId || null,
       items: orderItems,
-      shippingAddress,
-      billingAddress: billingAddress || shippingAddress,
+      shippingAddress: normalizedShipping,
+      billingAddress: billingAddress || normalizedShipping,
       paymentMethod: PAYMENT_METHOD_COD,
       subtotal,
       shippingCost,
@@ -196,7 +211,7 @@ async function createOrderWithTransaction(orderData, userId) {
       notes,
       isGift: isGift === true,
       giftMessage,
-      guestEmail: userId ? null : shippingAddress.email,
+      guestEmail: resolveGuestIdentifier(userId, normalizedShipping),
       stockDeducted: true,
       fiabilo: { syncStatus: 'pending' },
     });
@@ -234,7 +249,7 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
   }
 
   const { orderItems, subtotal } = await buildOrderItems(items, products);
-  const shippingCost = calculateShippingCost(subtotal);
+  const shippingCost = calculateShippingCost();
   const tax = 0;
   const total = subtotal + shippingCost + tax;
 
@@ -257,11 +272,13 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
       updatedProductIds.push(product._id);
     }
 
+    const normalizedShipping = prepareShippingAddress(shippingAddress);
+
     const order = new Order({
       user: userId || null,
       items: orderItems,
-      shippingAddress,
-      billingAddress: billingAddress || shippingAddress,
+      shippingAddress: normalizedShipping,
+      billingAddress: billingAddress || normalizedShipping,
       paymentMethod: PAYMENT_METHOD_COD,
       subtotal,
       shippingCost,
@@ -270,7 +287,7 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
       notes,
       isGift: isGift === true,
       giftMessage,
-      guestEmail: userId ? null : shippingAddress.email,
+      guestEmail: resolveGuestIdentifier(userId, normalizedShipping),
       stockDeducted: true,
       fiabilo: { syncStatus: 'pending' },
     });
