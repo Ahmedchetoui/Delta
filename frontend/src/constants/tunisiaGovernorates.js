@@ -1,18 +1,19 @@
+/** Noms alignés sur la liste Fiabilo (fiabilo.tn) */
 export const TUNISIA_GOVERNORATES = [
   'Ariana',
-  'Béja',
+  'Beja',
   'Ben Arous',
   'Bizerte',
-  'Gabès',
+  'Gabes',
   'Gafsa',
   'Jendouba',
   'Kairouan',
   'Kasserine',
-  'Kébili',
-  'Kef',
+  'Kebili',
+  'LE Kef',
   'Mahdia',
-  'Manouba',
-  'Médenine',
+  'Mannouba',
+  'Medenine',
   'Monastir',
   'Nabeul',
   'Sfax',
@@ -26,4 +27,4 @@ export const TUNISIA_GOVERNORATES = [
 ];
 
 export const DEFAULT_GOVERNORATE = 'Monastir';
-export const DEFAULT_CITY = 'Manzel ennour';
+export const DEFAULT_CITY = '';
