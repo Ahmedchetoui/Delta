@@ -6,7 +6,13 @@ const User = require('../models/User');
 const { authenticateToken, requireAdmin, requireOwnerOrAdmin, optionalAuth } = require('../middleware/auth');
 
 const { deductOrderStock, restoreOrderStock } = require('../utils/stockUtils');
-const { guestOrderLimiter, orderCreateLimiter, orderEmailLimiter } = require('../middleware/rateLimiters');
+const {
+  guestOrderLimiter,
+  orderCreateBurstLimiter,
+  orderCreateLimiter,
+  orderEmailLimiter,
+  orderPhoneLimiter,
+} = require('../middleware/rateLimiters');
 const { MAX_ITEM_QUANTITY, MAX_ORDER_ITEMS, PAYMENT_METHOD_COD } = require('../utils/orderConstants');
 const { processOrder } = require('../services/orderQueue');
 const { OrderServiceError } = require('../services/orderService');
@@ -333,7 +339,15 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // @route   POST /api/orders
 // @desc    Créer une nouvelle commande (utilisateurs connectés et invités)
 // @access  Public/Private
-router.post('/', orderCreateLimiter, orderEmailLimiter, optionalAuth, orderValidation, async (req, res) => {
+router.post(
+  '/',
+  orderCreateBurstLimiter,
+  orderCreateLimiter,
+  orderEmailLimiter,
+  orderPhoneLimiter,
+  optionalAuth,
+  orderValidation,
+  async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

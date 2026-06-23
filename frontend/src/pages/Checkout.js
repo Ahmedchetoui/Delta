@@ -18,6 +18,8 @@ const Checkout = () => {
   const items = useSelector(selectCartItems);
   const totalAmount = useSelector(selectCartTotal);
   
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState({
     // Informations essentielles
     fullName: '',
@@ -63,6 +65,8 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isSubmitting) return;
     
     // Validation
     if (!formData.fullName || !formData.email || !formData.phone || !formData.address || !formData.city) {
@@ -81,6 +85,8 @@ const Checkout = () => {
       toast.error('Veuillez entrer une adresse email valide');
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       // Séparer le nom complet en prénom et nom
@@ -142,6 +148,8 @@ const Checkout = () => {
     } catch (error) {
       console.error('Erreur lors de la commande:', error);
       toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -315,9 +323,17 @@ const Checkout = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  disabled={isSubmitting || items.length === 0}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  Confirmer la commande
+                  {isSubmitting ? (
+                    <>
+                      <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                      Commande en cours...
+                    </>
+                  ) : (
+                    'Confirmer la commande'
+                  )}
                 </button>
               </form>
             </div>
