@@ -27,7 +27,7 @@ const LandingPage = ({ onComplete, isReady = false }) => {
               stiffness: 200,
               damping: 15,
             }}
-            className="relative z-10 mb-10 px-6"
+            className="relative z-10 mb-6 px-6"
           >
             <img
               src={deltaLogo}
@@ -46,12 +46,6 @@ const LandingPage = ({ onComplete, isReady = false }) => {
             transition={{ delay: 0.15, duration: 0.4 }}
             className="text-center"
           >
-            <h1 className="text-5xl md:text-6xl font-bold text-black mb-3 tracking-tight">
-              Delta Fashion
-            </h1>
-            <p className="text-gray-600 text-lg md:text-xl font-light tracking-wide mb-6">
-              Élégance Moderne
-            </p>
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
               {isReady ? 'Ouverture...' : 'Chargement de la boutique...'}
