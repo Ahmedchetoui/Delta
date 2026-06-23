@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -22,11 +22,11 @@ const AdminFiabilo = () => {
   const [editForm, setEditForm] = useState({});
   const [actionLoading, setActionLoading] = useState(null);
 
-  const fetchOrders = async (page = 1) => {
+  const fetchOrders = useCallback(async (page = 1, searchQuery = '') => {
     try {
       setLoading(true);
       const params = { page, limit: 15 };
-      if (search.trim()) params.search = search.trim();
+      if (searchQuery.trim()) params.search = searchQuery.trim();
 
       const { data } = await api.get('/admin/fiabilo/orders', { params });
       setOrders(data.orders || []);
@@ -37,15 +37,15 @@ const AdminFiabilo = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(1);
+  }, [fetchOrders]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchOrders(1);
+    fetchOrders(1, search);
   };
 
   const handleConfirm = async (orderId) => {
@@ -55,7 +55,7 @@ const AdminFiabilo = () => {
     try {
       const { data } = await api.post(`/admin/fiabilo/orders/${orderId}/confirm`);
       toast.success(data.message || 'Commande envoyée à Fiabilo');
-      fetchOrders(pagination.currentPage);
+      fetchOrders(pagination.currentPage, search);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Erreur lors de la confirmation Fiabilo');
     } finally {
@@ -99,7 +99,7 @@ const AdminFiabilo = () => {
       toast.success(data.message || 'Commande mise à jour');
       setShowEditModal(false);
       setSelectedOrder(null);
-      fetchOrders(pagination.currentPage);
+      fetchOrders(pagination.currentPage, search);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Erreur lors de la modification');
     } finally {
@@ -114,7 +114,7 @@ const AdminFiabilo = () => {
     try {
       const { data } = await api.delete(`/admin/fiabilo/orders/${orderId}`);
       toast.success(data.message || 'Commande supprimée');
-      fetchOrders(pagination.currentPage);
+      fetchOrders(pagination.currentPage, search);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Erreur lors de la suppression');
     } finally {
@@ -262,7 +262,7 @@ const AdminFiabilo = () => {
               <div className="flex gap-2">
                 <button
                   disabled={pagination.currentPage <= 1}
-                  onClick={() => fetchOrders(pagination.currentPage - 1)}
+                  onClick={() => fetchOrders(pagination.currentPage - 1, search)}
                   className="px-3 py-1 border rounded disabled:opacity-50"
                 >
                   Précédent
@@ -272,7 +272,7 @@ const AdminFiabilo = () => {
                 </span>
                 <button
                   disabled={pagination.currentPage >= pagination.totalPages}
-                  onClick={() => fetchOrders(pagination.currentPage + 1)}
+                  onClick={() => fetchOrders(pagination.currentPage + 1, search)}
                   className="px-3 py-1 border rounded disabled:opacity-50"
                 >
                   Suivant
