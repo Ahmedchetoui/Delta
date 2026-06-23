@@ -8,6 +8,7 @@ const Order = require('../models/Order');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { escapeRegex } = require('../utils/escapeRegex');
 const { syncOrderWithFiabilo } = require('../services/orderService');
+const { attachFiabiloTrackingToOrder } = require('../services/fiabiloService');
 const { getImageUrl } = require('../middleware/upload');
 
 const router = express.Router();
@@ -887,6 +888,38 @@ router.get('/orders/:id', async (req, res) => {
     console.error('Erreur lors de la récupération de la commande:', error);
     res.status(500).json({
       message: 'Erreur lors de la récupération de la commande'
+    });
+  }
+});
+
+// @route   GET /api/admin/orders/:id/fiabilo-tracking
+// @desc    Suivi livraison Fiabilo en temps réel
+// @access  Private (Admin)
+router.get('/orders/:id/fiabilo-tracking', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).lean();
+    if (!order) {
+      return res.status(404).json({ message: 'Commande non trouvée' });
+    }
+
+    const trackingInfo = await attachFiabiloTrackingToOrder(order, { live: true });
+    if (!trackingInfo.fiabiloTracking && !trackingInfo.fiabiloTrackingError) {
+      return res.status(400).json({
+        message: 'Aucun code de suivi Fiabilo pour cette commande',
+      });
+    }
+
+    if (trackingInfo.fiabiloTrackingError) {
+      return res.status(502).json({
+        message: trackingInfo.fiabiloTrackingError,
+      });
+    }
+
+    res.json(trackingInfo);
+  } catch (error) {
+    console.error('Erreur suivi Fiabilo admin:', error);
+    res.status(500).json({
+      message: error.message || 'Erreur lors du suivi Fiabilo',
     });
   }
 });

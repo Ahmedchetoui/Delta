@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
+import { ArrowPathIcon, TruckIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
+import { getFiabiloBadgeClass } from '../utils/fiabiloTracking';
 
 const GuestOrderTracking = () => {
   const [formData, setFormData] = useState({
@@ -8,7 +10,10 @@ const GuestOrderTracking = () => {
     phone: ''
   });
   const [order, setOrder] = useState(null);
+  const [fiabiloTracking, setFiabiloTracking] = useState(null);
+  const [fiabiloError, setFiabiloError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [trackingLoading, setTrackingLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -17,9 +22,21 @@ const GuestOrderTracking = () => {
     });
   };
 
+  const fetchOrder = async ({ live = false } = {}) => {
+    const encodedPhone = encodeURIComponent(formData.phone.trim());
+    const liveQuery = live ? '?live=1' : '';
+    const response = await api.get(
+      `/orders/guest/${formData.orderNumber.trim()}/${encodedPhone}${liveQuery}`
+    );
+    setOrder(response.data.order);
+    setFiabiloTracking(response.data.order.fiabiloTracking || null);
+    setFiabiloError(response.data.order.fiabiloTrackingError || null);
+    return response.data.order;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.orderNumber || !formData.phone) {
       toast.error('Veuillez remplir tous les champs');
       return;
@@ -27,61 +44,80 @@ const GuestOrderTracking = () => {
 
     setLoading(true);
     try {
-      const encodedPhone = encodeURIComponent(formData.phone.trim());
-      const response = await api.get(`/orders/guest/${formData.orderNumber.trim()}/${encodedPhone}`);
-      setOrder(response.data.order);
+      await fetchOrder({ live: true });
       toast.success('Commande trouvée !');
     } catch (error) {
       console.error('Erreur:', error);
       toast.error(error.response?.data?.message || 'Commande non trouvée');
       setOrder(null);
+      setFiabiloTracking(null);
+      setFiabiloError(null);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRefreshTracking = async () => {
+    if (!order) return;
+
+    setTrackingLoading(true);
+    try {
+      await fetchOrder({ live: true });
+      toast.success('Suivi livraison actualisé');
+    } catch (error) {
+      console.error('Erreur:', error);
+      toast.error(error.response?.data?.message || 'Impossible d\'actualiser le suivi');
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'confirmed': 'bg-blue-100 text-blue-800',
-      'processing': 'bg-purple-100 text-purple-800',
-      'shipped': 'bg-indigo-100 text-indigo-800',
-      'delivered': 'bg-green-100 text-green-800',
-      'cancelled': 'bg-red-100 text-red-800',
-      'refunded': 'bg-gray-100 text-gray-800'
+      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-blue-100 text-blue-800',
+      processing: 'bg-purple-100 text-purple-800',
+      shipped: 'bg-indigo-100 text-indigo-800',
+      delivered: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      refunded: 'bg-gray-100 text-gray-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusText = (status) => {
     const statusMap = {
-      'pending': 'En attente',
-      'confirmed': 'Confirmée',
-      'processing': 'En cours de traitement',
-      'shipped': 'Expédiée',
-      'delivered': 'Livrée',
-      'cancelled': 'Annulée',
-      'refunded': 'Remboursée'
+      pending: 'En attente',
+      confirmed: 'Confirmée',
+      processing: 'En cours de traitement',
+      shipped: 'Expédiée',
+      delivered: 'Livrée',
+      cancelled: 'Annulée',
+      refunded: 'Remboursée',
     };
     return statusMap[status] || status;
   };
 
   const getPaymentStatusText = (status) => {
     const statusMap = {
-      'pending': 'En attente',
-      'paid': 'Payé',
-      'failed': 'Échoué',
-      'refunded': 'Remboursé'
+      pending: 'En attente',
+      paid: 'Payé',
+      failed: 'Échoué',
+      refunded: 'Remboursé',
     };
     return statusMap[status] || status;
   };
+
+  const trackingCode = order?.fiabilo?.trackingCode || order?.trackingNumber;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Suivi de commande</h1>
-          <p className="text-gray-600">Suivez votre commande avec votre numéro de commande et votre téléphone</p>
+          <p className="text-gray-600">
+            Suivez votre commande avec votre numéro de commande et votre téléphone
+          </p>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -101,7 +137,7 @@ const GuestOrderTracking = () => {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Numéro de téléphone
@@ -117,7 +153,7 @@ const GuestOrderTracking = () => {
                 />
               </div>
             </div>
-            
+
             <button
               type="submit"
               disabled={loading}
@@ -140,7 +176,7 @@ const GuestOrderTracking = () => {
                       month: 'long',
                       day: 'numeric',
                       hour: '2-digit',
-                      minute: '2-digit'
+                      minute: '2-digit',
                     })}
                   </p>
                 </div>
@@ -151,6 +187,63 @@ const GuestOrderTracking = () => {
                 </div>
               </div>
             </div>
+
+            {!trackingCode && order.fiabilo?.syncStatus !== 'synced' && (
+              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
+                Le suivi livraison Fiabilo sera disponible après l&apos;envoi de votre colis par notre équipe.
+              </div>
+            )}
+
+            {(trackingCode || fiabiloTracking) && (
+              <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                  <h3 className="text-lg font-semibold text-orange-900 flex items-center">
+                    <TruckIcon className="h-5 w-5 mr-2" />
+                    Suivi livraison Fiabilo
+                  </h3>
+                  {trackingCode && (
+                    <button
+                      type="button"
+                      onClick={handleRefreshTracking}
+                      disabled={trackingLoading}
+                      className="inline-flex items-center justify-center px-3 py-2 text-sm bg-white border border-orange-300 text-orange-800 rounded-lg hover:bg-orange-100 disabled:opacity-50"
+                    >
+                      <ArrowPathIcon className={`h-4 w-4 mr-2 ${trackingLoading ? 'animate-spin' : ''}`} />
+                      Actualiser
+                    </button>
+                  )}
+                </div>
+
+                {trackingCode && (
+                  <p className="text-sm text-orange-800 mb-2">
+                    <span className="font-medium">Code colis :</span> {trackingCode}
+                  </p>
+                )}
+
+                {fiabiloError && (
+                  <p className="text-sm text-red-700">{fiabiloError}</p>
+                )}
+
+                {fiabiloTracking && (
+                  <div className="space-y-2">
+                    <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${getFiabiloBadgeClass(fiabiloTracking.category)}`}>
+                      {fiabiloTracking.status}
+                    </span>
+                    {fiabiloTracking.reason && (
+                      <p className="text-sm text-orange-800">
+                        <span className="font-medium">Motif :</span> {fiabiloTracking.reason}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {!fiabiloTracking && !fiabiloError && trackingCode && (
+                  <p className="text-sm text-orange-700">
+                    Cliquez sur « Actualiser » pour récupérer l&apos;état du colis.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Articles commandés</h3>
@@ -222,7 +315,7 @@ const GuestOrderTracking = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Statut du paiement</span>
                     <span className={`text-sm font-medium ${
-                      order.paymentStatus === 'paid' ? 'text-green-600' : 
+                      order.paymentStatus === 'paid' ? 'text-green-600' :
                       order.paymentStatus === 'failed' ? 'text-red-600' : 'text-yellow-600'
                     }`}>
                       {getPaymentStatusText(order.paymentStatus)}
@@ -231,29 +324,13 @@ const GuestOrderTracking = () => {
                 </div>
               </div>
             </div>
-
-            {order.trackingNumber && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">Informations de suivi</h3>
-                <p className="text-blue-700">
-                  <span className="font-medium">Numéro de suivi:</span> {order.trackingNumber}
-                </p>
-              </div>
-            )}
-
-            {order.notes?.customer && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Notes de commande</h3>
-                <p className="text-gray-700">{order.notes.customer}</p>
-              </div>
-            )}
           </div>
         )}
 
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">Besoin d'aide ?</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Besoin d&apos;aide ?</h3>
           <p className="text-blue-700 mb-4">
-            Si vous avez des questions concernant votre commande, n'hésitez pas à nous contacter.
+            Si vous avez des questions concernant votre commande, n&apos;hésitez pas à nous contacter.
           </p>
           <div className="space-y-2 text-sm text-blue-600">
             <p>📞 Téléphone: +216 25 807 407</p>

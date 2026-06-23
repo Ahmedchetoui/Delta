@@ -17,6 +17,7 @@ const { normalizeGuestPhone } = require('../utils/phoneUtils');
 const { MAX_ITEM_QUANTITY, MAX_ORDER_ITEMS, PAYMENT_METHOD_COD } = require('../utils/orderConstants');
 const { processOrder } = require('../services/orderQueue');
 const { OrderServiceError } = require('../services/orderService');
+const { attachFiabiloTrackingToOrder } = require('../services/fiabiloService');
 const { getImageUrl } = require('../middleware/upload');
 
 const router = express.Router();
@@ -272,7 +273,16 @@ router.get('/guest/:orderNumber/:phone', guestOrderLimiter, async (req, res) => 
       });
     }
 
-    res.json({ order: mapOrderImages(order) });
+    const live = req.query.live === '1' || req.query.live === 'true';
+    const trackingInfo = await attachFiabiloTrackingToOrder(order, { live });
+    const mappedOrder = mapOrderImages(order);
+
+    res.json({
+      order: {
+        ...mappedOrder,
+        ...trackingInfo,
+      },
+    });
   } catch (error) {
     console.error('Erreur lors de la récupération de la commande invité:', error);
     res.status(500).json({

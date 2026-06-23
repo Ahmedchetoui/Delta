@@ -1,8 +1,23 @@
+const { getFiabiloStateCategory } = require('../utils/fiabiloTracking');
+
 const FIABILO_API_URL =
   process.env.FIABILO_API_URL || 'https://www.fiabilo.tn/api/v1/post.php';
 
-function getToken() {
+function getShipmentToken() {
   return process.env.FIABILO_API_TOKEN || process.env.FIABILO_TOKEN || '';
+}
+
+function getTrackingToken() {
+  return (
+    process.env.FIABILO_TRACKING_TOKEN ||
+    process.env.FIABILO_ETAT_TOKEN ||
+    ''
+  );
+}
+
+function resolveTrackingCode(order) {
+  if (!order) return null;
+  return order.fiabilo?.trackingCode || order.trackingNumber || null;
 }
 
 function normalizePhone(phone) {
@@ -14,7 +29,7 @@ function normalizePhone(phone) {
 }
 
 function buildShipmentPayload(order) {
-  const token = getToken();
+  const token = getShipmentToken();
   if (!token) {
     return null;
   }
@@ -95,13 +110,18 @@ async function createFiabiloShipment(order) {
 }
 
 async function trackFiabiloShipment(trackingCode) {
-  const token = getToken();
+  const token = getTrackingToken();
+  const code = String(trackingCode || '').trim();
+
   if (!token) {
-    return null;
+    throw new Error('Token de suivi Fiabilo non configuré (FIABILO_TRACKING_TOKEN)');
+  }
+  if (!code) {
+    throw new Error('Code de suivi Fiabilo manquant');
   }
 
   const data = await postFormData({
-    code: trackingCode,
+    code,
     token,
   });
 
@@ -109,14 +129,69 @@ async function trackFiabiloShipment(trackingCode) {
     throw new Error(data.status_message || 'Suivi Fiabilo indisponible');
   }
 
+  const etat = data.etat || 'Inconnu';
+
   return {
-    status: data.etat,
-    reason: data.motif,
-    trackingCode: data.status_message || trackingCode,
+    status: etat,
+    reason: data.motif || null,
+    trackingCode: data.status_message || code,
+    category: getFiabiloStateCategory(etat),
+    raw: data,
   };
+}
+
+async function refreshOrderFiabiloTracking(order) {
+  const code = resolveTrackingCode(order);
+  if (!code) {
+    return null;
+  }
+
+  return trackFiabiloShipment(code);
+}
+
+async function attachFiabiloTrackingToOrder(order, { live = false } = {}) {
+  const code = resolveTrackingCode(order);
+  if (!code) {
+    return { fiabiloTracking: null };
+  }
+
+  try {
+    const shouldFetchLive = live || !order.fiabilo?.status;
+    if (!shouldFetchLive) {
+      return {
+        fiabiloTracking: {
+          status: order.fiabilo.status,
+          trackingCode: code,
+          reason: null,
+          category: getFiabiloStateCategory(order.fiabilo.status),
+          cached: true,
+        },
+      };
+    }
+
+    const tracking = await refreshOrderFiabiloTracking(order);
+    if (tracking && order._id) {
+      const Order = require('../models/Order');
+      await Order.findByIdAndUpdate(order._id, {
+        'fiabilo.status': tracking.status,
+        'fiabilo.trackingCode': tracking.trackingCode,
+      });
+    }
+
+    return { fiabiloTracking: tracking };
+  } catch (error) {
+    return {
+      fiabiloTracking: null,
+      fiabiloTrackingError: error.message,
+    };
+  }
 }
 
 module.exports = {
   createFiabiloShipment,
   trackFiabiloShipment,
+  refreshOrderFiabiloTracking,
+  attachFiabiloTrackingToOrder,
+  resolveTrackingCode,
+  getTrackingToken,
 };

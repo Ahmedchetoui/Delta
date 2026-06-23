@@ -1,12 +1,51 @@
-import React from 'react';
-import { 
+import React, { useState, useEffect } from 'react';
+import {
   XMarkIcon,
   UserIcon,
   MapPinIcon,
-  CreditCardIcon
+  CreditCardIcon,
+  TruckIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+import api from '../../services/api';
+import { getFiabiloBadgeClass } from '../../utils/fiabiloTracking';
 
 const OrderDetailsModal = ({ order, isOpen, onClose }) => {
+  const [fiabiloTracking, setFiabiloTracking] = useState(null);
+  const [fiabiloError, setFiabiloError] = useState(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+
+  const trackingCode = order?.fiabilo?.trackingCode || order?.trackingNumber;
+
+  const loadFiabiloTracking = async () => {
+    if (!order?._id || !trackingCode) return;
+
+    setTrackingLoading(true);
+    setFiabiloError(null);
+    try {
+      const { data } = await api.get(`/admin/orders/${order._id}/fiabilo-tracking`);
+      setFiabiloTracking(data.fiabiloTracking || null);
+      if (data.fiabiloTrackingError) {
+        setFiabiloError(data.fiabiloTrackingError);
+      }
+    } catch (error) {
+      setFiabiloError(error.response?.data?.message || 'Erreur suivi Fiabilo');
+      setFiabiloTracking(null);
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && order && trackingCode) {
+      loadFiabiloTracking();
+    } else {
+      setFiabiloTracking(null);
+      setFiabiloError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, order?._id, trackingCode]);
+
   if (!isOpen || !order) return null;
 
   const formatCurrency = (amount) => {
@@ -88,6 +127,44 @@ const OrderDetailsModal = ({ order, isOpen, onClose }) => {
               <p className="text-sm text-gray-900">{order.paymentMethodInFrench}</p>
             </div>
           </div>
+
+          {trackingCode && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                <h3 className="text-lg font-medium text-orange-900 flex items-center">
+                  <TruckIcon className="h-5 w-5 mr-2" />
+                  Suivi Fiabilo
+                </h3>
+                <button
+                  type="button"
+                  onClick={loadFiabiloTracking}
+                  disabled={trackingLoading}
+                  className="inline-flex items-center px-3 py-2 text-sm bg-white border border-orange-300 text-orange-800 rounded-lg hover:bg-orange-100 disabled:opacity-50"
+                >
+                  <ArrowPathIcon className={`h-4 w-4 mr-2 ${trackingLoading ? 'animate-spin' : ''}`} />
+                  Actualiser
+                </button>
+              </div>
+              <p className="text-sm text-orange-800 mb-2">
+                <strong>Code colis :</strong> {trackingCode}
+              </p>
+              {fiabiloError && (
+                <p className="text-sm text-red-700">{fiabiloError}</p>
+              )}
+              {fiabiloTracking && (
+                <div className="space-y-2">
+                  <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getFiabiloBadgeClass(fiabiloTracking.category)}`}>
+                    {fiabiloTracking.status}
+                  </span>
+                  {fiabiloTracking.reason && (
+                    <p className="text-sm text-orange-800">
+                      <strong>Motif :</strong> {fiabiloTracking.reason}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Informations client */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
