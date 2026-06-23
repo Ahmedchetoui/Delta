@@ -5,51 +5,60 @@ import api from '../services/api';
 import { getFiabiloBadgeClass } from '../utils/fiabiloTracking';
 
 const GuestOrderTracking = () => {
-  const [formData, setFormData] = useState({
-    orderNumber: '',
-    phone: ''
-  });
+  const [reference, setReference] = useState('');
   const [order, setOrder] = useState(null);
+  const [trackingOnly, setTrackingOnly] = useState(false);
+  const [trackingCode, setTrackingCode] = useState('');
   const [fiabiloTracking, setFiabiloTracking] = useState(null);
   const [fiabiloError, setFiabiloError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const fetchOrder = async ({ live = false } = {}) => {
-    const encodedPhone = encodeURIComponent(formData.phone.trim());
+  const fetchTracking = async ({ live = false } = {}) => {
     const liveQuery = live ? '?live=1' : '';
-    const response = await api.get(
-      `/orders/guest/${formData.orderNumber.trim()}/${encodedPhone}${liveQuery}`
+    const encoded = encodeURIComponent(reference.trim());
+    const response = await api.get(`/orders/track/${encoded}${liveQuery}`);
+
+    setTrackingOnly(Boolean(response.data.trackingOnly));
+    setOrder(response.data.order || null);
+    setTrackingCode(
+      response.data.trackingCode ||
+      response.data.order?.fiabilo?.trackingCode ||
+      response.data.order?.trackingNumber ||
+      ''
     );
-    setOrder(response.data.order);
-    setFiabiloTracking(response.data.order.fiabiloTracking || null);
-    setFiabiloError(response.data.order.fiabiloTrackingError || null);
-    return response.data.order;
+    setFiabiloTracking(
+      response.data.fiabiloTracking ||
+      response.data.order?.fiabiloTracking ||
+      null
+    );
+    setFiabiloError(
+      response.data.fiabiloTrackingError ||
+      response.data.order?.fiabiloTrackingError ||
+      null
+    );
+
+    return response.data;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.orderNumber || !formData.phone) {
-      toast.error('Veuillez remplir tous les champs');
+    if (!reference.trim()) {
+      toast.error('Veuillez saisir un numéro de commande ou un code colis');
       return;
     }
 
     setLoading(true);
     try {
-      await fetchOrder({ live: true });
-      toast.success('Commande trouvée !');
+      await fetchTracking({ live: true });
+      toast.success('Suivi trouvé !');
     } catch (error) {
       console.error('Erreur:', error);
-      toast.error(error.response?.data?.message || 'Commande non trouvée');
+      toast.error(error.response?.data?.message || 'Suivi non trouvé');
       setOrder(null);
+      setTrackingOnly(false);
+      setTrackingCode('');
       setFiabiloTracking(null);
       setFiabiloError(null);
     } finally {
@@ -58,12 +67,10 @@ const GuestOrderTracking = () => {
   };
 
   const handleRefreshTracking = async () => {
-    if (!order) return;
-
     setTrackingLoading(true);
     try {
-      await fetchOrder({ live: true });
-      toast.success('Suivi livraison actualisé');
+      await fetchTracking({ live: true });
+      toast.success('Suivi actualisé');
     } catch (error) {
       console.error('Erreur:', error);
       toast.error(error.response?.data?.message || 'Impossible d\'actualiser le suivi');
@@ -108,7 +115,7 @@ const GuestOrderTracking = () => {
     return statusMap[status] || status;
   };
 
-  const trackingCode = order?.fiabilo?.trackingCode || order?.trackingNumber;
+  const showResults = order || trackingOnly;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -116,42 +123,28 @@ const GuestOrderTracking = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Suivi de commande</h1>
           <p className="text-gray-600">
-            Suivez votre commande avec votre numéro de commande et votre téléphone
+            Saisissez votre numéro de commande ou votre code colis Fiabilo
           </p>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Numéro de commande
-                </label>
-                <input
-                  type="text"
-                  name="orderNumber"
-                  value={formData.orderNumber}
-                  onChange={handleChange}
-                  placeholder="Ex: CMD-250623-00001"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Numéro de téléphone
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="Ex: +216 XX XXX XXX"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Numéro de commande ou code colis
+              </label>
+              <input
+                type="text"
+                name="reference"
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                placeholder="Ex: CMD-250623-00001 ou 185832040710"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Le code colis est le numéro à 10–12 chiffres fourni par Fiabilo après expédition.
+              </p>
             </div>
 
             <button
@@ -159,38 +152,47 @@ const GuestOrderTracking = () => {
               disabled={loading}
               className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
             >
-              {loading ? 'Recherche...' : 'Rechercher ma commande'}
+              {loading ? 'Recherche...' : 'Rechercher'}
             </button>
           </form>
         </div>
 
-        {order && (
+        {showResults && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="border-b border-gray-200 pb-6 mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Commande #{order.orderNumber}</h2>
-                  <p className="text-gray-600 mt-1">
-                    Passée le {new Date(order.createdAt).toLocaleDateString('fr-FR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
-                <div className="mt-4 sm:mt-0">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.orderStatus)}`}>
-                    {getStatusText(order.orderStatus)}
-                  </span>
+            {order && (
+              <div className="border-b border-gray-200 pb-6 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Commande #{order.orderNumber}</h2>
+                    <p className="text-gray-600 mt-1">
+                      Passée le {new Date(order.createdAt).toLocaleDateString('fr-FR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                  <div className="mt-4 sm:mt-0">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.orderStatus)}`}>
+                      {getStatusText(order.orderStatus)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {!trackingCode && order.fiabilo?.syncStatus !== 'synced' && (
+            {trackingOnly && !order && (
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Suivi colis Fiabilo</h2>
+                <p className="text-sm text-gray-600 mt-1">Code colis : {trackingCode}</p>
+              </div>
+            )}
+
+            {order && !trackingCode && order.fiabilo?.syncStatus !== 'synced' && (
               <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
-                Le suivi livraison Fiabilo sera disponible après l&apos;envoi de votre colis par notre équipe.
+                Le suivi livraison Fiabilo sera disponible après l&apos;envoi de votre colis.
               </div>
             )}
 
@@ -199,7 +201,7 @@ const GuestOrderTracking = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                   <h3 className="text-lg font-semibold text-orange-900 flex items-center">
                     <TruckIcon className="h-5 w-5 mr-2" />
-                    Suivi livraison Fiabilo
+                    État livraison Fiabilo
                   </h3>
                   {trackingCode && (
                     <button
@@ -236,101 +238,90 @@ const GuestOrderTracking = () => {
                     )}
                   </div>
                 )}
-
-                {!fiabiloTracking && !fiabiloError && trackingCode && (
-                  <p className="text-sm text-orange-700">
-                    Cliquez sur « Actualiser » pour récupérer l&apos;état du colis.
-                  </p>
-                )}
               </div>
             )}
 
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Articles commandés</h3>
-              <div className="space-y-4">
-                {order.items.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                    <img
-                      src={item.image || '/placeholder-image.jpg'}
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{item.name}</h4>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        {item.size && <p>Taille: {item.size}</p>}
-                        {item.color && <p>Couleur: {item.color}</p>}
-                        <p>Quantité: {item.quantity}</p>
+            {order && (
+              <>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Articles commandés</h3>
+                  <div className="space-y-4">
+                    {order.items.map((item, index) => (
+                      <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                        <img
+                          src={item.image || '/placeholder-image.jpg'}
+                          alt={item.name}
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{item.name}</h4>
+                          <div className="text-sm text-gray-600 space-y-1">
+                            {item.size && <p>Taille: {item.size}</p>}
+                            {item.color && <p>Couleur: {item.color}</p>}
+                            <p>Quantité: {item.quantity}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-gray-900">{item.price.toFixed(2)} DT</p>
+                          <p className="text-sm text-gray-600">
+                            Total: {(item.price * item.quantity).toFixed(2)} DT
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Adresse de livraison</h3>
+                    <div className="text-gray-600 space-y-1">
+                      <p className="font-medium">{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+                      <p>{order.shippingAddress.street}</p>
+                      <p>{order.shippingAddress.city} {order.shippingAddress.postalCode}</p>
+                      <p>{order.shippingAddress.country}</p>
+                      <p>📞 {order.shippingAddress.phone}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Résumé financier</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Sous-total</span>
+                        <span>{order.subtotal.toFixed(2)} DT</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Livraison</span>
+                        <span>{order.shippingCost.toFixed(2)} DT</span>
+                      </div>
+                      <div className="border-t border-gray-200 pt-2">
+                        <div className="flex justify-between font-semibold text-lg">
+                          <span>Total</span>
+                          <span>{order.total.toFixed(2)} DT</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium text-gray-900">{item.price.toFixed(2)} DT</p>
-                      <p className="text-sm text-gray-600">
-                        Total: {(item.price * item.quantity).toFixed(2)} DT
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Adresse de livraison</h3>
-                <div className="text-gray-600 space-y-1">
-                  <p className="font-medium">{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
-                  <p>{order.shippingAddress.street}</p>
-                  <p>{order.shippingAddress.city} {order.shippingAddress.postalCode}</p>
-                  <p>{order.shippingAddress.country}</p>
-                  <p>📞 {order.shippingAddress.phone}</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Résumé financier</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Sous-total</span>
-                    <span>{order.subtotal.toFixed(2)} DT</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Livraison</span>
-                    <span>{order.shippingCost.toFixed(2)} DT</span>
-                  </div>
-                  {order.tax > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">TVA</span>
-                      <span>{order.tax.toFixed(2)} DT</span>
-                    </div>
-                  )}
-                  <div className="border-t border-gray-200 pt-2">
-                    <div className="flex justify-between font-semibold text-lg">
-                      <span>Total</span>
-                      <span>{order.total.toFixed(2)} DT</span>
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Paiement</span>
+                        <span className="text-sm font-medium text-yellow-600">
+                          {getPaymentStatusText(order.paymentStatus)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Statut du paiement</span>
-                    <span className={`text-sm font-medium ${
-                      order.paymentStatus === 'paid' ? 'text-green-600' :
-                      order.paymentStatus === 'failed' ? 'text-red-600' : 'text-yellow-600'
-                    }`}>
-                      {getPaymentStatusText(order.paymentStatus)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         )}
 
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-blue-900 mb-2">Besoin d&apos;aide ?</h3>
           <p className="text-blue-700 mb-4">
-            Si vous avez des questions concernant votre commande, n&apos;hésitez pas à nous contacter.
+            Contactez-nous si vous ne trouvez pas votre suivi.
           </p>
           <div className="space-y-2 text-sm text-blue-600">
             <p>📞 Téléphone: +216 25 807 407</p>

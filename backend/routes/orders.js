@@ -246,6 +246,71 @@ router.get('/stats/summary', authenticateToken, requireAdmin, async (req, res) =
   }
 });
 
+// @route   GET /api/orders/track/:reference
+// @desc    Suivi par numéro de commande ou code colis Fiabilo (un seul champ)
+// @access  Public (rate limited)
+router.get('/track/:reference', guestOrderLimiter, async (req, res) => {
+  try {
+    const reference = String(req.params.reference || '').trim();
+
+    if (!reference) {
+      return res.status(400).json({
+        message: 'Numéro de commande ou code colis requis.',
+      });
+    }
+
+    const live = req.query.live === '1' || req.query.live === 'true';
+
+    const order = await Order.findOne({
+      $or: [
+        { orderNumber: reference },
+        { 'fiabilo.trackingCode': reference },
+      ],
+    })
+      .populate('items.product', 'name images slug')
+      .lean();
+
+    if (order) {
+      const trackingInfo = await attachFiabiloTrackingToOrder(order, { live });
+      const mappedOrder = mapOrderImages(order);
+
+      return res.json({
+        order: {
+          ...mappedOrder,
+          ...trackingInfo,
+        },
+        trackingOnly: false,
+      });
+    }
+
+    if (/^\d{8,20}$/.test(reference)) {
+      const { trackFiabiloShipment } = require('../services/fiabiloService');
+      try {
+        const fiabiloTracking = await trackFiabiloShipment(reference);
+        return res.json({
+          order: null,
+          trackingOnly: true,
+          trackingCode: reference,
+          fiabiloTracking,
+        });
+      } catch (error) {
+        return res.status(404).json({
+          message: 'Colis non trouvé. Vérifiez le code colis Fiabilo.',
+        });
+      }
+    }
+
+    return res.status(404).json({
+      message: 'Commande ou colis non trouvé. Vérifiez le numéro saisi.',
+    });
+  } catch (error) {
+    console.error('Erreur lors du suivi commande:', error);
+    res.status(500).json({
+      message: 'Erreur lors du suivi de la commande',
+    });
+  }
+});
+
 // @route   GET /api/orders/guest/:orderNumber/:phone
 // @desc    Obtenir une commande invité par numéro et téléphone
 // @access  Public (rate limited)
