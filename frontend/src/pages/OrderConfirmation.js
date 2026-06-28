@@ -64,7 +64,7 @@ const OrderConfirmation = () => {
               <li>• Nous traiterons votre commande dans les 24h</li>
               <li>• Vous serez contacté par téléphone pour la livraison</li>
               <li>• Frais de livraison : 8 DT sur toutes les commandes</li>
-              <li>• Conservez votre numéro de commande ou code colis pour le suivi</li>
+              <li>• Conservez votre code colis ou votre numéro de téléphone pour le suivi</li>
             </ul>
           </div>
 
@@ -102,7 +102,8 @@ const OrderConfirmation = () => {
                 <h3 className="text-lg font-semibold text-yellow-800 mb-2">Important - Conservez ces informations</h3>
                 <div className="text-sm text-yellow-700 space-y-2">
                   <p><strong>Numéro de commande :</strong> {orderNumber}</p>
-                  <p><strong>Code colis Fiabilo :</strong> fourni après l&apos;expédition (si disponible)</p>
+                  <p><strong>Code colis Fiabilo :</strong> fourni après l&apos;expédition (code-barres)</p>
+                  <p><strong>Téléphone :</strong> les 8 derniers chiffres de votre numéro</p>
                   <p className="mt-3 font-medium">
                     Ces informations sont nécessaires pour suivre votre commande. 
                     <Link to="/guest-order-tracking" className="text-yellow-900 underline ml-1">

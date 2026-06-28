@@ -51,40 +51,58 @@ export function sizeHasAvailableStock(product, size) {
   );
 }
 
-function productHasExplicitColors(product) {
-  return Array.isArray(product?.colors) && product.colors.length > 0;
+function sizeHasColorVariants(product, size) {
+  return (product.variants || []).some(
+    (v) => sizesEqual(v.size, size) && normalizeColorName(v.color)
+  );
 }
 
-function isColorInProductList(product, colorName) {
-  return product.colors.some((color) =>
-    colorsEqual(typeof color === 'string' ? color : color.name, colorName)
-  );
+export function getVariantStock(product, size, colorName) {
+  if (!product?.variants?.length || !size) return 0;
+
+  if (colorName) {
+    const exact = product.variants.find(
+      (v) => sizesEqual(v.size, size) && colorsEqual(v.color, colorName)
+    );
+    if (exact) {
+      return exact.stock ?? (exact.inStock ? 1 : 0);
+    }
+    if (sizeHasColorVariants(product, size)) return 0;
+  }
+
+  return product.variants
+    .filter((v) => sizesEqual(v.size, size))
+    .reduce((sum, v) => sum + (v.stock ?? (v.inStock ? 1 : 0)), 0);
 }
 
 export function isColorAvailableForSize(product, size, colorName) {
   if (!product?.variants?.length) return true;
   if (!size) return false;
 
-  // Couleurs définies au niveau produit : toutes sélectionnables si la taille a du stock
-  if (productHasExplicitColors(product)) {
-    return isColorInProductList(product, colorName) && sizeHasAvailableStock(product, size);
+  if (colorName && sizeHasColorVariants(product, size)) {
+    return product.variants.some(
+      (v) =>
+        sizesEqual(v.size, size) &&
+        colorsEqual(v.color, colorName) &&
+        variantHasStock(v)
+    );
   }
 
-  return product.variants.some(
-    (v) =>
-      sizesEqual(v.size, size) &&
-      colorsEqual(v.color, colorName) &&
-      variantHasStock(v)
-  );
+  if (colorName) {
+    return product.variants.some(
+      (v) =>
+        sizesEqual(v.size, size) &&
+        colorsEqual(v.color, colorName) &&
+        variantHasStock(v)
+    );
+  }
+
+  return sizeHasAvailableStock(product, size);
 }
 
 export function getAvailableColorsForSize(displayColors, product, size) {
   if (!size) return [];
   if (!product?.variants?.length) return displayColors;
-
-  if (productHasExplicitColors(product) && sizeHasAvailableStock(product, size)) {
-    return displayColors;
-  }
 
   return displayColors.filter((color) =>
     isColorAvailableForSize(product, size, color.name)

@@ -17,6 +17,10 @@ function colorsMatch(a, b) {
   return normalizeColor(a) === normalizeColor(b);
 }
 
+function hasColorOnVariant(variant) {
+  return Boolean(normalizeColor(variant?.color));
+}
+
 function variantInStock(variant) {
   return (variant?.stock ?? 0) > 0;
 }
@@ -34,21 +38,46 @@ function getVariantsForSize(product, size, color) {
   return product.variants.filter((v) => sizesMatch(v.size, size));
 }
 
+function sizeHasColorVariants(product, size) {
+  return (product.variants || []).some(
+    (v) => sizesMatch(v.size, size) && hasColorOnVariant(v)
+  );
+}
+
 function getAvailableStock(product, size, color) {
-  const variants = getVariantsForSize(product, size, color);
-  if (variants.length > 0) {
-    return variants.reduce((sum, v) => sum + (variantInStock(v) ? (v.stock || 0) : 0), 0);
+  if (!product?.variants?.length) {
+    return product.totalStock || 0;
   }
 
-  // Couleurs catalogue : stock par taille si pas de variante couleur exacte
-  if (product.colors?.length > 0 && size && product.variants?.length) {
-    const forSize = product.variants.filter((v) => sizesMatch(v.size, size));
-    if (forSize.length > 0) {
-      return forSize.reduce((sum, v) => sum + (variantInStock(v) ? (v.stock || 0) : 0), 0);
+  if (!size) {
+    return product.totalStock || 0;
+  }
+
+  if (color) {
+    const exact = product.variants.find(
+      (v) => sizesMatch(v.size, size) && colorsMatch(v.color, color)
+    );
+    if (exact) {
+      return exact.stock || 0;
     }
+
+    if (sizeHasColorVariants(product, size)) {
+      return 0;
+    }
+
+    const sizeOnlyVariants = product.variants.filter(
+      (v) => sizesMatch(v.size, size) && !hasColorOnVariant(v)
+    );
+    if (sizeOnlyVariants.length > 0) {
+      return sizeOnlyVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    }
+
+    return 0;
   }
 
-  return product.totalStock || 0;
+  return product.variants
+    .filter((v) => sizesMatch(v.size, size))
+    .reduce((sum, v) => sum + (v.stock || 0), 0);
 }
 
 function findVariant(product, size, color) {
@@ -59,13 +88,21 @@ function findVariant(product, size, color) {
       (v) => sizesMatch(v.size, size) && colorsMatch(v.color, color)
     );
     if (exact) return exact;
+
+    if (sizeHasColorVariants(product, size)) {
+      return null;
+    }
   }
 
   const forSize = product.variants.filter((v) => sizesMatch(v.size, size));
   if (forSize.length === 0) return null;
   if (forSize.length === 1) return forSize[0];
 
-  return forSize.find((v) => variantInStock(v)) || forSize[0];
+  if (!color) {
+    return forSize.find((v) => variantInStock(v)) || forSize[0];
+  }
+
+  return null;
 }
 
 function syncTotalStock(product) {

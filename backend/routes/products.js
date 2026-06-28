@@ -38,14 +38,24 @@ function escapeRegex(value) {
 }
 
 function normalizeVariants(variants = []) {
-  return variants
-    .filter((v) => v && v.size && String(v.size).trim())
-    .map((v) => ({
+  const deduped = new Map();
+
+  for (const v of variants) {
+    if (!v || !v.size || !String(v.size).trim()) continue;
+
+    const size = String(v.size).trim();
+    const color = v.color ? String(v.color).trim() : '';
+    const key = `${size.toLowerCase()}::${color.toLowerCase()}`;
+
+    deduped.set(key, {
       ...v,
-      size: String(v.size).trim(),
-      color: v.color ? String(v.color).trim() : '',
-      stock: Number(v.stock) || 0,
-    }));
+      size,
+      color,
+      stock: Math.max(0, Number(v.stock) || 0),
+    });
+  }
+
+  return Array.from(deduped.values());
 }
 
 function isAdminUser(req) {

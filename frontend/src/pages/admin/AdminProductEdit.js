@@ -332,7 +332,7 @@ const AdminProductEdit = () => {
         <div>
           <div className="flex items-center justify-between mb-4">
             <label className="block text-sm font-medium text-gray-700">
-              Variantes (taille obligatoire, couleur optionnelle)
+              Variantes (1 ligne = 1 taille + 1 couleur + quantité)
             </label>
             <button
               type="button"
@@ -343,11 +343,19 @@ const AdminProductEdit = () => {
             </button>
           </div>
           
-          {formData.variants.map((variant, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 p-4 border rounded-lg items-center">
+          {formData.variants.map((variant, index) => {
+            const stockQty = Number(variant.stock) || 0;
+            const stockLabel = stockQty === 0
+              ? { text: 'Rupture', className: 'bg-red-100 text-red-800' }
+              : stockQty <= 5
+                ? { text: `${stockQty} pc — stock faible`, className: 'bg-amber-100 text-amber-800' }
+                : { text: `${stockQty} pc`, className: 'bg-green-100 text-green-800' };
+
+            return (
+            <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4 p-4 border rounded-lg items-center">
               <input
                 type="text"
-                placeholder="Taille (ex: M, L, XL)"
+                placeholder="Taille (ex: 8, 12, 14)"
                 value={variant.size}
                 onChange={(e) => updateVariant(index, 'size', e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -360,11 +368,15 @@ const AdminProductEdit = () => {
               />
               <input
                 type="number"
+                min="0"
                 placeholder="Stock"
                 value={variant.stock}
-                onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
+                onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value, 10) || 0)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              <span className={`text-xs font-medium px-2 py-1 rounded-full text-center ${stockLabel.className}`}>
+                {stockLabel.text}
+              </span>
               {variant.color ? (
                 <button
                   type="button"
@@ -388,7 +400,8 @@ const AdminProductEdit = () => {
                 Supprimer
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Images */}

@@ -7,6 +7,7 @@ import { getFiabiloBadgeClass } from '../utils/fiabiloTracking';
 const GuestOrderTracking = () => {
   const [reference, setReference] = useState('');
   const [order, setOrder] = useState(null);
+  const [ordersList, setOrdersList] = useState([]);
   const [trackingOnly, setTrackingOnly] = useState(false);
   const [trackingCode, setTrackingCode] = useState('');
   const [fiabiloTracking, setFiabiloTracking] = useState(null);
@@ -14,38 +15,52 @@ const GuestOrderTracking = () => {
   const [loading, setLoading] = useState(false);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
+  const applyOrderData = (selectedOrder, data) => {
+    setOrder(selectedOrder || null);
+    setTrackingCode(
+      data.trackingCode ||
+      selectedOrder?.fiabilo?.trackingCode ||
+      selectedOrder?.trackingNumber ||
+      ''
+    );
+    setFiabiloTracking(
+      data.fiabiloTracking ||
+      selectedOrder?.fiabiloTracking ||
+      null
+    );
+    setFiabiloError(
+      data.fiabiloTrackingError ||
+      selectedOrder?.fiabiloTrackingError ||
+      null
+    );
+  };
+
   const fetchTracking = async ({ live = false } = {}) => {
     const liveQuery = live ? '?live=1' : '';
     const encoded = encodeURIComponent(reference.trim());
     const response = await api.get(`/orders/track/${encoded}${liveQuery}`);
 
     setTrackingOnly(Boolean(response.data.trackingOnly));
-    setOrder(response.data.order || null);
-    setTrackingCode(
-      response.data.trackingCode ||
-      response.data.order?.fiabilo?.trackingCode ||
-      response.data.order?.trackingNumber ||
-      ''
-    );
-    setFiabiloTracking(
-      response.data.fiabiloTracking ||
-      response.data.order?.fiabiloTracking ||
-      null
-    );
-    setFiabiloError(
-      response.data.fiabiloTrackingError ||
-      response.data.order?.fiabiloTrackingError ||
-      null
-    );
+    setOrdersList(response.data.orders || (response.data.order ? [response.data.order] : []));
+    applyOrderData(response.data.order || null, response.data);
 
     return response.data;
+  };
+
+  const handleSelectOrder = (selectedOrder) => {
+    setOrder(selectedOrder);
+    applyOrderData(selectedOrder, {
+      trackingCode: selectedOrder?.fiabilo?.trackingCode || selectedOrder?.trackingNumber,
+      fiabiloTracking: selectedOrder?.fiabiloTracking,
+      fiabiloTrackingError: selectedOrder?.fiabiloTrackingError,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!reference.trim()) {
-      toast.error('Veuillez saisir un numéro de commande ou un code colis');
+      toast.error('Veuillez saisir un code colis ou un numéro de téléphone');
       return;
     }
 
@@ -57,6 +72,7 @@ const GuestOrderTracking = () => {
       console.error('Erreur:', error);
       toast.error(error.response?.data?.message || 'Suivi non trouvé');
       setOrder(null);
+      setOrdersList([]);
       setTrackingOnly(false);
       setTrackingCode('');
       setFiabiloTracking(null);
@@ -123,7 +139,7 @@ const GuestOrderTracking = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Suivi de commande</h1>
           <p className="text-gray-600">
-            Saisissez votre numéro de commande ou votre code colis Fiabilo
+            Saisissez le code colis (code-barres) ou votre numéro de téléphone (8 chiffres)
           </p>
         </div>
 
@@ -131,19 +147,20 @@ const GuestOrderTracking = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Numéro de commande ou code colis
+                Code colis ou téléphone
               </label>
               <input
                 type="text"
                 name="reference"
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                placeholder="Ex: CMD-250623-00001 ou 185832040710"
+                placeholder="Ex: 185832040710 ou 25807407"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
               <p className="text-xs text-gray-500 mt-2">
-                Le code colis est le numéro à 10–12 chiffres fourni par Fiabilo après expédition.
+                Code colis : numéro à 9 chiffres ou plus sur l&apos;étiquette Fiabilo.
+                Téléphone : les 8 derniers chiffres de votre numéro.
               </p>
             </div>
 
@@ -159,6 +176,33 @@ const GuestOrderTracking = () => {
 
         {showResults && (
           <div className="bg-white rounded-lg shadow-md p-6">
+            {ordersList.length > 1 && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm font-medium text-blue-900 mb-3">
+                  {ordersList.length} commandes trouvées pour ce numéro — sélectionnez une commande :
+                </p>
+                <div className="space-y-2">
+                  {ordersList.map((o) => (
+                    <button
+                      key={o._id}
+                      type="button"
+                      onClick={() => handleSelectOrder(o)}
+                      className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                        order?._id === o._id
+                          ? 'border-blue-500 bg-blue-100'
+                          : 'border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="font-medium">{o.orderNumber}</span>
+                      <span className="text-gray-500 ml-2">
+                        — {new Date(o.createdAt).toLocaleDateString('fr-FR')} — {getStatusText(o.orderStatus)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {order && (
               <div className="border-b border-gray-200 pb-6 mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">

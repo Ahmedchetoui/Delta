@@ -247,7 +247,7 @@ router.get('/stats/summary', authenticateToken, requireAdmin, async (req, res) =
 });
 
 // @route   GET /api/orders/track/:reference
-// @desc    Suivi par numéro de commande ou code colis Fiabilo (un seul champ)
+// @desc    Suivi par code colis Fiabilo (code-barres) ou téléphone client (8 chiffres)
 // @access  Public (rate limited)
 router.get('/track/:reference', guestOrderLimiter, async (req, res) => {
   try {
@@ -255,18 +255,75 @@ router.get('/track/:reference', guestOrderLimiter, async (req, res) => {
 
     if (!reference) {
       return res.status(400).json({
-        message: 'Numéro de commande ou code colis requis.',
+        message: 'Code colis ou numéro de téléphone requis.',
       });
     }
 
     const live = req.query.live === '1' || req.query.live === 'true';
+    const digitsOnly = reference.replace(/\D/g, '');
+    const hasPhoneFormatting = /[\s+\-()]/.test(reference);
 
-    const order = await Order.findOne({
-      $or: [
-        { orderNumber: reference },
-        { 'fiabilo.trackingCode': reference },
-      ],
-    })
+    // Téléphone : 8 chiffres exactement, ou numéro formaté (+216, espaces…)
+    const isPhoneLookup = (digitsOnly.length === 8 && !hasPhoneFormatting)
+      || (hasPhoneFormatting && digitsOnly.length >= 8);
+
+    if (digitsOnly.length < 8) {
+      return res.status(400).json({
+        message: 'Saisissez un code colis (9 chiffres ou plus) ou un numéro de téléphone (8 chiffres).',
+      });
+    }
+
+    if (isPhoneLookup) {
+      const phone = normalizeGuestPhone(reference);
+
+      if (phone.length !== 8) {
+        return res.status(400).json({
+          message: 'Le numéro de téléphone doit contenir 8 chiffres.',
+        });
+      }
+
+      const candidates = await Order.find({
+        $or: [
+          { guestEmail: phone },
+          { 'shippingAddress.phone': { $regex: phone } },
+        ],
+      })
+        .populate('items.product', 'name images slug')
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean();
+
+      const orders = candidates.filter(
+        (o) => o.guestEmail === phone || normalizeGuestPhone(o.shippingAddress?.phone) === phone
+      );
+
+      if (orders.length === 0) {
+        return res.status(404).json({
+          message: 'Aucune commande trouvée pour ce numéro de téléphone.',
+        });
+      }
+
+      const mappedOrders = await Promise.all(
+        orders.map(async (order) => {
+          const trackingInfo = await attachFiabiloTrackingToOrder(order, { live });
+          return {
+            ...mapOrderImages(order),
+            ...trackingInfo,
+          };
+        })
+      );
+
+      return res.json({
+        order: mappedOrders[0],
+        orders: mappedOrders,
+        multiple: mappedOrders.length > 1,
+        trackingOnly: false,
+        searchType: 'phone',
+      });
+    }
+
+    // Code colis Fiabilo (code-barres)
+    const order = await Order.findOne({ 'fiabilo.trackingCode': reference })
       .populate('items.product', 'name images slug')
       .lean();
 
@@ -280,10 +337,11 @@ router.get('/track/:reference', guestOrderLimiter, async (req, res) => {
           ...trackingInfo,
         },
         trackingOnly: false,
+        searchType: 'barcode',
       });
     }
 
-    if (/^\d{8,20}$/.test(reference)) {
+    if (/^\d{9,20}$/.test(digitsOnly)) {
       const { trackFiabiloShipment } = require('../services/fiabiloService');
       try {
         const fiabiloTracking = await trackFiabiloShipment(reference);
@@ -292,16 +350,17 @@ router.get('/track/:reference', guestOrderLimiter, async (req, res) => {
           trackingOnly: true,
           trackingCode: reference,
           fiabiloTracking,
+          searchType: 'barcode',
         });
       } catch (error) {
         return res.status(404).json({
-          message: 'Colis non trouvé. Vérifiez le code colis Fiabilo.',
+          message: 'Colis non trouvé. Vérifiez le code colis.',
         });
       }
     }
 
-    return res.status(404).json({
-      message: 'Commande ou colis non trouvé. Vérifiez le numéro saisi.',
+    return res.status(400).json({
+      message: 'Saisissez un code colis (9 chiffres ou plus) ou un numéro de téléphone (8 chiffres).',
     });
   } catch (error) {
     console.error('Erreur lors du suivi commande:', error);
