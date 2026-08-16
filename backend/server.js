@@ -38,6 +38,9 @@ const envOrigins = (process.env.CORS_ORIGIN || '')
 const defaultOrigins = [
   'http://localhost:3000',
   'https://delta-fashion.vercel.app',
+  // Domaine Vercel actuellement ouvert par les clients mobiles. Sans cette
+  // origine, le navigateur bloque /api/home par CORS et affiche le fallback.
+  'https://delta-nine-plum.vercel.app',
   'https://delta-fashion-e-commerce.vercel.app',
   'https://delta-12jv2d3wl-deltas-projects-ce7253f2.vercel.app',
   'https://delta-e79s.vercel.app',
