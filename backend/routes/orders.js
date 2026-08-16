@@ -19,8 +19,18 @@ const { processOrder } = require('../services/orderQueue');
 const { OrderServiceError } = require('../services/orderService');
 const { attachFiabiloTrackingToOrder } = require('../services/fiabiloService');
 const { getImageUrl } = require('../middleware/upload');
+const { publishCatalogUpdate } = require('../services/catalogRealtime');
 
 const router = express.Router();
+
+router.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+
+  res.once('finish', () => {
+    if (res.statusCode < 400) publishCatalogUpdate('stock');
+  });
+  return next();
+});
 
 function canAccessOrder(order, user) {
   if (!user) return false;

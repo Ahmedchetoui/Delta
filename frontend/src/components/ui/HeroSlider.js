@@ -43,6 +43,8 @@ const HeroSlider = ({ slides = [] }) => {
             {/* Image optimisée */}
             <img
               src={slide.image}
+              srcSet={slide.imageSrcSet}
+              sizes="100vw"
               alt={slide.title || 'Banner'}
               loading={index === 0 ? 'eager' : 'lazy'}
               fetchPriority={index === 0 ? 'high' : 'low'}

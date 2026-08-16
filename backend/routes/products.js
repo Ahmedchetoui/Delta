@@ -5,7 +5,9 @@ const Category = require('../models/Category');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadProductImages, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
 const publicCache = require('../middleware/publicCache');
+const { publicCacheRevalidate } = require('../middleware/publicCache');
 const { reviewCreateLimiter } = require('../middleware/rateLimiters');
+const { publishCatalogUpdate } = require('../services/catalogRealtime');
 const {
   normalizeProductImages,
   buildImagesFromUploads,
@@ -19,6 +21,15 @@ const {
 } = require('../utils/catalogHelpers');
 
 const router = express.Router();
+
+router.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+
+  res.once('finish', () => {
+    if (res.statusCode < 400) publishCatalogUpdate('products');
+  });
+  return next();
+});
 
 const SORT_ALIASES = {
   'price-low': 'price_asc',
@@ -104,7 +115,7 @@ router.get('/', [
     'price_asc', 'price_desc', 'newest', 'oldest', 'rating', 'popular',
     'price-low', 'price-high', 'name-asc', 'name-desc', 'name_asc', 'name_desc'
   ]).withMessage('Tri invalide')
-], publicCache(120), optionalAuth, async (req, res) => {
+], publicCacheRevalidate(0), optionalAuth, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

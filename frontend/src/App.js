@@ -10,6 +10,7 @@ import Footer from './components/layout/Footer';
 import LandingPage from './components/layout/LandingPage';
 import ScrollToTop from './components/ui/ScrollToTop';
 import { bootstrapApp } from './utils/bootstrapApp';
+import { useCatalogRealtime } from './hooks/useCatalogRealtime';
 
 // Protected Route Component
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -61,7 +62,6 @@ function App() {
       sessionStorage.getItem('hasSeenLanding')
     );
   });
-  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -70,24 +70,12 @@ function App() {
     }
   }, [dispatch]);
 
+  useCatalogRealtime(dispatch, !showLanding);
+
   useEffect(() => {
-    let cancelled = false;
-
-    const runBootstrap = async () => {
-      try {
-        await bootstrapApp(dispatch);
-      } finally {
-        if (!cancelled) {
-          setAppReady(true);
-        }
-      }
-    };
-
-    runBootstrap();
-
-    return () => {
-      cancelled = true;
-    };
+    // Les données se chargent en arrière-plan : aucun appel API ne doit
+    // empêcher le visiteur de voir la navigation et le contenu de la page.
+    void bootstrapApp(dispatch);
   }, [dispatch]);
 
   const handleLandingComplete = () => {
@@ -97,7 +85,7 @@ function App() {
   };
 
   if (showLanding) {
-    return <LandingPage onComplete={handleLandingComplete} isReady={appReady} />;
+    return <LandingPage onComplete={handleLandingComplete} />;
   }
 
 

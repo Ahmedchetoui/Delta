@@ -37,3 +37,9 @@ export function resolveImageUrl(src, width = 800, cacheKey) {
   }
   return appendCacheBuster(url, cacheKey);
 }
+
+export function getResponsiveImageSrcSet(src, widths, cacheKey) {
+  return widths
+    .map((width) => `${resolveImageUrl(src, width, cacheKey)} ${width}w`)
+    .join(', ');
+}

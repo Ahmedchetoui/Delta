@@ -15,7 +15,7 @@ const router = express.Router();
 // @route   GET /api/home
 // @desc    Données page d'accueil en un seul appel
 // @access  Public
-router.get('/', publicCacheRevalidate(60), async (req, res) => {
+router.get('/', publicCacheRevalidate(0), async (req, res) => {
   try {
     const [categories, featuredRaw, newRaw, banners] = await Promise.all([
       Category.find({ isActive: true })

@@ -4,8 +4,18 @@ const Banner = require('../models/Banner');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
 const publicCache = require('../middleware/publicCache');
+const { publishCatalogUpdate } = require('../services/catalogRealtime');
 
 const router = express.Router();
+
+router.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+
+  res.once('finish', () => {
+    if (res.statusCode < 400) publishCatalogUpdate('banners');
+  });
+  return next();
+});
 
 // Validation pour les bannières
 const bannerValidation = [

@@ -39,6 +39,7 @@ const Product = () => {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColors, setSelectedColors] = useState(['']);
   const [quantity, setQuantity] = useState(1);
+  const [catalogVersion, setCatalogVersion] = useState(0);
 
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [isOrdering, setIsOrdering] = useState(false);
@@ -181,7 +182,13 @@ const Product = () => {
     if (id) {
       dispatch(fetchProduct(id));
     }
-  }, [dispatch, id]);
+  }, [dispatch, id, catalogVersion]);
+
+  useEffect(() => {
+    const refreshProduct = () => setCatalogVersion((version) => version + 1);
+    window.addEventListener('delta:catalog-updated', refreshProduct);
+    return () => window.removeEventListener('delta:catalog-updated', refreshProduct);
+  }, []);
 
   const validateOrderForm = () => {
     if (!firstName.trim()) {

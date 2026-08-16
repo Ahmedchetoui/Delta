@@ -20,6 +20,7 @@ const Shop = () => {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [sortBy, setSortBy] = useState('newest');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [catalogVersion, setCatalogVersion] = useState(0);
 
   const {
     products,
@@ -74,7 +75,13 @@ const Shop = () => {
     };
 
     dispatch(fetchProducts(filters));
-  }, [dispatch, search, category, minPrice, maxPrice, color, size, onSale, featured, page, sortBy]);
+  }, [dispatch, search, category, minPrice, maxPrice, color, size, onSale, featured, page, sortBy, catalogVersion]);
+
+  useEffect(() => {
+    const refreshProducts = () => setCatalogVersion((version) => version + 1);
+    window.addEventListener('delta:catalog-updated', refreshProducts);
+    return () => window.removeEventListener('delta:catalog-updated', refreshProducts);
+  }, []);
 
   const handleFilterChange = (newFilters) => {
     const params = new URLSearchParams(searchParams);

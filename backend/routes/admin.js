@@ -10,11 +10,24 @@ const { escapeRegex } = require('../utils/escapeRegex');
 const { syncOrderWithFiabilo } = require('../services/orderService');
 const { attachFiabiloTrackingToOrder } = require('../services/fiabiloService');
 const { getImageUrl } = require('../middleware/upload');
+const { publishCatalogUpdate } = require('../services/catalogRealtime');
 
 const router = express.Router();
 
 // Toutes les routes admin nécessitent une authentification admin
 router.use(authenticateToken, requireAdmin);
+
+router.use((req, res, next) => {
+  const affectsStock = /^\/(orders|fiabilo\/orders)(?:\/|$)/.test(req.path);
+  if (!affectsStock || !['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    return next();
+  }
+
+  res.once('finish', () => {
+    if (res.statusCode < 400) publishCatalogUpdate('stock');
+  });
+  return next();
+});
 
 // @route   GET /api/admin/dashboard
 // @desc    Obtenir les statistiques du tableau de bord

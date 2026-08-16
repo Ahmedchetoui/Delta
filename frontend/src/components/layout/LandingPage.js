@@ -2,13 +2,15 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import deltaLogo from '../../assets/logo/delta.jpg';
 
-const LandingPage = ({ onComplete, isReady = false }) => {
-  useEffect(() => {
-    if (!isReady) return undefined;
+const LANDING_DURATION_MS = 550;
 
-    const timer = setTimeout(onComplete, 500);
+const LandingPage = ({ onComplete }) => {
+  useEffect(() => {
+    // Cet écran est purement visuel. Il ne doit jamais attendre l'API,
+    // notamment après le démarrage à froid du serveur Render.
+    const timer = setTimeout(onComplete, LANDING_DURATION_MS);
     return () => clearTimeout(timer);
-  }, [isReady, onComplete]);
+  }, [onComplete]);
 
   return (
     <AnimatePresence>
@@ -48,7 +50,7 @@ const LandingPage = ({ onComplete, isReady = false }) => {
           >
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-              {isReady ? 'Ouverture...' : 'Chargement de la boutique...'}
+              Ouverture de la boutique...
             </div>
           </motion.div>
         </div>

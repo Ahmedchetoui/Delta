@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import Skeleton from '../components/ui/Skeleton';
 import ProductCard from '../components/product/ProductCard';
 import HeroSlider from '../components/ui/HeroSlider';
-import { resolveImageUrl } from '../utils/imageUtils';
+import { getResponsiveImageSrcSet, resolveImageUrl } from '../utils/imageUtils';
 import { useEnsureHomeData } from '../hooks/useEnsureHomeData';
 import { fetchHomeData, clearHomeError } from '../store/slices/homeSlice';
 
@@ -39,7 +39,8 @@ const Home = () => {
       title: banner.title,
       subtitle: banner.subtitle,
       description: banner.description,
-      image: resolveImageUrl(banner.image),
+      image: resolveImageUrl(banner.image, 768),
+      imageSrcSet: getResponsiveImageSrcSet(banner.image, [480, 768, 1200, 1600]),
       link: banner.buttonLink,
       buttonText: banner.buttonText,
       backgroundColor: banner.backgroundColor,
@@ -54,8 +55,24 @@ const Home = () => {
     <div className="min-h-screen bg-white -mt-14 md:-mt-16">
       {showHeroSkeleton ? (
         <div className="relative h-[500px] md:h-[600px] lg:h-[700px] bg-gray-200 animate-pulse" />
+      ) : heroSlides.length > 0 ? (
+        <HeroSlider slides={heroSlides} />
       ) : (
-        heroSlides.length > 0 && <HeroSlider slides={heroSlides} />
+        <section className="relative h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
+          <div className="absolute inset-0 pattern-overlay opacity-20" />
+          <div className="relative flex h-full items-center justify-center px-4 text-center">
+            <div>
+              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">Delta Fashion</p>
+              <h1 className="mb-6 text-5xl font-bold md:text-6xl">Votre style, notre passion</h1>
+              <Link
+                to="/shop"
+                className="inline-block rounded-lg bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
+              >
+                Découvrir la boutique
+              </Link>
+            </div>
+          </div>
+        </section>
       )}
 
       {showLoadError && (
@@ -99,7 +116,9 @@ const Home = () => {
                     <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
                       <img
                         key={`${category._id}-${category.updatedAt || ''}`}
-                        src={resolveImageUrl(category.image, 800, category.updatedAt)}
+                        src={resolveImageUrl(category.image, 480, category.updatedAt)}
+                        srcSet={getResponsiveImageSrcSet(category.image, [320, 480, 640, 800], category.updatedAt)}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                         alt={category.name}
                         loading="lazy"
                         width="600"

@@ -14,6 +14,11 @@ const {
   getQueueMode,
 } = require('./services/orderQueue');
 const {
+  addCatalogClient,
+  closeCatalogRealtime,
+  startCatalogRealtime,
+} = require('./services/catalogRealtime');
+const {
   adminLoginLimiter,
   loginLimiter,
   registerLimiter,
@@ -172,6 +177,10 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admin-requests', require('./routes/adminRequests'));
 
+// Flux Server-Sent Events : les pages déjà ouvertes reçoivent les changements
+// de catalogue sans rafraîchissement manuel.
+app.get('/api/catalog/events', addCatalogClient);
+
 // Route de test
 app.get('/api/health', (req, res) => {
   res.json({
@@ -300,6 +309,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/delta-fas
 })
   .then(() => {
     console.log('✅ Connecté à MongoDB');
+    startCatalogRealtime();
   })
   .catch((err) => {
     console.error('❌ Erreur de connexion MongoDB:', err);
@@ -338,6 +348,7 @@ app.listen(PORT, HOST, () => {
 async function shutdown(signal) {
   console.log(`\n${signal} reçu — arrêt gracieux...`);
   await closeOrderQueue();
+  await closeCatalogRealtime();
   await mongoose.connection.close();
   process.exit(0);
 }

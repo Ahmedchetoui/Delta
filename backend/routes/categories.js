@@ -5,12 +5,22 @@ const Product = require('../models/Product');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
 const { publicCacheRevalidate } = require('../middleware/publicCache');
+const { publishCatalogUpdate } = require('../services/catalogRealtime');
 const {
   getProductCountsByCategory,
   enrichCategoriesWithDetails,
 } = require('../utils/catalogHelpers');
 
 const router = express.Router();
+
+router.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+
+  res.once('finish', () => {
+    if (res.statusCode < 400) publishCatalogUpdate('categories');
+  });
+  return next();
+});
 
 // Validation pour la création/mise à jour de catégorie
 const categoryValidation = [
