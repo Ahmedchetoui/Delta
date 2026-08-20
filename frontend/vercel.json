@@ -1,4 +1,14 @@
 {
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://delta-n5d8.onrender.com/api/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "https://delta-n5d8.onrender.com/uploads/:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/manifest.json",
