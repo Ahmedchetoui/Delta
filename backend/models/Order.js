@@ -15,6 +15,15 @@ const orderSchema = new mongoose.Schema({
     type: String,
     required: false // Identifiant invité : téléphone normalisé (8 derniers chiffres)
   },
+  // Clé générée par le navigateur pour qu'un nouvel essai après une coupure
+  // réseau retourne la même commande au lieu d'en créer une seconde.
+  idempotencyKey: {
+    type: String,
+    required: false,
+    unique: true,
+    sparse: true,
+    maxlength: 128,
+  },
   items: [{
     product: {
       type: mongoose.Schema.Types.ObjectId,
@@ -178,6 +187,7 @@ const orderSchema = new mongoose.Schema({
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ orderStatus: 1, createdAt: -1 });
 orderSchema.index({ guestEmail: 1, orderNumber: 1 });
+orderSchema.index({ idempotencyKey: 1 }, { unique: true, sparse: true });
 orderSchema.index({ createdAt: -1 });
 
 // Générer un numéro de commande unique avant la validation

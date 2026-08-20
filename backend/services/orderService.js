@@ -165,7 +165,7 @@ function resolveGuestIdentifier(userId, shippingAddress) {
   return normalizeGuestPhone(shippingAddress.phone);
 }
 
-async function createOrderWithTransaction(orderData, userId) {
+async function createOrderWithTransaction(orderData, userId, idempotencyKey = null) {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -212,6 +212,7 @@ async function createOrderWithTransaction(orderData, userId) {
       isGift: isGift === true,
       giftMessage,
       guestEmail: resolveGuestIdentifier(userId, normalizedShipping),
+      idempotencyKey,
       stockDeducted: true,
       fiabilo: { syncStatus: 'pending' },
     });
@@ -228,7 +229,7 @@ async function createOrderWithTransaction(orderData, userId) {
   }
 }
 
-async function createOrderWithSequentialUpdates(orderData, userId) {
+async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKey = null) {
   const {
     items,
     shippingAddress,
@@ -288,6 +289,7 @@ async function createOrderWithSequentialUpdates(orderData, userId) {
       isGift: isGift === true,
       giftMessage,
       guestEmail: resolveGuestIdentifier(userId, normalizedShipping),
+      idempotencyKey,
       stockDeducted: true,
       fiabilo: { syncStatus: 'pending' },
     });
@@ -334,9 +336,9 @@ function isTransactionUnsupported(error) {
   );
 }
 
-async function createOrder(orderData, userId = null) {
+async function createOrder(orderData, userId = null, idempotencyKey = null) {
   try {
-    return await createOrderWithTransaction(orderData, userId);
+    return await createOrderWithTransaction(orderData, userId, idempotencyKey);
   } catch (error) {
     if (error instanceof OrderServiceError) {
       throw error;
@@ -345,7 +347,7 @@ async function createOrder(orderData, userId = null) {
     if (isTransactionUnsupported(error)) {
       console.warn('⚠️ Transactions MongoDB indisponibles — fallback séquentiel');
       try {
-        return await createOrderWithSequentialUpdates(orderData, userId);
+        return await createOrderWithSequentialUpdates(orderData, userId, idempotencyKey);
       } catch (fallbackError) {
         if (fallbackError instanceof OrderServiceError) throw fallbackError;
         throw new OrderServiceError(
@@ -353,6 +355,11 @@ async function createOrder(orderData, userId = null) {
           500
         );
       }
+    }
+
+    if (error.code === 11000 && error.keyPattern?.idempotencyKey && idempotencyKey) {
+      const existingOrder = await Order.findOne({ idempotencyKey });
+      if (existingOrder) return finalizeOrder(existingOrder);
     }
 
     if (error.code === 11000) {

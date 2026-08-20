@@ -12,12 +12,16 @@ function publicCache(maxAge = 300) {
   };
 }
 
-/** Données modifiables en admin : le navigateur revalide à chaque visite. */
-function publicCacheRevalidate(sMaxAge = 60) {
+/**
+ * Données modifiables en admin : cache court au CDN avec réponse périmée
+ * servie pendant la revalidation. Cela évite que des dizaines de visiteurs
+ * déclenchent simultanément les mêmes requêtes MongoDB.
+ */
+function publicCacheRevalidate(sMaxAge = 60, staleWhileRevalidate = 60) {
   return (_req, res, next) => {
     res.set(
       'Cache-Control',
-      `public, max-age=0, must-revalidate, s-maxage=${sMaxAge}`
+      `public, max-age=0, must-revalidate, s-maxage=${sMaxAge}, stale-while-revalidate=${staleWhileRevalidate}`
     );
     next();
   };

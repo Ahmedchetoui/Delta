@@ -5,6 +5,12 @@ const { normalizeGuestPhone } = require('../utils/phoneUtils');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+function getOrderCustomerKey(req) {
+  const phone = normalizeGuestPhone(req.body?.shippingAddress?.phone);
+  if (phone.length >= 8) return `order-phone:${phone}`;
+  return req.ip;
+}
+
 const guestOrderLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isProduction ? 10 : 50,
@@ -14,10 +20,12 @@ const guestOrderLimiter = rateLimit({
   store: createRateLimitStore('guest-order'),
 });
 
-// Plafond court : stoppe le spam immédiat (3 commandes / minute / IP)
+// Plafond court : stoppe le spam d'un même client sans pénaliser plusieurs
+// acheteurs légitimes partageant un Wi-Fi ou un réseau mobile.
 const orderCreateBurstLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: isProduction ? 3 : 20,
+  keyGenerator: getOrderCustomerKey,
   message: {
     message: 'Trop de commandes en peu de temps. Attendez une minute avant de réessayer.',
   },
@@ -54,13 +62,7 @@ const orderEmailLimiter = rateLimit({
 const orderPhoneLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isProduction ? 5 : 50,
-  keyGenerator: (req) => {
-    const phone = normalizeGuestPhone(req.body?.shippingAddress?.phone);
-    if (phone.length >= 8) {
-      return `order-phone:${phone}`;
-    }
-    return req.ip;
-  },
+  keyGenerator: getOrderCustomerKey,
   message: {
     message: 'Trop de commandes pour ce numéro de téléphone. Réessayez plus tard.',
   },

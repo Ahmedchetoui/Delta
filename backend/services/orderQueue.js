@@ -68,8 +68,8 @@ function initOrderQueue() {
     worker = new Worker(
       QUEUE_NAME,
       async (job) => {
-        const { orderData, userId } = job.data;
-        return createOrder(orderData, userId);
+        const { orderData, userId, idempotencyKey } = job.data;
+        return createOrder(orderData, userId, idempotencyKey);
       },
       {
         connection: redisConnection.duplicate(),
@@ -89,11 +89,11 @@ function initOrderQueue() {
   }
 }
 
-async function processOrder(orderData, userId = null) {
+async function processOrder(orderData, userId = null, idempotencyKey = null) {
   if (mode === 'redis' && queue && queueEvents) {
     const job = await queue.add(
       'create-order',
-      { orderData, userId },
+      { orderData, userId, idempotencyKey },
       {
         removeOnComplete: 100,
         removeOnFail: 200,
@@ -125,7 +125,7 @@ async function processOrder(orderData, userId = null) {
     }
   }
 
-  return memoryQueue.enqueue(() => createOrder(orderData, userId));
+  return memoryQueue.enqueue(() => createOrder(orderData, userId, idempotencyKey));
 }
 
 async function closeOrderQueue() {

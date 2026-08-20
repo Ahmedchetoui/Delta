@@ -26,8 +26,10 @@ const {
 
 const app = express();
 
-// Render / reverse proxy — requis pour rate-limit par IP réelle
-app.set('trust proxy', 1);
+// Navigateur → Vercel → Render/Cloudflare : deux reverse proxies séparent
+// l'application du client. Sans cela req.ip correspondait à un proxy Vercel,
+// rendant les limites anti-spam incohérentes selon l'appareil.
+app.set('trust proxy', 2);
 
 // Configuration CORS en premier
 const envOrigins = (process.env.CORS_ORIGIN || '')
