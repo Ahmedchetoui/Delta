@@ -10,22 +10,26 @@ function normalizeApiBaseUrl(url) {
   return url;
 }
 
-const PRODUCTION_API_URL = 'https://delta-n5d8.onrender.com/api';
-
 export function getApiBaseUrl() {
-  if (process.env.REACT_APP_API_URL) {
-    return normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
-  }
-
   if (typeof window !== 'undefined') {
     const { protocol, hostname } = window.location;
 
-    // Déployé sur Vercel sans variable d'env → backend Render
+    // En production, les requêtes passent par le proxy Vercel (/api). Ainsi
+    // le navigateur ne doit jamais contacter Render directement : cela évite
+    // les échecs CORS qui ne touchaient que certains appareils/réseaux.
     if (hostname.endsWith('.vercel.app') || hostname === 'delta-fashion.vercel.app') {
-      return PRODUCTION_API_URL;
+      return '/api';
+    }
+
+    if (process.env.REACT_APP_API_URL) {
+      return normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
     }
 
     return `${protocol}//${hostname}:5000/api`;
+  }
+
+  if (process.env.REACT_APP_API_URL) {
+    return normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
   }
 
   return 'http://localhost:5000/api';

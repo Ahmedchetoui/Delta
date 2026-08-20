@@ -4,6 +4,14 @@
   "buildCommand": "CI=true npm run build --prefix frontend",
   "outputDirectory": "frontend/build",
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://delta-n5d8.onrender.com/api/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "https://delta-n5d8.onrender.com/uploads/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "redirects": [
