@@ -27,6 +27,8 @@ import {
 } from '../constants/tunisiaGovernorates';
 import { calculateShippingCost } from '../constants/shipping';
 import ProductReviews from '../components/product/ProductReviews';
+import { trackViewContent, trackAddToCart, trackInitiateCheckout, trackPurchase } from '../utils/metaPixel';
+
 
 const Product = () => {
   const { id } = useParams();
@@ -185,6 +187,12 @@ const Product = () => {
   }, [dispatch, id, catalogVersion]);
 
   useEffect(() => {
+    if (currentProduct) {
+      trackViewContent(currentProduct);
+    }
+  }, [currentProduct]);
+
+  useEffect(() => {
     const refreshProduct = () => setCatalogVersion((version) => version + 1);
     window.addEventListener('delta:catalog-updated', refreshProduct);
     return () => window.removeEventListener('delta:catalog-updated', refreshProduct);
@@ -240,6 +248,8 @@ const Product = () => {
 
   const handleAddToCart = () => {
     if (!validateOrderForm()) return;
+    trackAddToCart(currentProduct, quantity);
+    trackInitiateCheckout([currentProduct], total);
     setShowOrderModal(true);
   };
 
@@ -287,6 +297,8 @@ const Product = () => {
       };
 
       const response = await api.post('/orders', orderData);
+
+      trackPurchase(response.data.order.orderNumber, response.data.order.total || total);
 
       toast.success('Commande enregistrée avec succès !');
       setShowOrderModal(false);

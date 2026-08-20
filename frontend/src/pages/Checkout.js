@@ -12,6 +12,8 @@ import {
 import { getImagesForColor, getProductImageUrl } from '../utils/productImages';
 import { normalizeCartColors } from '../utils/cartColors';
 import { calculateShippingCost } from '../constants/shipping';
+import { trackInitiateCheckout, trackPurchase } from '../utils/metaPixel';
+
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -29,6 +31,13 @@ const Checkout = () => {
     address: '',
     paymentMethod: 'cash_on_delivery'
   });
+
+  // Trigger InitiateCheckout event when checkout page loads
+  useEffect(() => {
+    if (items.length > 0) {
+      trackInitiateCheckout(items, totalAmount + calculateShippingCost());
+    }
+  }, [items, totalAmount]);
 
   // Charger les informations invité au chargement de la page
   useEffect(() => {
@@ -109,6 +118,8 @@ const Checkout = () => {
       // Envoyer la commande
       const response = await api.post('/orders', orderData);
       
+      trackPurchase(response.data.order.orderNumber, response.data.order.total || finalTotal);
+
       toast.success('Commande passée avec succès !');
       
       // Sauvegarder les informations de commande en localStorage pour suivi
