@@ -281,7 +281,7 @@ router.get('/', [
 // @route   GET /api/products/featured
 // @desc    Obtenir les produits en vedette
 // @access  Public
-router.get('/featured', publicCache(300), async (req, res) => {
+router.get('/featured', publicCacheRevalidate(0), async (req, res) => {
   try {
     const products = await Product.find({
       isActive: true,
@@ -307,7 +307,7 @@ router.get('/featured', publicCache(300), async (req, res) => {
 // @route   GET /api/products/new
 // @desc    Obtenir les nouveaux produits
 // @access  Public
-router.get('/new', publicCache(300), async (req, res) => {
+router.get('/new', publicCacheRevalidate(0), async (req, res) => {
   try {
     const products = await Product.find({
       isActive: true,
