@@ -13,8 +13,16 @@ function sizesMatch(a, b) {
   return normalizeSize(a) === normalizeSize(b);
 }
 
-function colorsMatch(a, b) {
-  return normalizeColor(a) === normalizeColor(b);
+function colorsMatch(variantColor, itemColor) {
+  if (!variantColor || !itemColor) return false;
+  const vc = normalizeColor(variantColor);
+  const ic = normalizeColor(itemColor);
+  if (vc === ic) return true;
+  if (ic.includes(',')) {
+    const parts = ic.split(',').map((p) => p.trim());
+    return parts.includes(vc);
+  }
+  return false;
 }
 
 function hasColorOnVariant(variant) {
@@ -29,10 +37,10 @@ function getVariantsForSize(product, size, color) {
   if (!size || !product.variants?.length) return [];
 
   if (color) {
-    const exact = product.variants.find(
+    const matching = product.variants.filter(
       (v) => sizesMatch(v.size, size) && colorsMatch(v.color, color)
     );
-    return exact ? [exact] : [];
+    if (matching.length > 0) return matching;
   }
 
   return product.variants.filter((v) => sizesMatch(v.size, size));
@@ -54,11 +62,11 @@ function getAvailableStock(product, size, color) {
   }
 
   if (color) {
-    const exact = product.variants.find(
+    const matching = product.variants.filter(
       (v) => sizesMatch(v.size, size) && colorsMatch(v.color, color)
     );
-    if (exact) {
-      return exact.stock || 0;
+    if (matching.length > 0) {
+      return matching.reduce((sum, v) => sum + (v.stock || 0), 0);
     }
 
     if (sizeHasColorVariants(product, size)) {
@@ -89,6 +97,11 @@ function findVariant(product, size, color) {
     );
     if (exact) return exact;
 
+    const matching = product.variants.filter(
+      (v) => sizesMatch(v.size, size) && colorsMatch(v.color, color)
+    );
+    if (matching.length > 0) return matching[0];
+
     if (sizeHasColorVariants(product, size)) {
       return null;
     }
@@ -112,12 +125,27 @@ function syncTotalStock(product) {
 }
 
 function applyStockDeduction(product, item) {
+  if (item.size && item.color && product.variants?.length) {
+    const matchingVariants = product.variants.filter(
+      (v) => sizesMatch(v.size, item.size) && colorsMatch(v.color, item.color)
+    );
+    if (matchingVariants.length > 0) {
+      let remainingToDeduct = item.quantity;
+      for (const variant of matchingVariants) {
+        if (remainingToDeduct <= 0) break;
+        const deduct = Math.min(variant.stock || 0, remainingToDeduct);
+        variant.stock -= deduct;
+        remainingToDeduct -= deduct;
+      }
+      product.markModified('variants');
+      syncTotalStock(product);
+      return;
+    }
+  }
+
   const variant = findVariant(product, item.size, item.color);
   if (variant) {
     const available = variant.stock || 0;
-    if (available < item.quantity) {
-      throw new Error(`Stock insuffisant pour ${product.name}`);
-    }
     variant.stock = Math.max(0, available - item.quantity);
     product.markModified('variants');
     syncTotalStock(product);
