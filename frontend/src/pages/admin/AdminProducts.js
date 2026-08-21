@@ -82,12 +82,12 @@ const AdminProducts = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Top produits</h1>
-          <p className="text-gray-600 mt-1">Gestion et suppression des produits du catalogue</p>
+          <h1 className="text-3xl font-bold text-gray-900">Gestion des Produits</h1>
+          <p className="text-gray-600 mt-1">Consultez, modifiez ou supprimez les produits de votre catalogue</p>
         </div>
         <Link
           to="/admin/products/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center shadow"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
           Ajouter un produit
@@ -134,28 +134,29 @@ const AdminProducts = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
+                    <div className="flex items-center space-x-2">
+                      <Link
+                        to={`/admin/products/edit/${product.id}`}
+                        className="inline-flex items-center px-3 py-1.5 bg-green-50 text-green-700 border border-green-300 rounded-lg hover:bg-green-100 transition-colors text-xs font-semibold"
+                        title="Modifier ce produit"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Modifier
+                      </Link>
                       <Link
                         to={`/product/${product.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-900"
+                        className="p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Voir sur le site"
                       >
                         <EyeIcon className="h-5 w-5" />
-                      </Link>
-                      <Link
-                        to={`/admin/products/edit/${product.id}`}
-                        className="text-green-600 hover:text-green-900"
-                        title="Modifier"
-                      >
-                        <PencilIcon className="h-5 w-5" />
                       </Link>
                       <button
                         type="button"
                         onClick={() => handleDelete(product)}
                         disabled={deletingId === product.id}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                        className="p-1.5 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                         title="Supprimer"
                       >
                         <TrashIcon className="h-5 w-5" />

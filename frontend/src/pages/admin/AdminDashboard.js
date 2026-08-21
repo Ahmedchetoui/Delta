@@ -157,17 +157,31 @@ const AdminDashboard = () => {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
-                {stats.map((stat, index) => (
-                    <div key={index} className="bg-white rounded-xl shadow-sm p-6 transform hover:scale-105 transition duration-300 border border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                                <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
+                {stats.map((stat, index) => {
+                    const CardContent = (
+                        <div className="bg-white rounded-xl shadow-sm p-6 transform hover:scale-105 transition duration-300 border border-gray-100 cursor-pointer">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className={`p-3 rounded-lg ${stat.bgColor}`}>
+                                    <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
+                                </div>
                             </div>
+                            <h3 className="text-gray-500 text-sm font-medium">{stat.title}</h3>
+                            <p className="text-2xl font-bold text-gray-800 mt-1">{stat.value}</p>
                         </div>
-                        <h3 className="text-gray-500 text-sm font-medium">{stat.title}</h3>
-                        <p className="text-2xl font-bold text-gray-800 mt-1">{stat.value}</p>
-                    </div>
-                ))}
+                    );
+
+                    return stat.title === 'Produits' ? (
+                        <Link key={index} to="/admin/products" title="Gérer et modifier les produits">
+                            {CardContent}
+                        </Link>
+                    ) : stat.title === 'Commandes' ? (
+                        <Link key={index} to="/admin/orders" title="Gérer les commandes">
+                            {CardContent}
+                        </Link>
+                    ) : (
+                        <div key={index}>{CardContent}</div>
+                    );
+                })}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -342,8 +356,9 @@ const AdminDashboard = () => {
 
             {/* Quick Actions Grid */}
             <h2 className="text-xl font-bold text-gray-900 mb-4">Actions Rapides</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
                 {[
+                    { to: "/admin/products", icon: ShoppingBagIcon, label: "Gérer / Modifier Produits", color: "bg-blue-700 font-bold" },
                     { to: "/admin/products/new", icon: ShoppingBagIcon, label: "Nouveau Produit", color: "bg-blue-600" },
                     { to: "/admin/orders", icon: ClipboardDocumentCheckIcon, label: "Gérer Commandes", color: "bg-green-600" },
                     { to: "/admin/fiabilo", icon: TruckIcon, label: "Fiabilo", color: "bg-orange-600" },
