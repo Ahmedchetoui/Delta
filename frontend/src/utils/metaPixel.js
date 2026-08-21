@@ -15,6 +15,11 @@ function toValidNumber(val) {
 }
 
 /**
+ * Devise standard pour Meta Ads (Facebook exige un code reconnu par son système publicitaire comme USD ou EUR)
+ */
+const META_CURRENCY = 'USD';
+
+/**
  * Suivi de la vue de page
  */
 export function trackPageView() {
@@ -32,7 +37,7 @@ export function trackViewContent(product) {
     content_ids: [String(product._id || product.id || '')],
     content_type: 'product',
     value: price,
-    currency: 'TND',
+    currency: META_CURRENCY,
   });
 }
 
@@ -48,7 +53,7 @@ export function trackAddToCart(product, quantity = 1) {
     content_ids: [String(product._id || product.id || '')],
     content_type: 'product',
     value: toValidNumber(price * qty),
-    currency: 'TND',
+    currency: META_CURRENCY,
   });
 }
 
@@ -61,7 +66,7 @@ export function trackInitiateCheckout(items = [], totalValue = 0) {
     content_ids: validItems.map((i) => String(i?.product?._id || i?.product || i?.id || '')),
     num_items: validItems.length,
     value: toValidNumber(totalValue),
-    currency: 'TND',
+    currency: META_CURRENCY,
   });
 }
 
@@ -72,7 +77,7 @@ export function trackPurchase(orderNumber, totalValue = 0) {
   const value = toValidNumber(totalValue);
   fbq('track', 'Purchase', {
     value: value,
-    currency: 'TND',
+    currency: META_CURRENCY,
     order_id: String(orderNumber || ''),
   });
 }
