@@ -198,7 +198,7 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
 
     const normalizedShipping = prepareShippingAddress(shippingAddress);
 
-    const order = new Order({
+    const orderDoc = {
       user: userId || null,
       items: orderItems,
       shippingAddress: normalizedShipping,
@@ -212,10 +212,15 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
       isGift: isGift === true,
       giftMessage,
       guestEmail: resolveGuestIdentifier(userId, normalizedShipping),
-      idempotencyKey,
       stockDeducted: true,
       fiabilo: { syncStatus: 'pending' },
-    });
+    };
+
+    if (idempotencyKey && String(idempotencyKey).trim()) {
+      orderDoc.idempotencyKey = String(idempotencyKey).trim();
+    }
+
+    const order = new Order(orderDoc);
 
     await order.save({ session });
     await session.commitTransaction();
@@ -275,7 +280,7 @@ async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKe
 
     const normalizedShipping = prepareShippingAddress(shippingAddress);
 
-    const order = new Order({
+    const orderDoc = {
       user: userId || null,
       items: orderItems,
       shippingAddress: normalizedShipping,
@@ -289,10 +294,15 @@ async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKe
       isGift: isGift === true,
       giftMessage,
       guestEmail: resolveGuestIdentifier(userId, normalizedShipping),
-      idempotencyKey,
       stockDeducted: true,
       fiabilo: { syncStatus: 'pending' },
-    });
+    };
+
+    if (idempotencyKey && String(idempotencyKey).trim()) {
+      orderDoc.idempotencyKey = String(idempotencyKey).trim();
+    }
+
+    const order = new Order(orderDoc);
 
     await order.save();
 
@@ -337,43 +347,63 @@ function isTransactionUnsupported(error) {
 }
 
 async function createOrder(orderData, userId = null, idempotencyKey = null) {
-  try {
-    return await createOrderWithTransaction(orderData, userId, idempotencyKey);
-  } catch (error) {
-    if (error instanceof OrderServiceError) {
-      throw error;
-    }
+  const cleanIdempotency = idempotencyKey && String(idempotencyKey).trim() ? String(idempotencyKey).trim() : null;
+  let attempts = 0;
+  const maxAttempts = 5;
 
-    if (isTransactionUnsupported(error)) {
-      console.warn('⚠️ Transactions MongoDB indisponibles — fallback séquentiel');
-      try {
-        return await createOrderWithSequentialUpdates(orderData, userId, idempotencyKey);
-      } catch (fallbackError) {
-        if (fallbackError instanceof OrderServiceError) throw fallbackError;
-        throw new OrderServiceError(
-          fallbackError.message || 'Erreur lors de la création de la commande',
-          500
-        );
+  while (attempts < maxAttempts) {
+    try {
+      return await createOrderWithTransaction(orderData, userId, cleanIdempotency);
+    } catch (error) {
+      if (error instanceof OrderServiceError) {
+        throw error;
       }
-    }
 
-    if (error.code === 11000 && error.keyPattern?.idempotencyKey && idempotencyKey) {
-      const existingOrder = await Order.findOne({ idempotencyKey });
-      if (existingOrder) return finalizeOrder(existingOrder);
-    }
+      if (isTransactionUnsupported(error)) {
+        console.warn('⚠️ Transactions MongoDB indisponibles — fallback séquentiel');
+        try {
+          return await createOrderWithSequentialUpdates(orderData, userId, cleanIdempotency);
+        } catch (fallbackError) {
+          if (fallbackError instanceof OrderServiceError) throw fallbackError;
+          if (fallbackError.code === 11000) {
+            console.warn(`⚠️ E11000 fallback (essai ${attempts + 1}/${maxAttempts}):`, fallbackError.keyPattern || fallbackError.message);
+            attempts++;
+            if (attempts < maxAttempts) continue;
+          }
+          throw new OrderServiceError(
+            fallbackError.message || 'Erreur lors de la création de la commande',
+            500
+          );
+        }
+      }
 
-    if (error.code === 11000) {
+      if (error.code === 11000) {
+        console.warn(`⚠️ E11000 transaction (essai ${attempts + 1}/${maxAttempts}):`, error.keyPattern || error.message);
+
+        // Si la clé idempotente est en double, tenter de retourner la commande existante
+        if (cleanIdempotency && (error.keyPattern?.idempotencyKey || (error.message && error.message.includes('idempotencyKey')))) {
+          const existingOrder = await Order.findOne({ idempotencyKey: cleanIdempotency });
+          if (existingOrder) return finalizeOrder(existingOrder);
+        }
+
+        // Si collision sur numéro de commande ou autre index, réessayer avec un nouveau document
+        attempts++;
+        if (attempts < maxAttempts) {
+          continue;
+        }
+      }
+
       throw new OrderServiceError(
-        'Conflit lors de la création de la commande. Réessayez.',
-        409
+        error.message || 'Erreur lors de la création de la commande',
+        500
       );
     }
-
-    throw new OrderServiceError(
-      error.message || 'Erreur lors de la création de la commande',
-      500
-    );
   }
+
+  throw new OrderServiceError(
+    'Erreur lors de la création de la commande. Veuillez réessayer.',
+    500
+  );
 }
 
 module.exports = {

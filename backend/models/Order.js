@@ -190,6 +190,14 @@ orderSchema.index({ guestEmail: 1, orderNumber: 1 });
 orderSchema.index({ idempotencyKey: 1 }, { unique: true, sparse: true });
 orderSchema.index({ createdAt: -1 });
 
+// Nettoyer idempotencyKey si vide ou falsy pour éviter tout conflit d'index unique sur null
+orderSchema.pre('validate', function(next) {
+  if (!this.idempotencyKey || !String(this.idempotencyKey).trim()) {
+    this.idempotencyKey = undefined;
+  }
+  next();
+});
+
 // Générer un numéro de commande unique avant la validation
 orderSchema.pre('validate', async function(next) {
   try {
