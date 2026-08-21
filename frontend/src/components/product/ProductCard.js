@@ -27,9 +27,18 @@ const ProductCard = ({ product, priority = false }) => {
 
   const inStock = productHasStock(product);
 
-  const discountPercent = product.price && product.finalPrice && Number(product.price) > Number(product.finalPrice)
-    ? Math.round((1 - product.finalPrice / product.price) * 100)
-    : null;
+  const discountPercent = useMemo(() => {
+    if (product.discount && Number(product.discount) > 0) {
+      return Math.round(Number(product.discount));
+    }
+    if (product.originalPrice && product.price && Number(product.originalPrice) > Number(product.price)) {
+      return Math.round((1 - Number(product.price) / Number(product.originalPrice)) * 100);
+    }
+    if (product.price && product.finalPrice && Number(product.price) > Number(product.finalPrice)) {
+      return Math.round((1 - Number(product.finalPrice) / Number(product.price)) * 100);
+    }
+    return null;
+  }, [product.discount, product.originalPrice, product.price, product.finalPrice]);
 
   const derivedSizes = product.sizes && product.sizes.length > 0
     ? product.sizes
@@ -73,6 +82,10 @@ const ProductCard = ({ product, priority = false }) => {
             {discountPercent ? (
               <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full uppercase shadow-lg">
                 -{discountPercent}%
+              </span>
+            ) : product.isOnSale ? (
+              <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full uppercase shadow-lg">
+                🔥 PROMO
               </span>
             ) : product.isNewProduct ? (
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full uppercase shadow-lg">
