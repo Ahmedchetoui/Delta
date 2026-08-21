@@ -104,7 +104,8 @@ const productValidation = [
 // @access  Public
 router.get('/', [
   query('page').optional().isInt({ min: 1 }).withMessage('Page invalide'),
-  query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limite invalide'),
+  query('limit').optional().isInt({ min: 1, max: 200 }).withMessage('Limite invalide'),
+  query('includeInactive').optional().isBoolean().withMessage('includeInactive invalide'),
   query('category').optional().isMongoId().withMessage('ID de catégorie invalide'),
   query('minPrice').optional().isFloat({ min: 0 }).withMessage('Prix minimum invalide'),
   query('maxPrice').optional().isFloat({ min: 0 }).withMessage('Prix maximum invalide'),

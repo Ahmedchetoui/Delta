@@ -26,7 +26,7 @@ const AdminProducts = () => {
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await api.get('/products', { params: { limit: 100, includeInactive: true } });
+      const { data } = await api.get('/products', { params: { limit: 50, includeInactive: 'true' } });
       const list = (data.products || []).map((p) => ({
         id: p._id,
         slug: p.slug,
