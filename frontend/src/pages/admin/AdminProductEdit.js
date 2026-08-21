@@ -28,6 +28,10 @@ const AdminProductEdit = () => {
     originalPrice: '',
     category: '',
     isActive: true,
+    isFeatured: true,
+    isNew: false,
+    isOnSale: false,
+    discount: '',
     images: [],
     colors: [],
     variants: []
@@ -63,6 +67,10 @@ const AdminProductEdit = () => {
           originalPrice: product.originalPrice || product.price || '',
           category: product.category?._id || '',
           isActive: product.isActive !== false,
+          isFeatured: product.isFeatured !== false,
+          isNew: !!product.isNewProduct,
+          isOnSale: !!product.isOnSale,
+          discount: product.discount || '',
           images: normalizeProductImages(product.images).map((img) => ({
             ...img,
             preview: img.url,
@@ -108,48 +116,47 @@ const AdminProductEdit = () => {
   };
 
   const handleImagesChange = (images) => {
-    const removed = formData.images.filter(
-      (existing) =>
-        !existing.isNew &&
-        !images.some((img) => img.url === existing.url)
-    );
-    if (removed.length > 0) {
-      setImagesToDelete((prev) => [...prev, ...removed.map((img) => img.url)]);
+    // Identifier les images supprimées (seulement celles qui étaient déjà sur le serveur)
+    const currentUrls = images.map((img) => img.url).filter(Boolean);
+    const deleted = formData.images
+      .filter((img) => !img.isNew && img.url && !currentUrls.includes(img.url))
+      .map((img) => img.url);
+
+    if (deleted.length > 0) {
+      setImagesToDelete((prev) => [...prev, ...deleted]);
     }
+
     setFormData((prev) => ({ ...prev, images }));
   };
 
-  const addVariant = () => {
+  const handleAddVariant = () => {
+    const defaultColor = formData.colors[0]?.name || '';
     setFormData(prev => ({
       ...prev,
-      variants: [...prev.variants, { size: '', color: '', stock: 0 }]
+      variants: [...prev.variants, { size: '', color: defaultColor, stock: 0 }]
     }));
   };
 
-  const updateVariant = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      variants: prev.variants.map((variant, i) => 
-        i === index ? { ...variant, [field]: value } : variant
-      )
-    }));
-  };
-
-  const removeVariant = (index) => {
+  const handleRemoveVariant = (index) => {
     setFormData(prev => ({
       ...prev,
       variants: prev.variants.filter((_, i) => i !== index)
     }));
   };
 
+  const handleVariantChange = (index, field, value) => {
+    setFormData(prev => {
+      const newVariants = [...prev.variants];
+      newVariants[index] = {
+        ...newVariants[index],
+        [field]: value
+      };
+      return { ...prev, variants: newVariants };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.price || !formData.category) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-
     setSaving(true);
 
     try {
@@ -161,7 +168,13 @@ const AdminProductEdit = () => {
       submitData.append('price', formData.price);
       submitData.append('originalPrice', formData.originalPrice);
       submitData.append('category', formData.category);
-      submitData.append('isActive', formData.isActive);
+      submitData.append('isActive', String(formData.isActive));
+      submitData.append('isFeatured', String(formData.isFeatured));
+      submitData.append('isNew', String(formData.isNew));
+      submitData.append('isOnSale', String(formData.isOnSale));
+      if (formData.discount) {
+        submitData.append('discount', String(formData.discount));
+      }
       
       // Images existantes à conserver
       const existingImages = formData.images
@@ -194,9 +207,8 @@ const AdminProductEdit = () => {
         }
       });
 
-      toast.success('Produit mis à jour avec succès !');
+      toast.success('Produit mis à jour avec succès');
       navigate('/admin/products');
-      
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
       toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour');
@@ -209,11 +221,11 @@ const AdminProductEdit = () => {
     return (
       <div className="p-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6" />
           <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
+            <div className="h-12 bg-gray-200 rounded" />
+            <div className="h-32 bg-gray-200 rounded" />
+            <div className="h-12 bg-gray-200 rounded" />
           </div>
         </div>
       </div>
@@ -221,8 +233,8 @@ const AdminProductEdit = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Modifier le produit</h1>
         <button
           onClick={() => navigate('/admin/products')}
@@ -283,11 +295,11 @@ const AdminProductEdit = () => {
           />
         </div>
 
-        {/* Prix */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Prix et Promotion */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Prix original *
+              Prix de vente (DT) *
             </label>
             <input
               type="number"
@@ -313,6 +325,68 @@ const AdminProductEdit = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Remise (%)
+            </label>
+            <input
+              type="number"
+              name="discount"
+              value={formData.discount}
+              onChange={handleChange}
+              min="0"
+              max="100"
+              placeholder="ex: 15"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        {/* Statut & Badges du produit */}
+        <div className="bg-blue-50/60 p-5 rounded-xl border border-blue-200 space-y-4">
+          <h3 className="text-base font-bold text-gray-900">Statuts & Badges d'affichage</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input
+                type="checkbox"
+                name="isNew"
+                checked={formData.isNew}
+                onChange={handleChange}
+                className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-semibold text-gray-800">
+                ✨ Produit Nouveau (Badge Bleu)
+              </span>
+            </label>
+
+            <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input
+                type="checkbox"
+                name="isFeatured"
+                checked={formData.isFeatured}
+                onChange={handleChange}
+                className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-semibold text-gray-800">
+                ⭐ En Vedette (Page d'accueil)
+              </span>
+            </label>
+
+            <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <input
+                type="checkbox"
+                name="isOnSale"
+                checked={formData.isOnSale}
+                onChange={handleChange}
+                className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-semibold text-gray-800">
+                🔥 En Promotion (Badge Promo)
+              </span>
+            </label>
+          </div>
         </div>
 
         {/* Couleurs */}
@@ -328,86 +402,74 @@ const AdminProductEdit = () => {
           />
         </div>
 
-        {/* Variantes */}
+        {/* Variantes (Tailles & Stocks) */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Variantes (1 ligne = 1 taille + 1 couleur + quantité)
-            </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Variantes (Taille et Stock)
+          </label>
+          <div className="space-y-3">
+            {formData.variants.map((variant, index) => (
+              <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                <input
+                  type="text"
+                  placeholder="Taille (ex: M, L, XL, 38)"
+                  value={variant.size}
+                  onChange={(e) => handleVariantChange(index, 'size', e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                />
+                <VariantColorSelect
+                  value={variant.color}
+                  colors={formData.colors}
+                  onChange={(color) => handleVariantChange(index, 'color', color)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+                <input
+                  type="number"
+                  placeholder="Stock"
+                  value={variant.stock}
+                  onChange={(e) => handleVariantChange(index, 'stock', parseInt(e.target.value) || 0)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                />
+                <div className="flex items-center space-x-2">
+                  {variant.color ? (
+                    <button
+                      type="button"
+                      onClick={() => openColorPhotoUpload(variant.color)}
+                      className={`text-xs px-2 py-1.5 rounded border font-medium ${
+                        hasImageForColor(formData.images, variant.color)
+                          ? 'border-green-500 text-green-700 bg-green-50'
+                          : 'border-amber-500 text-amber-700 bg-amber-50'
+                      }`}
+                    >
+                      {hasImageForColor(formData.images, variant.color)
+                        ? '✓ Photo'
+                        : '+ Photo'}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveVariant(index)}
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
             <button
               type="button"
-              onClick={addVariant}
-              className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+              onClick={handleAddVariant}
+              className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
             >
-              + Ajouter variante
+              + Ajouter une variante
             </button>
           </div>
-          
-          {formData.variants.map((variant, index) => {
-            const stockQty = Number(variant.stock) || 0;
-            const stockLabel = stockQty === 0
-              ? { text: 'Rupture', className: 'bg-red-100 text-red-800' }
-              : stockQty <= 5
-                ? { text: `${stockQty} pc — stock faible`, className: 'bg-amber-100 text-amber-800' }
-                : { text: `${stockQty} pc`, className: 'bg-green-100 text-green-800' };
-
-            return (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4 p-4 border rounded-lg items-center">
-              <input
-                type="text"
-                placeholder="Taille (ex: 8, 12, 14)"
-                value={variant.size}
-                onChange={(e) => updateVariant(index, 'size', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <VariantColorSelect
-                value={variant.color}
-                colors={formData.colors}
-                onChange={(color) => updateVariant(index, 'color', color)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
-              />
-              <input
-                type="number"
-                min="0"
-                placeholder="Stock"
-                value={variant.stock}
-                onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value, 10) || 0)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <span className={`text-xs font-medium px-2 py-1 rounded-full text-center ${stockLabel.className}`}>
-                {stockLabel.text}
-              </span>
-              {variant.color ? (
-                <button
-                  type="button"
-                  onClick={() => openColorPhotoUpload(variant.color)}
-                  className={`text-sm px-3 py-2 rounded-lg border ${
-                    hasImageForColor(formData.images, variant.color)
-                      ? 'border-green-500 text-green-700 bg-green-50'
-                      : 'border-amber-500 text-amber-700 bg-amber-50'
-                  }`}
-                >
-                  {hasImageForColor(formData.images, variant.color) ? '✓ Photo' : '+ Photo'}
-                </button>
-              ) : (
-                <span className="text-xs text-gray-400">Couleur → photo</span>
-              )}
-              <button
-                type="button"
-                onClick={() => removeVariant(index)}
-                className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600"
-              >
-                Supprimer
-              </button>
-            </div>
-            );
-          })}
         </div>
 
         {/* Images */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Images du produit par couleur
+            Images du produit
           </label>
           <ProductImageManager
             images={formData.images}
@@ -419,9 +481,9 @@ const AdminProductEdit = () => {
         </div>
 
         {/* Statut & Visibilité */}
-        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
           <label className="block text-sm font-bold text-gray-800 mb-2">
-            Statut & Visibilité sur la boutique *
+            Visibilité sur la boutique *
           </label>
           <select
             name="isActive"
@@ -444,19 +506,18 @@ const AdminProductEdit = () => {
         </div>
 
         {/* Boutons */}
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 pt-4">
           <button
             type="submit"
             disabled={saving}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-bold disabled:opacity-50 shadow"
           >
-            {saving ? 'Mise à jour...' : 'Mettre à jour le produit'}
+            {saving ? 'Enregistrement...' : 'Mettre à jour le produit'}
           </button>
-          
           <button
             type="button"
             onClick={() => navigate('/admin/products')}
-            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+            className="bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors font-bold"
           >
             Annuler
           </button>
