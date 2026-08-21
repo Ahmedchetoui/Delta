@@ -179,13 +179,13 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
       giftMessage,
     } = orderData;
 
-    const productIds = items.map((item) => item.product);
+    const uniqueProductIds = Array.from(new Set(items.map((item) => String(item.product))));
     const products = await Product.find({
-      _id: { $in: productIds },
+      _id: { $in: uniqueProductIds },
       isActive: true,
     }).session(session);
 
-    if (products.length !== productIds.length) {
+    if (products.length !== uniqueProductIds.length) {
       throw new OrderServiceError('Un ou plusieurs produits ne sont pas disponibles', 400);
     }
 
@@ -244,13 +244,13 @@ async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKe
     giftMessage,
   } = orderData;
 
-  const productIds = items.map((item) => item.product);
+  const uniqueProductIds = Array.from(new Set(items.map((item) => String(item.product))));
   const products = await Product.find({
-    _id: { $in: productIds },
+    _id: { $in: uniqueProductIds },
     isActive: true,
   });
 
-  if (products.length !== productIds.length) {
+  if (products.length !== uniqueProductIds.length) {
     throw new OrderServiceError('Un ou plusieurs produits ne sont pas disponibles', 400);
   }
 
