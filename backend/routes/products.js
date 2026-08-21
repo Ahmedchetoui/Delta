@@ -143,7 +143,7 @@ router.get('/', [
     const normalizedSort = normalizeSort(sort);
 
     // Construire le filtre
-    const filter = { isActive: true };
+    const filter = req.query.includeInactive === 'true' ? {} : { isActive: true };
 
     if (category) {
       filter.category = category;
@@ -752,7 +752,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     if (isFeatured !== undefined) product.isFeatured = isFeatured === 'true';
     if (isNew !== undefined) product.isNewProduct = isNew === 'true';
     if (isOnSale !== undefined) product.isOnSale = isOnSale === 'true';
-    if (isActive !== undefined) product.isActive = isActive === 'true' || isActive === true;
+    if (isActive !== undefined) product.isActive = String(isActive) === 'true';
     if (weight !== undefined) product.weight = parseFloat(weight);
     if (metaTitle !== undefined) product.metaTitle = metaTitle;
     if (metaDescription !== undefined) product.metaDescription = metaDescription;

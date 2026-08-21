@@ -418,18 +418,29 @@ const AdminProductEdit = () => {
           />
         </div>
 
-        {/* Statut */}
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            name="isActive"
-            checked={formData.isActive}
-            onChange={handleChange}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label className="ml-2 block text-sm text-gray-700">
-            Produit actif (visible sur le site)
+        {/* Statut & Visibilité */}
+        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <label className="block text-sm font-bold text-gray-800 mb-2">
+            Statut & Visibilité sur la boutique *
           </label>
+          <select
+            name="isActive"
+            value={formData.isActive ? 'true' : 'false'}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, isActive: e.target.value === 'true' }))
+            }
+            className={`w-full md:w-1/2 px-4 py-2.5 rounded-lg font-semibold text-sm border focus:ring-2 focus:outline-none ${
+              formData.isActive
+                ? 'bg-green-50 border-green-400 text-green-800 focus:ring-green-500'
+                : 'bg-red-50 border-red-400 text-red-800 focus:ring-red-500'
+            }`}
+          >
+            <option value="true">🟢 Publié (Visible sur le site)</option>
+            <option value="false">🔴 Inactif / Masqué (Caché sur la boutique)</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-2">
+            Note: Si le stock total des variantes est à 0, le site affichera automatiquement le badge <strong>"RUPTURE DE STOCK"</strong> sur le produit.
+          </p>
         </div>
 
         {/* Boutons */}
