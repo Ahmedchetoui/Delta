@@ -7,21 +7,29 @@ export function fbq(...args) {
 }
 
 /**
- * Triggers PageView on SPA route changes
+ * Garantit que la valeur est un nombre strict et valide pour Meta Pixel (ex: 33.00)
+ */
+function toValidNumber(val) {
+  const num = parseFloat(val);
+  return isNaN(num) ? 0 : Math.round(num * 100) / 100;
+}
+
+/**
+ * Suivi de la vue de page
  */
 export function trackPageView() {
   fbq('track', 'PageView');
 }
 
 /**
- * Triggers ViewContent when a user views a product page
+ * Suivi de la consultation produit (ViewContent)
  */
 export function trackViewContent(product) {
   if (!product) return;
-  const price = product.finalPrice ?? product.price ?? 0;
+  const price = toValidNumber(product.finalPrice ?? product.price ?? 0);
   fbq('track', 'ViewContent', {
-    content_name: product.name,
-    content_ids: [String(product._id || product.id)],
+    content_name: String(product.name || ''),
+    content_ids: [String(product._id || product.id || '')],
     content_type: 'product',
     value: price,
     currency: 'TND',
@@ -29,38 +37,41 @@ export function trackViewContent(product) {
 }
 
 /**
- * Triggers AddToCart when a product is ordered / added to cart
+ * Suivi de l'ajout au panier (AddToCart)
  */
 export function trackAddToCart(product, quantity = 1) {
   if (!product) return;
-  const price = product.finalPrice ?? product.price ?? 0;
+  const price = toValidNumber(product.finalPrice ?? product.price ?? 0);
+  const qty = parseInt(quantity, 10) || 1;
   fbq('track', 'AddToCart', {
-    content_name: product.name,
-    content_ids: [String(product._id || product.id)],
+    content_name: String(product.name || ''),
+    content_ids: [String(product._id || product.id || '')],
     content_type: 'product',
-    value: price * quantity,
+    value: toValidNumber(price * qty),
     currency: 'TND',
   });
 }
 
 /**
- * Triggers InitiateCheckout when starting checkout
+ * Suivi du démarrage de commande (InitiateCheckout)
  */
 export function trackInitiateCheckout(items = [], totalValue = 0) {
+  const validItems = Array.isArray(items) ? items : [];
   fbq('track', 'InitiateCheckout', {
-    content_ids: items.map((i) => String(i.product?._id || i.product || i.id)),
-    num_items: items.length,
-    value: totalValue,
+    content_ids: validItems.map((i) => String(i?.product?._id || i?.product || i?.id || '')),
+    num_items: validItems.length,
+    value: toValidNumber(totalValue),
     currency: 'TND',
   });
 }
 
 /**
- * Triggers Purchase when order is confirmed
+ * Suivi d'achat confirmé (Purchase)
  */
 export function trackPurchase(orderNumber, totalValue = 0) {
+  const value = toValidNumber(totalValue);
   fbq('track', 'Purchase', {
-    value: totalValue,
+    value: value,
     currency: 'TND',
     order_id: String(orderNumber || ''),
   });
