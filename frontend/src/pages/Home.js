@@ -110,7 +110,6 @@ const Home = () => {
             ) : (
               categories
                 .filter((c) => !c.parentCategory)
-                .slice(0, 4)
                 .map((category) => (
                   <Link key={category._id} to={`/shop?category=${category._id}`} className="group">
                     <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
