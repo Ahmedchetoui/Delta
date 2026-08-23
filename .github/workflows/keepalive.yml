@@ -2,14 +2,36 @@ name: Keep Render Backend Alive
 
 on:
   schedule:
-    # Exécuté toutes les 10 minutes (évite la mise en veille de Render)
-    - cron: '*/10 * * * *'
+    # Exécuté toutes les 14 minutes (juste avant la mise en veille Render de 15 min)
+    - cron: '*/14 * * * *'
   workflow_dispatch: # Permet aussi de déclencher manuellement depuis GitHub
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Render Backend Health Endpoint
+      - name: Ping Render Backend (avec retry et timeout long)
         run: |
-          curl -s -f https://delta-n5d8.onrender.com/api/health || echo "Ping failed or server sleeping"
+          BACKEND_URL="https://delta-n5d8.onrender.com/api/health"
+          MAX_RETRIES=3
+          TIMEOUT=120
+
+          for attempt in $(seq 1 $MAX_RETRIES); do
+            echo "Tentative $attempt/$MAX_RETRIES - Ping $BACKEND_URL"
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time $TIMEOUT "$BACKEND_URL" || true)
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Backend en ligne (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            
+            echo "⏳ Réponse HTTP $HTTP_CODE - Le serveur se réveille peut-être..."
+            
+            if [ "$attempt" -lt "$MAX_RETRIES" ]; then
+              echo "Attente de 15 secondes avant la prochaine tentative..."
+              sleep 15
+            fi
+          done
+
+          echo "⚠️ Backend n'a pas répondu après $MAX_RETRIES tentatives"
+          exit 1
