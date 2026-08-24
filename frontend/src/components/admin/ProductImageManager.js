@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { resolveImageUrl } from '../../utils/imageUtils';
 import { colorNameToHex } from '../../utils/colorUtils';
-import { ScissorIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { ScissorsIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 function ColorSwatch({ color }) {
   const hex = color?.code || colorNameToHex(color?.name || '');
@@ -82,7 +82,7 @@ function ImageCropModal({ imageUrl, onSave, onClose }) {
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5">
         <div className="flex justify-between items-center border-b pb-3">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <ScissorIcon className="h-5 w-5 text-blue-600" />
+            <ScissorsIcon className="h-5 w-5 text-blue-600" />
             Redimensionner & Cadrer la photo
           </h3>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700">
@@ -202,7 +202,7 @@ function ImagePreview({
             className="bg-blue-600 text-white p-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow flex items-center gap-1"
             title="Redimensionner et cadrer cette photo"
           >
-            <ScissorIcon className="h-4 w-4" />
+            <ScissorsIcon className="h-4 w-4" />
             Recadrer
           </button>
         </div>
