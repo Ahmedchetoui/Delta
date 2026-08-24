@@ -15,7 +15,6 @@ const ProductCard = ({ product, priority = false }) => {
   const dispatch = useDispatch();
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   const handlePrefetch = () => {
     prefetchProduct(dispatch, product._id);
@@ -84,11 +83,7 @@ const ProductCard = ({ product, priority = false }) => {
   return (
     <div
       className="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-500 flex flex-col h-full"
-      onMouseEnter={() => {
-        setIsHovered(true);
-        handlePrefetch();
-      }}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handlePrefetch}
     >
       <Link
         to={`/product/${product._id}`}
