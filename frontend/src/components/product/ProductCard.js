@@ -106,7 +106,7 @@ const ProductCard = ({ product, priority = false }) => {
             fetchPriority={priority ? 'high' : 'auto'}
             decoding="async"
             onLoad={() => setIsImageLoaded(true)}
-            className={`w-full h-full object-contain bg-slate-50 p-1 transition-all duration-700 ease-out group-hover:scale-105 ${
+            className={`w-full h-full object-cover object-center transition-all duration-700 ease-out group-hover:scale-105 ${
               isImageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
           />
