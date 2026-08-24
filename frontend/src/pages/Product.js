@@ -361,44 +361,44 @@ const Product = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Colonne gauche: Image principale */}
           <div>
-            <div className="w-full min-h-[360px] max-h-[640px] bg-white rounded-2xl shadow-md overflow-hidden relative flex items-center justify-center border border-gray-200 p-1 sm:p-2">
+            <div className="aspect-square bg-white rounded-lg shadow-md overflow-hidden relative">
               {galleryImages.length > 1 && (
-                <div className="absolute top-4 right-4 z-10 bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg backdrop-blur-sm">
+                <div className="absolute top-3 right-3 z-10 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
                   {selectedImage + 1} / {galleryImages.length}
                 </div>
               )}
               <img
-                src={getProductImageUrl(galleryImages[selectedImage] || galleryImages[0], 1000)}
+                src={getProductImageUrl(galleryImages[selectedImage] || galleryImages[0], 720)}
                 alt={currentProduct.name}
                 loading="eager"
                 fetchPriority="high"
-                width="800"
-                height="800"
-                className="max-h-[620px] w-full h-auto object-contain rounded-xl transition-all duration-300"
+                width="600"
+                height="600"
+                className="w-full h-full object-cover transition-opacity duration-500"
               />
             </div>
 
             {/* Thumbnail Images */}
             {galleryImages.length > 1 && (
-              <div className="flex flex-wrap gap-2.5 mt-4">
+              <div className="grid grid-cols-4 gap-2 mt-4">
                 {galleryImages.map((image, index) => (
                   <button
                     key={`${image.url}-${index}`}
                     type="button"
                     onClick={() => handleThumbnailClick(index)}
-                    className={`h-20 w-20 sm:h-24 sm:w-24 bg-white rounded-xl shadow-sm overflow-hidden border-2 transition-all p-1 flex items-center justify-center ${
+                    className={`aspect-square bg-white rounded-lg shadow-sm overflow-hidden border-2 ${
                       selectedImage === index
-                        ? 'border-blue-600 ring-2 ring-blue-400'
-                        : 'border-gray-200 hover:border-gray-400'
+                        ? 'border-blue-500'
+                        : 'border-gray-200'
                     }`}
                   >
                     <img
-                      src={getProductImageUrl(image, 250)}
+                      src={getProductImageUrl(image, 150)}
                       alt={`${currentProduct.name} ${index + 1}`}
                       loading="lazy"
                       width="150"
                       height="150"
-                      className="max-h-full max-w-full object-contain rounded-lg"
+                      className="w-full h-full object-cover"
                     />
                   </button>
                 ))}
