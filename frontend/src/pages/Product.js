@@ -361,44 +361,44 @@ const Product = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Colonne gauche: Image principale */}
           <div>
-            <div className="aspect-square bg-white rounded-lg shadow-md overflow-hidden relative">
+            <div className="aspect-[3/4] max-h-[580px] w-full bg-gray-50 rounded-2xl shadow-md overflow-hidden relative flex items-center justify-center border border-gray-200">
               {galleryImages.length > 1 && (
-                <div className="absolute top-3 right-3 z-10 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                <div className="absolute top-3 right-3 z-10 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
                   {selectedImage + 1} / {galleryImages.length}
                 </div>
               )}
               <img
-                src={getProductImageUrl(galleryImages[selectedImage] || galleryImages[0], 720)}
+                src={getProductImageUrl(galleryImages[selectedImage] || galleryImages[0], 900)}
                 alt={currentProduct.name}
                 loading="eager"
                 fetchPriority="high"
                 width="600"
-                height="600"
-                className="w-full h-full object-cover transition-opacity duration-500"
+                height="800"
+                className="w-full h-full object-contain transition-opacity duration-500"
               />
             </div>
 
             {/* Thumbnail Images */}
             {galleryImages.length > 1 && (
-              <div className="grid grid-cols-4 gap-2 mt-4">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 mt-4">
                 {galleryImages.map((image, index) => (
                   <button
                     key={`${image.url}-${index}`}
                     type="button"
                     onClick={() => handleThumbnailClick(index)}
-                    className={`aspect-square bg-white rounded-lg shadow-sm overflow-hidden border-2 ${
+                    className={`aspect-[3/4] h-20 bg-gray-50 rounded-xl shadow-sm overflow-hidden border-2 transition-all ${
                       selectedImage === index
-                        ? 'border-blue-500'
-                        : 'border-gray-200'
+                        ? 'border-blue-600 ring-2 ring-blue-400'
+                        : 'border-gray-200 hover:border-gray-400'
                     }`}
                   >
                     <img
-                      src={getProductImageUrl(image, 150)}
+                      src={getProductImageUrl(image, 200)}
                       alt={`${currentProduct.name} ${index + 1}`}
                       loading="lazy"
                       width="150"
-                      height="150"
-                      className="w-full h-full object-cover"
+                      height="200"
+                      className="w-full h-full object-contain"
                     />
                   </button>
                 ))}
