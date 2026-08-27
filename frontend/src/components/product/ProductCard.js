@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
@@ -15,6 +15,7 @@ const ProductCard = ({ product, priority = false }) => {
   const dispatch = useDispatch();
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const imgRef = useRef(null);
 
   const handlePrefetch = () => {
     prefetchProduct(dispatch, product._id);
@@ -80,6 +81,26 @@ const ProductCard = ({ product, priority = false }) => {
     ? getProductImageUrl(allImages[currentImgIndex % allImages.length], CARD_IMAGE_WIDTH)
     : getProductImageUrl(null, CARD_IMAGE_WIDTH);
 
+  // Réinitialiser l'état de chargement quand l'URL de l'image change (diaporama)
+  // et vérifier immédiatement si l'image est déjà en cache du navigateur.
+  useEffect(() => {
+    setIsImageLoaded(false);
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      setIsImageLoaded(true);
+    }
+  }, [activeImageUrl]);
+
+  // Callback ref pour détecter les images chargées depuis le cache du navigateur.
+  // Quand React monte un nouveau <img> (via key=), l'image peut être chargée
+  // instantanément depuis le cache avant que onLoad soit attaché.
+  const imgCallbackRef = useCallback((node) => {
+    imgRef.current = node;
+    if (node && node.complete && node.naturalWidth > 0) {
+      setIsImageLoaded(true);
+    }
+  }, []);
+
   return (
     <div
       className="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-500 flex flex-col h-full"
@@ -100,6 +121,7 @@ const ProductCard = ({ product, priority = false }) => {
           {/* Diaporama d'images avec transition fluide */}
           <img
             key={activeImageUrl}
+            ref={imgCallbackRef}
             src={activeImageUrl}
             alt={product.name}
             loading={priority ? 'eager' : 'lazy'}
