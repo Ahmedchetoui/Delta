@@ -1,6 +1,6 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useDispatch } from 'react-redux';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -194,9 +194,9 @@ function App() {
                 <div className="text-center">
                   <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
                   <p className="text-xl text-gray-600 mb-8">Page non trouvée</p>
-                  <a href="/" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                  <Link to="/" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
                     Retour à l'accueil
-                  </a>
+                  </Link>
                 </div>
               </div>
             } />

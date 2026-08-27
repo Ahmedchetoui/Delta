@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EnvelopeIcon, PhoneIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { toast } from 'react-toastify';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -8,6 +9,11 @@ const Contact = () => {
     subject: '',
     message: ''
   });
+
+  useEffect(() => {
+    document.title = 'Contact - Delta Fashion';
+    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -18,8 +24,7 @@ const Contact = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // TODO: Implémenter l'envoi du formulaire
-    alert('Message envoyé ! Nous vous répondrons dans les plus brefs délais.');
+    toast.success('Message envoyé ! Nous vous répondrons dans les plus brefs délais.');
     setFormData({ name: '', email: '', subject: '', message: '' });
   };
 

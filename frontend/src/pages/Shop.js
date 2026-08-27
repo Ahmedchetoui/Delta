@@ -41,6 +41,13 @@ const Shop = () => {
     dispatch(fetchCategories());
   }, [dispatch, categories.length, categoriesLoading, categoriesError]);
 
+  useEffect(() => {
+    document.title = search
+      ? `Recherche: "${search}" - Delta Fashion`
+      : 'Boutique - Delta Fashion';
+    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
+  }, [search]);
+
   // Récupérer les paramètres de l'URL
   const search = searchParams.get('search') || '';
   const category = searchParams.get('category') || '';

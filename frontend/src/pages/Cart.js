@@ -30,6 +30,7 @@ const Cart = () => {
 
   // Charger les informations invité au chargement de la page
   useEffect(() => {
+    document.title = 'Mon Panier - Delta Fashion';
     const guestInfo = localStorage.getItem('guestOrderInfo');
     if (guestInfo) {
       try {
@@ -43,6 +44,7 @@ const Cart = () => {
         console.error('Erreur lors du chargement des informations invité:', error);
       }
     }
+    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
   }, []);
 
   const deliveryCost = calculateShippingCost();
