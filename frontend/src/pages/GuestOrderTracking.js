@@ -15,6 +15,11 @@ const GuestOrderTracking = () => {
   const [loading, setLoading] = useState(false);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
+  React.useEffect(() => {
+    document.title = 'Suivi de commande - Delta Fashion';
+    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
+  }, []);
+
   const applyOrderData = (selectedOrder, data) => {
     setOrder(selectedOrder || null);
     setTrackingCode(
