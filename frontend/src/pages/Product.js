@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProduct } from '../store/slices/productSlice';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
@@ -189,7 +189,9 @@ const Product = () => {
   useEffect(() => {
     if (currentProduct) {
       trackViewContent(currentProduct);
+      document.title = `${currentProduct.name} - Delta Fashion`;
     }
+    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
   }, [currentProduct]);
 
   useEffect(() => {
@@ -346,13 +348,13 @@ const Product = () => {
         {/* Breadcrumb amélioré */}
         <nav className="mb-8">
           <ol className="flex items-center space-x-2 text-sm">
-            <li><a href="/" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">Accueil</a></li>
+            <li><Link to="/" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">Accueil</Link></li>
             <li><span className="text-gray-400">•</span></li>
-            <li><a href="/shop" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">Boutique</a></li>
+            <li><Link to="/shop" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">Boutique</Link></li>
             <li><span className="text-gray-400">•</span></li>
-            <li><a href={`/shop?category=${currentProduct.category?._id}`} className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
+            <li><Link to={`/shop?category=${currentProduct.category?._id}`} className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
               {currentProduct.category?.name}
-            </a></li>
+            </Link></li>
             <li><span className="text-gray-400">•</span></li>
             <li className="text-gray-700 font-semibold">{currentProduct.name}</li>
           </ol>

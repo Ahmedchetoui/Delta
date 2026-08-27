@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
 import { 
   EnvelopeIcon, 
@@ -10,6 +11,18 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Footer = () => {
+  const [footerEmail, setFooterEmail] = useState('');
+
+  const handleFooterNewsletter = (e) => {
+    e.preventDefault();
+    if (!footerEmail.trim() || !footerEmail.includes('@')) {
+      toast.error('Veuillez saisir une adresse email valide');
+      return;
+    }
+    toast.success('Merci ! Vous serez informé de nos offres et nouveautés 🎉');
+    setFooterEmail('');
+  };
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="w-full px-6 sm:px-8 lg:px-12 py-8">
@@ -105,16 +118,18 @@ const Footer = () => {
               <p className="text-gray-300 text-sm mb-3">
                 Recevez nos dernières offres et nouveautés
               </p>
-              <div className="grid grid-cols-[1fr_auto] w-full">
+              <form onSubmit={handleFooterNewsletter} className="grid grid-cols-[1fr_auto] w-full">
                 <input
                   type="email"
                   placeholder="Votre email"
+                  value={footerEmail}
+                  onChange={(e) => setFooterEmail(e.target.value)}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
                 />
-                <button className="px-5 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors">
+                <button type="submit" className="px-5 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors">
                   S'abonner
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         </div>
@@ -123,7 +138,7 @@ const Footer = () => {
         <div className="border-t border-gray-800 mt-3 py-2">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2025 Delta Fashion. Tous droits réservés.
+              © {new Date().getFullYear()} Delta Fashion. Tous droits réservés.
             </p>
             <div className="flex space-x-6 mt-0 md:mt-0 text-gray-400 text-sm">
               <span>Politique de confidentialité</span>

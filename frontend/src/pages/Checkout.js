@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { selectCartItems, selectCartTotal } from '../store/slices/cartSlice';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCartItems, selectCartTotal, clearCart } from '../store/slices/cartSlice';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -17,6 +17,7 @@ import { trackInitiateCheckout, trackPurchase } from '../utils/metaPixel';
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const items = useSelector(selectCartItems);
   const totalAmount = useSelector(selectCartTotal);
   
@@ -34,9 +35,11 @@ const Checkout = () => {
 
   // Trigger InitiateCheckout event when checkout page loads
   useEffect(() => {
+    document.title = 'Finaliser la commande - Delta Fashion';
     if (items.length > 0) {
       trackInitiateCheckout(items, totalAmount + calculateShippingCost());
     }
+    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
   }, [items, totalAmount]);
 
   // Charger les informations invité au chargement de la page
@@ -119,6 +122,9 @@ const Checkout = () => {
       const response = await api.post('/orders', orderData);
       
       trackPurchase(response.data.order.orderNumber, response.data.order.total || finalTotal);
+
+      // Vider le panier après commande réussie
+      dispatch(clearCart());
 
       toast.success('Commande passée avec succès !');
       

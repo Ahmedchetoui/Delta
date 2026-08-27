@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import Skeleton from '../components/ui/Skeleton';
@@ -7,10 +7,26 @@ import HeroSlider from '../components/ui/HeroSlider';
 import { getResponsiveImageSrcSet, resolveImageUrl } from '../utils/imageUtils';
 import { useEnsureHomeData } from '../hooks/useEnsureHomeData';
 import { fetchHomeData, clearHomeError } from '../store/slices/homeSlice';
+import { toast } from 'react-toastify';
 
 const Home = () => {
   const dispatch = useDispatch();
   useEnsureHomeData();
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+
+  useEffect(() => {
+    document.title = 'Delta Fashion - Votre style, notre passion';
+  }, []);
+
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim() || !newsletterEmail.includes('@')) {
+      toast.error('Veuillez saisir une adresse email valide');
+      return;
+    }
+    toast.success('Merci ! Vous serez informé de nos offres et nouveautés 🎉');
+    setNewsletterEmail('');
+  };
 
   const { featuredProducts = [], newProducts = [], isLoading: productsLoading } = useSelector(
     (state) => state.products || {}
@@ -184,16 +200,18 @@ const Home = () => {
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Restez Informé</h2>
           <p className="text-xl text-blue-100 mb-10">Recevez nos dernières offres et nouveautés</p>
 
-          <div className="max-w-md mx-auto flex gap-3">
+          <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto flex gap-3">
             <input
               type="email"
               placeholder="Votre email"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
               className="flex-1 px-6 py-4 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
             />
-            <button className="bg-white text-blue-900 px-8 py-4 rounded-lg font-bold hover:bg-gray-100 transition-all shadow-lg">
+            <button type="submit" className="bg-white text-blue-900 px-8 py-4 rounded-lg font-bold hover:bg-gray-100 transition-all shadow-lg">
               S'abonner
             </button>
-          </div>
+          </form>
         </div>
       </section>
     </div>
