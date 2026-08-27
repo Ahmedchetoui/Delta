@@ -81,22 +81,18 @@ const ProductCard = ({ product, priority = false }) => {
     ? getProductImageUrl(allImages[currentImgIndex % allImages.length], CARD_IMAGE_WIDTH)
     : getProductImageUrl(null, CARD_IMAGE_WIDTH);
 
-  // Réinitialiser l'état de chargement quand l'URL de l'image change (diaporama)
-  // et vérifier immédiatement si l'image est déjà en cache du navigateur.
+  // Vérifier si l'image est déjà chargée au montage ou lors du changement de ref
   useEffect(() => {
-    setIsImageLoaded(false);
     const img = imgRef.current;
-    if (img && img.complete && img.naturalWidth > 0) {
+    if (img && img.complete) {
       setIsImageLoaded(true);
     }
-  }, [activeImageUrl]);
+  }, []);
 
-  // Callback ref pour détecter les images chargées depuis le cache du navigateur.
-  // Quand React monte un nouveau <img> (via key=), l'image peut être chargée
-  // instantanément depuis le cache avant que onLoad soit attaché.
+  // Callback ref pour détection instantanée de l'image si déjà en cache
   const imgCallbackRef = useCallback((node) => {
     imgRef.current = node;
-    if (node && node.complete && node.naturalWidth > 0) {
+    if (node && node.complete) {
       setIsImageLoaded(true);
     }
   }, []);
@@ -118,9 +114,8 @@ const ProductCard = ({ product, priority = false }) => {
             <Skeleton className="absolute inset-0 w-full h-full z-10" />
           )}
 
-          {/* Diaporama d'images avec transition fluide */}
+          {/* Image avec transition fluide sans clignotement blanc */}
           <img
-            key={activeImageUrl}
             ref={imgCallbackRef}
             src={activeImageUrl}
             alt={product.name}
@@ -128,7 +123,8 @@ const ProductCard = ({ product, priority = false }) => {
             fetchPriority={priority ? 'high' : 'auto'}
             decoding="async"
             onLoad={() => setIsImageLoaded(true)}
-            className={`w-full h-full object-cover object-center transition-all duration-700 ease-out group-hover:scale-105 ${
+            onError={() => setIsImageLoaded(true)}
+            className={`w-full h-full object-cover object-center transition-opacity duration-500 ease-out group-hover:scale-105 ${
               isImageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
           />

@@ -70,7 +70,21 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white -mt-14 md:-mt-16">
       {showHeroSkeleton ? (
-        <div className="relative h-[500px] md:h-[600px] lg:h-[700px] bg-gray-200 animate-pulse" />
+        <section className="relative h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
+          <div className="absolute inset-0 pattern-overlay opacity-20" />
+          <div className="relative flex h-full items-center justify-center px-4 text-center">
+            <div>
+              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">Delta Fashion</p>
+              <h1 className="mb-6 text-5xl font-bold md:text-6xl">Votre style, notre passion</h1>
+              <Link
+                to="/shop"
+                className="inline-block rounded-lg bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
+              >
+                Découvrir la boutique
+              </Link>
+            </div>
+          </div>
+        </section>
       ) : heroSlides.length > 0 ? (
         <HeroSlider slides={heroSlides} />
       ) : (
