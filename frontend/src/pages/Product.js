@@ -74,11 +74,6 @@ const Product = () => {
 
   const hasVariants = productSizes.length > 0;
 
-  const availableColorsForSize = useMemo(
-    () => getAvailableColorsForSize(displayColors, currentProduct, selectedSizes[0]),
-    [displayColors, currentProduct, selectedSizes]
-  );
-
   const colorRequired = displayColors.length > 0;
 
   const activeColorForImage = useMemo(

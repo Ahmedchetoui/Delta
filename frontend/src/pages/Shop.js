@@ -41,13 +41,6 @@ const Shop = () => {
     dispatch(fetchCategories());
   }, [dispatch, categories.length, categoriesLoading, categoriesError]);
 
-  useEffect(() => {
-    document.title = search
-      ? `Recherche: "${search}" - Delta Fashion`
-      : 'Boutique - Delta Fashion';
-    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
-  }, [search]);
-
   // Récupérer les paramètres de l'URL
   const search = searchParams.get('search') || '';
   const category = searchParams.get('category') || '';
@@ -58,6 +51,13 @@ const Shop = () => {
   const onSale = searchParams.get('onSale') === 'true';
   const featured = searchParams.get('featured') === 'true';
   const page = parseInt(searchParams.get('page')) || 1;
+
+  useEffect(() => {
+    document.title = search
+      ? `Recherche: "${search}" - Delta Fashion`
+      : 'Boutique - Delta Fashion';
+    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
+  }, [search]);
 
   useEffect(() => {
     if (!searchParams.get('brand')) return;
