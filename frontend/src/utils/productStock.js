@@ -51,6 +51,26 @@ export function sizeHasAvailableStock(product, size) {
   );
 }
 
+// A color can be chosen before a size. In that case it is available as soon as
+// at least one of its variants still has stock. Products whose variants do not
+// manage stock by color keep all of their configured colors available.
+export function colorHasAvailableStock(product, colorName) {
+  if (!product) return false;
+  if (!product.variants?.length) return productHasStock(product);
+
+  const usesColorVariants = product.variants.some(
+    (variant) => normalizeColorName(variant.color)
+  );
+
+  if (!usesColorVariants) return productHasStock(product);
+
+  return product.variants.some(
+    (variant) =>
+      colorsEqual(variant.color, colorName) &&
+      variantHasStock(variant)
+  );
+}
+
 function sizeHasColorVariants(product, size) {
   return (product.variants || []).some(
     (v) => sizesEqual(v.size, size) && normalizeColorName(v.color)
@@ -106,5 +126,11 @@ export function getAvailableColorsForSize(displayColors, product, size) {
 
   return displayColors.filter((color) =>
     isColorAvailableForSize(product, size, color.name)
+  );
+}
+
+export function getAvailableColors(displayColors, product) {
+  return displayColors.filter((color) =>
+    colorHasAvailableStock(product, color.name)
   );
 }

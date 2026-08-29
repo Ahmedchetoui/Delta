@@ -13,6 +13,7 @@ import {
 } from '../utils/productImages';
 import {
   colorsEqual,
+  getAvailableColors,
   getAvailableColorsForSize,
   getProductSizes,
   isColorAvailableForSize,
@@ -72,9 +73,14 @@ const Product = () => {
     [currentProduct]
   );
 
+  const availableColors = useMemo(
+    () => getAvailableColors(displayColors, currentProduct),
+    [displayColors, currentProduct]
+  );
+
   const hasVariants = productSizes.length > 0;
 
-  const colorRequired = displayColors.length > 0;
+  const colorRequired = availableColors.length > 0;
 
   const activeColorForImage = useMemo(
     () => selectedColors.find((color) => color) || '',
@@ -167,8 +173,18 @@ const Product = () => {
       let changed = false;
       const next = prev.map((color, idx) => {
         const size = selectedSizes[idx];
-        if (!size || !color) return color;
-        const available = getAvailableColorsForSize(displayColors, currentProduct, size);
+        if (!color) return color;
+
+        const isAvailableForProduct = availableColors.some((c) =>
+          colorsEqual(c.name, color)
+        );
+        if (!isAvailableForProduct) {
+          changed = true;
+          return '';
+        }
+
+        if (!size) return color;
+        const available = getAvailableColorsForSize(availableColors, currentProduct, size);
         const isStillAvailable = available.some((c) => colorsEqual(c.name, color));
         if (!isStillAvailable) {
           changed = true;
@@ -178,7 +194,7 @@ const Product = () => {
       });
       return changed ? next : prev;
     });
-  }, [selectedSizes, currentProduct, displayColors]);
+  }, [selectedSizes, currentProduct, availableColors]);
 
   // Automatically select color if only one color is available for the selected size of an article
   useEffect(() => {
@@ -192,7 +208,7 @@ const Product = () => {
         const size = selectedSizes[i];
         if (!size) continue;
 
-        const avail = getAvailableColorsForSize(displayColors, currentProduct, size);
+        const avail = getAvailableColorsForSize(availableColors, currentProduct, size);
         if (avail.length === 1) {
           const onlyColor = avail[0].name;
           if (nextColors[i] !== onlyColor) {
@@ -204,14 +220,13 @@ const Product = () => {
 
       return changed ? nextColors : prevColors;
     });
-  }, [selectedSizes, colorRequired, displayColors, currentProduct, quantity]);
+  }, [selectedSizes, colorRequired, availableColors, currentProduct, quantity]);
 
-  const renderColorSwatches = (selected, onSelect, keyPrefix = '', allowPick = true, size = '') => (
+  const renderColorSwatches = (selected, onSelect, keyPrefix = '', size = '') => (
     <div className="flex flex-wrap gap-4">
-      {displayColors.map((color) => {
+      {availableColors.map((color) => {
         const isSelected = selected === color.name;
         const isDisabled =
-          !allowPick ||
           (hasVariants &&
             size &&
             !isColorAvailableForSize(currentProduct, size, color.name));
@@ -529,7 +544,10 @@ const Product = () => {
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {productSizes.map((size) => {
-                          const available = sizeHasAvailableStock(currentProduct, size);
+                          const available =
+                            sizeHasAvailableStock(currentProduct, size) &&
+                            (!selectedColors[0] ||
+                              isColorAvailableForSize(currentProduct, size, selectedColors[0]));
                           const isSelected = sizesEqual(selectedSizes[0], size);
                           return (
                             <button
@@ -552,23 +570,16 @@ const Product = () => {
                   )}
 
                   {/* Couleur */}
-                  {displayColors.length > 0 && (
+                  {availableColors.length > 0 && (
                     <div className="mb-6">
                       <h3 className="text-sm font-medium text-gray-700 mb-3">
                         Couleur <span className="text-red-500">*</span>
                       </h3>
-                      {hasVariants && !selectedSizes[0] ? (
-                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                          Veuillez d&apos;abord choisir une taille pour sélectionner les couleurs disponibles.
-                        </p>
-                      ) : (
-                        renderColorSwatches(
-                          selectedColors[0] || '',
-                          (name) => setColorAtIndex(0, name),
-                          '0-',
-                          Boolean(selectedSizes[0] || !hasVariants),
-                          selectedSizes[0]
-                        )
+                      {renderColorSwatches(
+                        selectedColors[0] || '',
+                        (name) => setColorAtIndex(0, name),
+                        '0-',
+                        selectedSizes[0]
                       )}
                     </div>
                   )}
@@ -590,7 +601,10 @@ const Product = () => {
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {productSizes.map((size) => {
-                              const available = sizeHasAvailableStock(currentProduct, size);
+                              const available =
+                                sizeHasAvailableStock(currentProduct, size) &&
+                                (!selectedColors[index] ||
+                                  isColorAvailableForSize(currentProduct, size, selectedColors[index]));
                               const isSelected = sizesEqual(selectedSizes[index], size);
                               return (
                                 <button
@@ -613,23 +627,16 @@ const Product = () => {
                       )}
 
                       {/* Couleur pour l'article */}
-                      {displayColors.length > 0 && (
+                      {availableColors.length > 0 && (
                         <div>
                           <h4 className="text-xs font-semibold text-gray-600 mb-2">
                             Couleur <span className="text-red-500">*</span>
                           </h4>
-                          {hasVariants && !selectedSizes[index] ? (
-                            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                              Veuillez d&apos;abord choisir une taille pour cet article.
-                            </p>
-                          ) : (
-                            renderColorSwatches(
-                              selectedColors[index] || '',
-                              (name) => setColorAtIndex(index, name),
-                              `${index}-`,
-                              Boolean(selectedSizes[index] || !hasVariants),
-                              selectedSizes[index]
-                            )
+                          {renderColorSwatches(
+                            selectedColors[index] || '',
+                            (name) => setColorAtIndex(index, name),
+                            `${index}-`,
+                            selectedSizes[index]
                           )}
                         </div>
                       )}
