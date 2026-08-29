@@ -38,7 +38,7 @@ const Product = () => {
   const { currentProduct, isLoading, isRefreshing } = useSelector((state) => state.products);
   const [selectedImage, setSelectedImage] = useState(0);
   const [autoPlayPaused, setAutoPlayPaused] = useState(false);
-  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedSizes, setSelectedSizes] = useState(['']);
   const [selectedColors, setSelectedColors] = useState(['']);
   const [quantity, setQuantity] = useState(1);
   const [catalogVersion, setCatalogVersion] = useState(0);
@@ -75,8 +75,8 @@ const Product = () => {
   const hasVariants = productSizes.length > 0;
 
   const availableColorsForSize = useMemo(
-    () => getAvailableColorsForSize(displayColors, currentProduct, selectedSize),
-    [displayColors, currentProduct, selectedSize]
+    () => getAvailableColorsForSize(displayColors, currentProduct, selectedSizes[0]),
+    [displayColors, currentProduct, selectedSizes]
   );
 
   const colorRequired = displayColors.length > 0;
@@ -121,43 +121,86 @@ const Product = () => {
       setAutoPlayPaused(false);
     }
   };
+  const setSizeAtIndex = (index, sizeName) => {
+    setSelectedSizes((prev) => {
+      const next = [...prev];
+      next[index] = sizeName;
+      return next;
+    });
+  };
+
   useEffect(() => {
+    setSelectedSizes((prev) => {
+      if (quantity > prev.length) {
+        const defaultSize = prev[0] || '';
+        return [...prev, ...Array(quantity - prev.length).fill(defaultSize)];
+      }
+      return prev.slice(0, quantity);
+    });
     setSelectedColors((prev) => {
       if (quantity > prev.length) {
-        return [...prev, ...Array(quantity - prev.length).fill('')];
+        const defaultColor = prev[0] || '';
+        return [...prev, ...Array(quantity - prev.length).fill(defaultColor)];
       }
       return prev.slice(0, quantity);
     });
   }, [quantity]);
 
+  // Reset color of an article if it becomes unavailable for the new selected size of that article
   useEffect(() => {
-    setSelectedColors((prev) =>
-      prev.map((color) =>
-        color && availableColorsForSize.some((c) => colorsEqual(c.name, color))
-          ? color
-          : ''
-      )
-    );
-  }, [selectedSize, availableColorsForSize]);
+    if (!currentProduct) return;
+    setSelectedColors((prev) => {
+      let changed = false;
+      const next = prev.map((color, idx) => {
+        const size = selectedSizes[idx];
+        if (!size || !color) return color;
+        const available = getAvailableColorsForSize(displayColors, currentProduct, size);
+        const isStillAvailable = available.some((c) => colorsEqual(c.name, color));
+        if (!isStillAvailable) {
+          changed = true;
+          return '';
+        }
+        return color;
+      });
+      return changed ? next : prev;
+    });
+  }, [selectedSizes, currentProduct, displayColors]);
 
+  // Automatically select color if only one color is available for the selected size of an article
   useEffect(() => {
-    if (!selectedSize || !colorRequired || availableColorsForSize.length !== 1) return;
+    if (!currentProduct || !colorRequired) return;
 
-    const onlyColor = availableColorsForSize[0].name;
-    setSelectedColors((prev) =>
-      Array.from({ length: quantity }, (_, index) => prev[index] || onlyColor)
-    );
-  }, [selectedSize, colorRequired, availableColorsForSize, quantity]);
+    setSelectedColors((prevColors) => {
+      let changed = false;
+      const nextColors = [...prevColors];
 
-  const renderColorSwatches = (selected, onSelect, keyPrefix = '', allowPick = true) => (
+      for (let i = 0; i < quantity; i++) {
+        const size = selectedSizes[i];
+        if (!size) continue;
+
+        const avail = getAvailableColorsForSize(displayColors, currentProduct, size);
+        if (avail.length === 1) {
+          const onlyColor = avail[0].name;
+          if (nextColors[i] !== onlyColor) {
+            nextColors[i] = onlyColor;
+            changed = true;
+          }
+        }
+      }
+
+      return changed ? nextColors : prevColors;
+    });
+  }, [selectedSizes, colorRequired, displayColors, currentProduct, quantity]);
+
+  const renderColorSwatches = (selected, onSelect, keyPrefix = '', allowPick = true, size = '') => (
     <div className="flex flex-wrap gap-4">
       {displayColors.map((color) => {
         const isSelected = selected === color.name;
         const isDisabled =
           !allowPick ||
           (hasVariants &&
-            selectedSize &&
-            !isColorAvailableForSize(currentProduct, selectedSize, color.name));
+            size &&
+            !isColorAvailableForSize(currentProduct, size, color.name));
         const hex = color.code || colorNameToHex(color.name);
         return (
           <div key={`${keyPrefix}${color.name}`} className="flex flex-col items-center">
@@ -230,9 +273,16 @@ const Product = () => {
       toast.error('Veuillez saisir votre adresse complète');
       return false;
     }
-    if (hasVariants && !selectedSize) {
-      toast.error('Veuillez sélectionner une taille');
-      return false;
+    if (hasVariants) {
+      const sizesForOrder = selectedSizes.slice(0, quantity);
+      if (sizesForOrder.length < quantity || sizesForOrder.some((s) => !s)) {
+        toast.error(
+          quantity === 1
+            ? 'Veuillez sélectionner une taille'
+            : `Veuillez sélectionner une taille pour chaque article (${quantity} tailles)`
+        );
+        return false;
+      }
     }
     if (colorRequired) {
       const colorsForOrder = selectedColors.slice(0, quantity);
@@ -256,25 +306,26 @@ const Product = () => {
   };
 
   const buildOrderItemsFromProduct = () => {
-    const colorsForOrder = colorRequired ? selectedColors.slice(0, quantity) : [];
-    if (colorsForOrder.length > 0) {
-      const byColor = colorsForOrder.reduce((acc, color) => {
-        acc[color] = (acc[color] || 0) + 1;
-        return acc;
-      }, {});
-      return Object.entries(byColor).map(([color, qty]) => ({
-        product: currentProduct._id,
-        quantity: qty,
-        size: selectedSize || null,
-        color,
-      }));
+    const itemsGrouped = {};
+
+    for (let i = 0; i < quantity; i++) {
+      const size = hasVariants ? (selectedSizes[i] || null) : null;
+      const color = colorRequired ? (selectedColors[i] || null) : null;
+      const key = `${size || 'no-size'}_${color || 'no-color'}`;
+
+      if (itemsGrouped[key]) {
+        itemsGrouped[key].quantity += 1;
+      } else {
+        itemsGrouped[key] = {
+          product: currentProduct._id,
+          quantity: 1,
+          size,
+          color,
+        };
+      }
     }
-    return [{
-      product: currentProduct._id,
-      quantity: parseInt(quantity, 10),
-      size: selectedSize || null,
-      color: null,
-    }];
+
+    return Object.values(itemsGrouped);
   };
 
   const handleConfirmOrder = async () => {
@@ -429,100 +480,150 @@ const Product = () => {
               </div>
             </div>
 
-            {/* Taille */}
-            {hasVariants && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  Taille <span className="text-red-500">*</span>
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {productSizes.map((size) => {
-                    const available = sizeHasAvailableStock(currentProduct, size);
-                    const isSelected = sizesEqual(selectedSize, size);
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => available && setSelectedSize(size)}
-                        disabled={!available}
-                        className={`min-w-10 h-10 px-2 border rounded text-sm font-medium ${
-                          isSelected
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                        } ${!available ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        {size}
-                      </button>
-                    );
-                  })}
+            {/* Quantité & Options */}
+            <div className="space-y-6">
+              {/* Quantité */}
+              <div className="bg-white border border-gray-300 rounded-lg p-3">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Quantité</h3>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center font-medium text-sm">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
-            )}
 
-            {/* Quantité (défaut : 1) */}
-            <div className="bg-white border border-gray-300 rounded-lg p-3">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Quantité</h3>
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
-                >
-                  -
-                </button>
-                <span className="w-8 text-center font-medium text-sm">{quantity}</span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Couleur(s) — une par article */}
-            {displayColors.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  {quantity === 1 ? 'Couleur' : 'Couleurs'}{' '}
-                  <span className="text-red-500">*</span>
-                  {quantity > 1 && (
-                    <span className="text-gray-500 font-normal text-xs ml-1">
-                      (1 couleur par article)
-                    </span>
-                  )}
-                </h3>
-                {hasVariants && !selectedSize ? (
-                  <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                    Veuillez d&apos;abord choisir une taille pour sélectionner les couleurs disponibles.
-                  </p>
-                ) : quantity === 1 ? (
-                  renderColorSwatches(
-                    selectedColors[0] || '',
-                    (name) => setColorAtIndex(0, name),
-                    '',
-                    Boolean(selectedSize || !hasVariants)
-                  )
-                ) : (
-                  <div className="space-y-4">
-                    {Array.from({ length: quantity }, (_, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                        <p className="text-xs font-medium text-gray-600 mb-2">
-                          Article {index + 1}
-                        </p>
-                        {renderColorSwatches(
-                          selectedColors[index] || '',
-                          (name) => setColorAtIndex(index, name),
-                          `${index}-`,
-                          Boolean(selectedSize || !hasVariants)
-                        )}
+              {quantity === 1 ? (
+                // Mode unitaire simple
+                <>
+                  {/* Taille */}
+                  {hasVariants && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">
+                        Taille <span className="text-red-500">*</span>
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {productSizes.map((size) => {
+                          const available = sizeHasAvailableStock(currentProduct, size);
+                          const isSelected = sizesEqual(selectedSizes[0], size);
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => available && setSizeAtIndex(0, size)}
+                              disabled={!available}
+                              className={`min-w-10 h-10 px-2 border rounded text-sm font-medium ${
+                                isSelected
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                              } ${!available ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                    </div>
+                  )}
+
+                  {/* Couleur */}
+                  {displayColors.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">
+                        Couleur <span className="text-red-500">*</span>
+                      </h3>
+                      {hasVariants && !selectedSizes[0] ? (
+                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                          Veuillez d&apos;abord choisir une taille pour sélectionner les couleurs disponibles.
+                        </p>
+                      ) : (
+                        renderColorSwatches(
+                          selectedColors[0] || '',
+                          (name) => setColorAtIndex(0, name),
+                          '0-',
+                          Boolean(selectedSizes[0] || !hasVariants),
+                          selectedSizes[0]
+                        )
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                // Mode multiple - Taille et couleur répétées par article
+                <div className="space-y-4">
+                  {Array.from({ length: quantity }, (_, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
+                      <p className="text-sm font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                        Article {index + 1}
+                      </p>
+
+                      {/* Taille pour l'article */}
+                      {hasVariants && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-600 mb-2">
+                            Taille <span className="text-red-500">*</span>
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {productSizes.map((size) => {
+                              const available = sizeHasAvailableStock(currentProduct, size);
+                              const isSelected = sizesEqual(selectedSizes[index], size);
+                              return (
+                                <button
+                                  key={size}
+                                  type="button"
+                                  onClick={() => available && setSizeAtIndex(index, size)}
+                                  disabled={!available}
+                                  className={`min-w-8 h-8 px-2 border rounded text-xs font-medium ${
+                                    isSelected
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                                  } ${!available ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                  {size}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Couleur pour l'article */}
+                      {displayColors.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-600 mb-2">
+                            Couleur <span className="text-red-500">*</span>
+                          </h4>
+                          {hasVariants && !selectedSizes[index] ? (
+                            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                              Veuillez d&apos;abord choisir une taille pour cet article.
+                            </p>
+                          ) : (
+                            renderColorSwatches(
+                              selectedColors[index] || '',
+                              (name) => setColorAtIndex(index, name),
+                              `${index}-`,
+                              Boolean(selectedSizes[index] || !hasVariants),
+                              selectedSizes[index]
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Informations de livraison */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
@@ -669,15 +770,22 @@ const Product = () => {
               </div>
 
               <div className="space-y-3 mb-6 text-sm">
-                <div className="bg-gray-50 rounded-lg p-3">
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1">
                   <p className="font-semibold text-gray-900 mb-1">{currentProduct.name}</p>
-                  {selectedSize && <p className="text-gray-600">Taille : {selectedSize}</p>}
-                  {colorRequired && (
-                    <p className="text-gray-600">
-                      Couleur(s) : {selectedColors.slice(0, quantity).filter(Boolean).join(', ')}
-                    </p>
-                  )}
                   <p className="text-gray-600">Quantité : {quantity}</p>
+                  {Array.from({ length: quantity }, (_, idx) => {
+                    const size = selectedSizes[idx];
+                    const color = selectedColors[idx];
+                    const labels = [];
+                    if (size) labels.push(`Taille: ${size}`);
+                    if (color) labels.push(`Couleur: ${color}`);
+                    if (labels.length === 0) return null;
+                    return (
+                      <p key={idx} className="text-xs text-gray-500">
+                        Article {idx + 1} : {labels.join(' · ')}
+                      </p>
+                    );
+                  })}
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-3">
