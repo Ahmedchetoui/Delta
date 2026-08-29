@@ -129,6 +129,25 @@ const Product = () => {
     });
   };
 
+  // Auto-select size if only 1 size is available for the product
+  useEffect(() => {
+    if (!currentProduct || productSizes.length !== 1) return;
+    const onlySize = productSizes[0];
+    if (!sizeHasAvailableStock(currentProduct, onlySize)) return;
+
+    setSelectedSizes((prev) => {
+      let changed = false;
+      const next = prev.map((s) => {
+        if (!s) {
+          changed = true;
+          return onlySize;
+        }
+        return s;
+      });
+      return changed ? next : prev;
+    });
+  }, [currentProduct, productSizes]);
+
   useEffect(() => {
     setSelectedSizes((prev) => {
       if (quantity > prev.length) {
