@@ -2,8 +2,8 @@ name: Keep Render Backend Alive
 
 on:
   schedule:
-    # Exécuté toutes les 14 minutes (évite la mise en veille Render de 15 min)
-    - cron: '*/14 * * * *'
+    # Marge suffisante avant le délai de veille éventuel de Render.
+    - cron: '*/10 * * * *'
   workflow_dispatch: # Permet le déclenchement manuel depuis GitHub
 
 jobs:

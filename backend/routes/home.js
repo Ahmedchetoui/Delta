@@ -17,7 +17,7 @@ const router = express.Router();
 // @access  Public
 // Cache CDN court : le catalogue reste réactif après une modification tout en
 // absorbant les arrivées simultanées de visiteurs.
-router.get('/', publicCacheRevalidate(0, 0), async (req, res) => {
+router.get('/', publicCacheRevalidate(60, 300), async (req, res) => {
   try {
     const [categories, featuredRaw, newRaw, banners] = await Promise.all([
       Category.find({ isActive: true })
