@@ -1,5 +1,6 @@
 import { fetchHomeData } from '../store/slices/homeSlice';
 import { prefetchShopProducts } from './prefetch';
+import { readHomeCache } from './homeCache';
 
 function scheduleShopPrefetch(dispatch) {
   const prefetch = () => prefetchShopProducts(dispatch);
@@ -15,7 +16,8 @@ function scheduleShopPrefetch(dispatch) {
 }
 
 export function bootstrapApp(dispatch) {
-  const request = dispatch(fetchHomeData());
+  const cachedHomeData = readHomeCache();
+  const request = dispatch(fetchHomeData({ force: Boolean(cachedHomeData) }));
 
   request
     .unwrap()

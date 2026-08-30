@@ -7,6 +7,40 @@ import homeReducer from './slices/homeSlice';
 import orderReducer from './slices/orderSlice';
 import uiReducer from './slices/uiSlice';
 import adminRequestReducer from './slices/adminRequestSlice';
+import { readHomeCache } from '../utils/homeCache';
+
+function getPreloadedHomeState() {
+  const cachedHomeData = readHomeCache();
+  if (!cachedHomeData) return undefined;
+
+  const products = productReducer(undefined, { type: '@@INIT' });
+  const allHomeProducts = [
+    ...cachedHomeData.featuredProducts,
+    ...cachedHomeData.newProducts,
+  ];
+  const productCache = allHomeProducts.reduce((cache, product) => {
+    cache[product._id] = { product, loadedAt: Date.now() };
+    return cache;
+  }, {});
+
+  return {
+    home: {
+      ...homeReducer(undefined, { type: '@@INIT' }),
+      banners: cachedHomeData.banners,
+      loadedAt: Date.now(),
+    },
+    categories: {
+      ...categoryReducer(undefined, { type: '@@INIT' }),
+      categories: cachedHomeData.categories,
+    },
+    products: {
+      ...products,
+      featuredProducts: cachedHomeData.featuredProducts,
+      newProducts: cachedHomeData.newProducts,
+      productCache,
+    },
+  };
+}
 
 export const store = configureStore({
   reducer: {
@@ -19,6 +53,7 @@ export const store = configureStore({
     ui: uiReducer,
     adminRequests: adminRequestReducer,
   },
+  preloadedState: getPreloadedHomeState(),
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
@@ -26,4 +61,3 @@ export const store = configureStore({
       },
     }),
 });
-

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { getApiBaseUrl } from '../../config/apiConfig';
+import { writeHomeCache } from '../../utils/homeCache';
 
 const API_URL = getApiBaseUrl();
 const HOME_STALE_MS = 5 * 60 * 1000;
@@ -13,6 +14,7 @@ export const fetchHomeData = createAsyncThunk(
         timeout: 90000,
         params: options.force ? { _t: Date.now() } : undefined,
       });
+      writeHomeCache(response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -22,9 +24,9 @@ export const fetchHomeData = createAsyncThunk(
   },
   {
     condition: (options = {}, { getState }) => {
-      if (options.force) return true;
       const { home } = getState();
       if (home.isLoading) return false;
+      if (options.force) return true;
       if (home.loadedAt && Date.now() - home.loadedAt < HOME_STALE_MS) {
         return false;
       }
