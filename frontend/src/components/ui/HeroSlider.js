@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
 
 const HeroSlider = ({ slides = [] }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -51,11 +52,15 @@ const HeroSlider = ({ slides = [] }) => {
               decoding={index === 0 ? 'sync' : 'async'}
               width="1920"
               height="700"
+              onError={(e) => {
+                e.currentTarget.src = PLACEHOLDER_IMAGE;
+                e.currentTarget.srcset = '';
+              }}
               className="absolute inset-0 w-full h-full object-cover"
             />
 
-            {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/95 via-gray-900/90 to-blue-900/80"></div>
+            {/* Subtle Gradient Overlay so Banner is clearly visible */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30"></div>
 
             {/* Pattern Overlay */}
             <div className="absolute inset-0 pattern-overlay opacity-20"></div>

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import Skeleton from '../components/ui/Skeleton';
 import ProductCard from '../components/product/ProductCard';
 import HeroSlider from '../components/ui/HeroSlider';
-import { getResponsiveImageSrcSet, resolveImageUrl } from '../utils/imageUtils';
+import { getResponsiveImageSrcSet, resolveImageUrl, PLACEHOLDER_IMAGE } from '../utils/imageUtils';
 import { useEnsureHomeData } from '../hooks/useEnsureHomeData';
 import { fetchHomeData, clearHomeError } from '../store/slices/homeSlice';
 import { toast } from 'react-toastify';
@@ -152,6 +152,10 @@ const Home = () => {
                         loading="lazy"
                         width="600"
                         height="800"
+                        onError={(e) => {
+                          e.currentTarget.src = PLACEHOLDER_IMAGE;
+                          e.currentTarget.srcset = '';
+                        }}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />

@@ -1,21 +1,19 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
-import Skeleton from '../ui/Skeleton';
 import { normalizeProductImages, getProductImageUrl } from '../../utils/productImages';
 import { normalizeProductColors, colorNameToHex } from '../../utils/colorUtils';
 import { productHasStock, colorsEqual } from '../../utils/productStock';
 import { prefetchProduct } from '../../utils/prefetch';
+import { PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
 
 const CARD_IMAGE_WIDTH = 600;
 
 const ProductCard = ({ product, priority = false }) => {
   const dispatch = useDispatch();
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const imgRef = useRef(null);
 
   const handlePrefetch = () => {
     prefetchProduct(dispatch, product._id);
@@ -81,21 +79,11 @@ const ProductCard = ({ product, priority = false }) => {
     ? getProductImageUrl(allImages[currentImgIndex % allImages.length], CARD_IMAGE_WIDTH)
     : getProductImageUrl(null, CARD_IMAGE_WIDTH);
 
-  // Vérifier si l'image est déjà chargée au montage ou lors du changement de ref
-  useEffect(() => {
-    const img = imgRef.current;
-    if (img && img.complete) {
-      setIsImageLoaded(true);
-    }
-  }, []);
+  const [imgSrc, setImgSrc] = useState(activeImageUrl);
 
-  // Callback ref pour détection instantanée de l'image si déjà en cache
-  const imgCallbackRef = useCallback((node) => {
-    imgRef.current = node;
-    if (node && node.complete) {
-      setIsImageLoaded(true);
-    }
-  }, []);
+  useEffect(() => {
+    setImgSrc(activeImageUrl);
+  }, [activeImageUrl]);
 
   return (
     <div
@@ -110,23 +98,14 @@ const ProductCard = ({ product, priority = false }) => {
       >
         {/* Cadre Image avec Ratio 3:4 optimisé pour le textile */}
         <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100">
-          {!isImageLoaded && (
-            <Skeleton className="absolute inset-0 w-full h-full z-10" />
-          )}
-
-          {/* Image avec transition fluide sans clignotement blanc */}
           <img
-            ref={imgCallbackRef}
-            src={activeImageUrl}
+            src={imgSrc || PLACEHOLDER_IMAGE}
             alt={product.name}
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : 'auto'}
             decoding="async"
-            onLoad={() => setIsImageLoaded(true)}
-            onError={() => setIsImageLoaded(true)}
-            className={`w-full h-full object-cover object-center transition-opacity duration-500 ease-out group-hover:scale-105 ${
-              isImageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            onError={() => setImgSrc(PLACEHOLDER_IMAGE)}
+            className="w-full h-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />

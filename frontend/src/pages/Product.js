@@ -7,6 +7,7 @@ import Loading from '../components/ui/Loading';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { normalizeProductColors, colorNameToHex } from '../utils/colorUtils';
+import { PLACEHOLDER_IMAGE } from '../utils/imageUtils';
 import {
   getImagesForColor,
   getProductImageUrl,
@@ -456,6 +457,7 @@ const Product = () => {
                 fetchPriority="high"
                 width="600"
                 height="600"
+                onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMAGE; }}
                 className="w-full h-full object-cover transition-opacity duration-500"
               />
             </div>
@@ -480,6 +482,7 @@ const Product = () => {
                       loading="lazy"
                       width="150"
                       height="150"
+                      onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMAGE; }}
                       className="w-full h-full object-cover"
                     />
                   </button>
