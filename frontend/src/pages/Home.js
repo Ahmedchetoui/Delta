@@ -218,15 +218,15 @@ const Home = () => {
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Restez Informé</h2>
           <p className="text-xl text-blue-100 mb-10">Recevez nos dernières offres et nouveautés</p>
 
-          <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto flex gap-3">
+          <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto flex flex-col sm:flex-row gap-3 px-2 sm:px-0">
             <input
               type="email"
               placeholder="Votre email"
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
-              className="flex-1 px-6 py-4 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="flex-1 w-full px-6 py-4 rounded-xl focus:ring-2 focus:ring-blue-400 focus:outline-none text-gray-900 text-base"
             />
-            <button type="submit" className="bg-white text-blue-900 px-8 py-4 rounded-lg font-bold hover:bg-gray-100 transition-all shadow-lg">
+            <button type="submit" className="w-full sm:w-auto shrink-0 bg-white text-blue-900 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-lg text-base whitespace-nowrap">
               S'abonner
             </button>
           </form>
