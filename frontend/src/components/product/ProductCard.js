@@ -247,19 +247,19 @@ const ProductCard = ({ product, priority = false }) => {
 
           <div>
             {/* Prix & Statut Stock */}
-            <div className="flex items-baseline justify-between mb-4">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl sm:text-2xl font-extrabold text-blue-600">
-                  {displayFinalPrice.toFixed(2)} {t('currency')}
+            <div className="flex items-baseline justify-between mb-4 gap-2 flex-wrap sm:flex-nowrap">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-xl sm:text-2xl font-extrabold text-blue-600 whitespace-nowrap">
+                  {displayFinalPrice % 1 === 0 ? displayFinalPrice : displayFinalPrice.toFixed(2)} {t('currency')}
                 </span>
                 {displayOriginalPrice && (
-                  <span className="text-xs sm:text-sm text-gray-400 line-through">
-                    {displayOriginalPrice.toFixed(2)} {t('currency')}
+                  <span className="text-xs sm:text-sm text-gray-400 line-through whitespace-nowrap">
+                    {displayOriginalPrice % 1 === 0 ? displayOriginalPrice : displayOriginalPrice.toFixed(2)} {t('currency')}
                   </span>
                 )}
               </div>
               <span
-                className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
                   inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                 }`}
               >

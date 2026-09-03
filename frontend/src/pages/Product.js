@@ -542,11 +542,11 @@ const Product = () => {
 
               <div className="flex items-center gap-3 mb-6 flex-wrap">
                 <div className="text-3xl font-bold" style={{ color: '#B8860B' }}>
-                  {productPrice.toFixed(2)} {t('currency')}
+                  {productPrice % 1 === 0 ? productPrice : productPrice.toFixed(2)} {t('currency')}
                 </div>
                 {displayOriginalPrice && (
                   <div className="text-xl text-gray-400 line-through">
-                    {displayOriginalPrice.toFixed(2)} {t('currency')}
+                    {displayOriginalPrice % 1 === 0 ? displayOriginalPrice : displayOriginalPrice.toFixed(2)} {t('currency')}
                   </div>
                 )}
                 {discountPercent && (
