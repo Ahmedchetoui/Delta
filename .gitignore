@@ -31,3 +31,4 @@ backend/scripts/cloudinary-onboarding.js
 Thumbs.db
 .vscode/
 .idea/
+.vercel/
