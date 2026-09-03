@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { EnvelopeIcon, PhoneIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
+import { useLanguage } from '../context/LanguageContext';
 
 const Contact = () => {
+  const { t, lang } = useLanguage();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -11,9 +13,9 @@ const Contact = () => {
   });
 
   useEffect(() => {
-    document.title = 'Contact - Delta Fashion';
+    document.title = `${t('contactUs')} - Delta Fashion`;
     return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
-  }, []);
+  }, [t]);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,7 +26,7 @@ const Contact = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    toast.success('Message envoyé ! Nous vous répondrons dans les plus brefs délais.');
+    toast.success(lang === 'ar' ? 'تم إرسال الرسالة! سنقوم بالرد عليك في أقرب وقت.' : 'Message envoyé ! Nous vous répondrons dans les plus brefs délais.');
     setFormData({ name: '', email: '', subject: '', message: '' });
   };
 
@@ -34,11 +36,10 @@ const Contact = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Contactez-nous
+            {t('contactUs')}
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Nous sommes là pour vous aider ! N'hésitez pas à nous contacter pour 
-            toute question ou assistance.
+            {t('contactSubtitle')}
           </p>
         </div>
 
@@ -46,14 +47,14 @@ const Contact = () => {
           {/* Contact Form */}
           <div className="bg-white rounded-lg shadow-md p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Envoyez-nous un message
+              {t('sendMessage')}
             </h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Nom complet *
+                    {t('fullName')} *
                   </label>
                   <input
                     type="text"
@@ -63,7 +64,7 @@ const Contact = () => {
                     value={formData.name}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Votre nom"
+                    placeholder={lang === 'ar' ? 'اسمك الكامل' : 'Votre nom'}
                   />
                 </div>
                 
@@ -86,7 +87,7 @@ const Contact = () => {
               
               <div>
                 <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                  Sujet *
+                  {t('subject')} *
                 </label>
                 <select
                   id="subject"
@@ -96,19 +97,19 @@ const Contact = () => {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Sélectionnez un sujet</option>
-                  <option value="question">Question générale</option>
-                  <option value="order">Commande</option>
-                  <option value="return">Retour/Échange</option>
-                  <option value="complaint">Réclamation</option>
-                  <option value="suggestion">Suggestion</option>
-                  <option value="other">Autre</option>
+                  <option value="">{t('selectSubject')}</option>
+                  <option value="question">{t('generalQuestion')}</option>
+                  <option value="order">{t('orderSubject')}</option>
+                  <option value="return">{t('returnSubject')}</option>
+                  <option value="complaint">{t('complaintSubject')}</option>
+                  <option value="suggestion">{t('suggestionSubject')}</option>
+                  <option value="other">{t('otherSubject')}</option>
                 </select>
               </div>
               
               <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  Message *
+                  {t('message')} *
                 </label>
                 <textarea
                   id="message"
@@ -118,7 +119,7 @@ const Contact = () => {
                   value={formData.message}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Décrivez votre demande en détail..."
+                  placeholder={t('describeRequest')}
                 />
               </div>
               
@@ -126,7 +127,7 @@ const Contact = () => {
                 type="submit"
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                Envoyer le message
+                {t('sendButton')}
               </button>
             </form>
           </div>
@@ -136,47 +137,47 @@ const Contact = () => {
             {/* Contact Details */}
             <div className="bg-white rounded-lg shadow-md p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Informations de contact
+                {t('contactInfoHeading')}
               </h2>
               
               <div className="space-y-6">
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-4 rtl:space-x-reverse">
                   <PhoneIcon className="h-6 w-6 text-blue-600 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-gray-900">Téléphone</h3>
-                    <p className="text-gray-600">+216 25 807 407</p>
-                    <p className="text-sm text-gray-500">Lun-Ven: 9h-18h</p>
+                    <h3 className="font-semibold text-gray-900">{t('phone')}</h3>
+                    <p className="text-gray-600" dir="ltr">+216 25 807 407</p>
+                    <p className="text-sm text-gray-500">{lang === 'ar' ? 'الإثنين-الجمعة: 9ص-6م' : 'Lun-Ven: 9h-18h'}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-4 rtl:space-x-reverse">
                   <EnvelopeIcon className="h-6 w-6 text-blue-600 mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Email</h3>
-                    <p className="text-gray-600">contact@deltafashion.tn</p>
-                    <p className="text-sm text-gray-500">Réponse sous 24h</p>
+                    <p className="text-gray-600" dir="ltr">contact@deltafashion.tn</p>
+                    <p className="text-sm text-gray-500">{t('responseDelay')}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-4 rtl:space-x-reverse">
                   <MapPinIcon className="h-6 w-6 text-blue-600 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-gray-900">Adresse</h3>
+                    <h3 className="font-semibold text-gray-900">{t('address')}</h3>
                     <p className="text-gray-600">
-                      Monastir, Manzel ennour<br />
-                      Tunisie
+                      {lang === 'ar' ? 'المنستير، منزل النور' : 'Monastir, Manzel ennour'}<br />
+                      {lang === 'ar' ? 'تونس' : 'Tunisie'}
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-4 rtl:space-x-reverse">
                   <ClockIcon className="h-6 w-6 text-blue-600 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-gray-900">Horaires</h3>
+                    <h3 className="font-semibold text-gray-900">{t('schedules')}</h3>
                     <div className="text-gray-600 text-sm">
-                      <p>Lundi - Vendredi: 9h00 - 18h00</p>
-                      <p>Samedi: 9h00 - 16h00</p>
-                      <p>Dimanche: Fermé</p>
+                      <p>{lang === 'ar' ? 'الإثنين - الجمعة: 9:00 - 18:00' : 'Lundi - Vendredi: 9h00 - 18h00'}</p>
+                      <p>{lang === 'ar' ? 'السبت: 9:00 - 16:00' : 'Samedi: 9h00 - 16h00'}</p>
+                      <p>{lang === 'ar' ? 'الأحد: مغلق' : 'Dimanche: Fermé'}</p>
                     </div>
                   </div>
                 </div>
@@ -186,37 +187,34 @@ const Contact = () => {
             {/* FAQ */}
             <div className="bg-white rounded-lg shadow-md p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Questions fréquentes
+                {t('faqHeading')}
               </h2>
               
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">
-                    Comment puis-je suivre ma commande ?
+                    {lang === 'ar' ? 'كيف يمكنني تتبع طلبي؟' : 'Comment puis-je suivre ma commande ?'}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    Vous recevrez un email de confirmation avec un numéro de suivi. 
-                    Vous pouvez également utiliser notre page de suivi des commandes.
+                    {lang === 'ar' ? 'ستتلقى رمز التتبع فور شحن الطلب، ويمكنك استخدام صفحة متابعة الطلبات على موقعنا.' : 'Vous recevrez un email de confirmation avec un numéro de suivi. Vous pouvez également utiliser notre page de suivi des commandes.'}
                   </p>
                 </div>
                 
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">
-                    Quels sont vos délais de livraison ?
+                    {lang === 'ar' ? 'ما هي آليات وأوقات التوصيل؟' : 'Quels sont vos délais de livraison ?'}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    La livraison standard prend 2-3 jours ouvrés. La livraison express 
-                    est disponible pour 1 jour ouvré.
+                    {lang === 'ar' ? 'التوصيل العادي يستغرق بين 2 إلى 3 أيام عمل لجميع الولايات.' : 'La livraison standard prend 2-3 jours ouvrés. La livraison express est disponible pour 1 jour ouvré.'}
                   </p>
                 </div>
                 
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">
-                    Puis-je retourner un article ?
+                    {lang === 'ar' ? 'هل يمكنني إرجاع أو استبدال منتج؟' : 'Puis-je retourner un article ?'}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    Oui, vous avez 14 jours pour retourner un article non porté, 
-                    dans son emballage d'origine.
+                    {lang === 'ar' ? 'نعم، يمكنك استبدال المنتج بنفس القيمة أو إرجاعه وفق شروط الإرجاع لدينا.' : 'Oui, vous avez 14 jours pour retourner un article non porté, dans son emballage d\'origine.'}
                   </p>
                 </div>
               </div>

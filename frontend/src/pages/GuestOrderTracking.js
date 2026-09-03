@@ -3,8 +3,10 @@ import { toast } from 'react-toastify';
 import { ArrowPathIcon, TruckIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import { getFiabiloBadgeClass } from '../utils/fiabiloTracking';
+import { useLanguage } from '../context/LanguageContext';
 
 const GuestOrderTracking = () => {
+  const { t, lang } = useLanguage();
   const [reference, setReference] = useState('');
   const [order, setOrder] = useState(null);
   const [ordersList, setOrdersList] = useState([]);
@@ -16,9 +18,9 @@ const GuestOrderTracking = () => {
   const [trackingLoading, setTrackingLoading] = useState(false);
 
   React.useEffect(() => {
-    document.title = 'Suivi de commande - Delta Fashion';
+    document.title = `${t('trackingTitle')} - Delta Fashion`;
     return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
-  }, []);
+  }, [t]);
 
   const applyOrderData = (selectedOrder, data) => {
     setOrder(selectedOrder || null);
@@ -65,17 +67,17 @@ const GuestOrderTracking = () => {
     e.preventDefault();
 
     if (!reference.trim()) {
-      toast.error('Veuillez saisir un code colis ou un numéro de téléphone');
+      toast.error(lang === 'ar' ? 'يرجى إدخال رمز الطرد أو رقم الهاتف' : 'Veuillez saisir un code colis ou un numéro de téléphone');
       return;
     }
 
     setLoading(true);
     try {
       await fetchTracking({ live: true });
-      toast.success('Suivi trouvé !');
+      toast.success(lang === 'ar' ? 'تم العثور على التتبع!' : 'Suivi trouvé !');
     } catch (error) {
       console.error('Erreur:', error);
-      toast.error(error.response?.data?.message || 'Suivi non trouvé');
+      toast.error(error.response?.data?.message || (lang === 'ar' ? 'لم يتم العثور على التتبع' : 'Suivi non trouvé'));
       setOrder(null);
       setOrdersList([]);
       setTrackingOnly(false);
@@ -91,10 +93,10 @@ const GuestOrderTracking = () => {
     setTrackingLoading(true);
     try {
       await fetchTracking({ live: true });
-      toast.success('Suivi actualisé');
+      toast.success(lang === 'ar' ? 'تم تحديث التتبع' : 'Suivi actualisé');
     } catch (error) {
       console.error('Erreur:', error);
-      toast.error(error.response?.data?.message || 'Impossible d\'actualiser le suivi');
+      toast.error(error.response?.data?.message || (lang === 'ar' ? 'تعذر تحديث التتبع' : 'Impossible d\'actualiser le suivi'));
     } finally {
       setTrackingLoading(false);
     }
@@ -114,7 +116,7 @@ const GuestOrderTracking = () => {
   };
 
   const getStatusText = (status) => {
-    const statusMap = {
+    const statusMapFr = {
       pending: 'En attente',
       confirmed: 'Confirmée',
       processing: 'En cours de traitement',
@@ -123,17 +125,34 @@ const GuestOrderTracking = () => {
       cancelled: 'Annulée',
       refunded: 'Remboursée',
     };
-    return statusMap[status] || status;
+    const statusMapAr = {
+      pending: 'قيد الانتظار',
+      confirmed: 'مؤكدة',
+      processing: 'قيد المعالجة',
+      shipped: 'تم الشحن',
+      delivered: 'تم التسليم',
+      cancelled: 'ملغاة',
+      refunded: 'تم المسترجع',
+    };
+    const map = lang === 'ar' ? statusMapAr : statusMapFr;
+    return map[status] || status;
   };
 
   const getPaymentStatusText = (status) => {
-    const statusMap = {
+    const statusMapFr = {
       pending: 'En attente',
       paid: 'Payé',
       failed: 'Échoué',
       refunded: 'Remboursé',
     };
-    return statusMap[status] || status;
+    const statusMapAr = {
+      pending: 'في الانتظار',
+      paid: 'مدفوع',
+      failed: 'فشل',
+      refunded: 'مسترجع',
+    };
+    const map = lang === 'ar' ? statusMapAr : statusMapFr;
+    return map[status] || status;
   };
 
   const showResults = order || trackingOnly;
@@ -142,9 +161,9 @@ const GuestOrderTracking = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Suivi de commande</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('trackingTitle')}</h1>
           <p className="text-gray-600">
-            Saisissez le code colis (code-barres) ou votre numéro de téléphone (8 chiffres)
+            {t('trackingSubtitle')}
           </p>
         </div>
 
@@ -152,7 +171,7 @@ const GuestOrderTracking = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Code colis ou téléphone
+                {t('codeOrPhone')}
               </label>
               <input
                 type="text"
@@ -164,8 +183,9 @@ const GuestOrderTracking = () => {
                 required
               />
               <p className="text-xs text-gray-500 mt-2">
-                Code colis : numéro à 9 chiffres ou plus sur l&apos;étiquette Fiabilo.
-                Téléphone : les 8 derniers chiffres de votre numéro.
+                {lang === 'ar' 
+                  ? 'رمز الطرد: رقم متكون من 9 أرقام أو أكثر. الهاتف: أخر 8 أرقام من رقم هاتفك.' 
+                  : 'Code colis : numéro à 9 chiffres ou plus sur l\'étiquette Fiabilo. Téléphone : les 8 derniers chiffres de votre numéro.'}
               </p>
             </div>
 
@@ -174,7 +194,7 @@ const GuestOrderTracking = () => {
               disabled={loading}
               className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
             >
-              {loading ? 'Recherche...' : 'Rechercher'}
+              {loading ? (lang === 'ar' ? 'جاري البحث...' : 'Recherche...') : t('search')}
             </button>
           </form>
         </div>
@@ -184,7 +204,7 @@ const GuestOrderTracking = () => {
             {ordersList.length > 1 && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm font-medium text-blue-900 mb-3">
-                  {ordersList.length} commandes trouvées pour ce numéro — sélectionnez une commande :
+                  {ordersList.length} {lang === 'ar' ? 'طلبيات موجودة لهذا الرقم — اختر طلبية:' : 'commandes trouvées pour ce numéro — sélectionnez une commande :'}
                 </p>
                 <div className="space-y-2">
                   {ordersList.map((o) => (
@@ -192,15 +212,15 @@ const GuestOrderTracking = () => {
                       key={o._id}
                       type="button"
                       onClick={() => handleSelectOrder(o)}
-                      className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                      className={`w-full text-left rtl:text-right px-4 py-3 rounded-lg border transition-colors ${
                         order?._id === o._id
                           ? 'border-blue-500 bg-blue-100'
                           : 'border-gray-200 bg-white hover:bg-gray-50'
                       }`}
                     >
                       <span className="font-medium">{o.orderNumber}</span>
-                      <span className="text-gray-500 ml-2">
-                        — {new Date(o.createdAt).toLocaleDateString('fr-FR')} — {getStatusText(o.orderStatus)}
+                      <span className="text-gray-500 ml-2 rtl:ml-0 rtl:mr-2">
+                        — {new Date(o.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-TN' : 'fr-FR')} — {getStatusText(o.orderStatus)}
                       </span>
                     </button>
                   ))}
@@ -212,9 +232,12 @@ const GuestOrderTracking = () => {
               <div className="border-b border-gray-200 pb-6 mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Commande #{order.orderNumber}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {lang === 'ar' ? `طلب رقم #${order.orderNumber}` : `Commande #${order.orderNumber}`}
+                    </h2>
                     <p className="text-gray-600 mt-1">
-                      Passée le {new Date(order.createdAt).toLocaleDateString('fr-FR', {
+                      {lang === 'ar' ? 'بتاريخ ' : 'Passée le '} 
+                      {new Date(order.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-TN' : 'fr-FR', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -234,14 +257,14 @@ const GuestOrderTracking = () => {
 
             {trackingOnly && !order && (
               <div className="mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Suivi colis Fiabilo</h2>
-                <p className="text-sm text-gray-600 mt-1">Code colis : {trackingCode}</p>
+                <h2 className="text-xl font-bold text-gray-900">{lang === 'ar' ? 'تتبع طرد فيابيلو' : 'Suivi colis Fiabilo'}</h2>
+                <p className="text-sm text-gray-600 mt-1">{lang === 'ar' ? 'رمز الطرد:' : 'Code colis :'} {trackingCode}</p>
               </div>
             )}
 
             {order && !trackingCode && order.fiabilo?.syncStatus !== 'synced' && (
               <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
-                Le suivi livraison Fiabilo sera disponible après l&apos;envoi de votre colis.
+                {lang === 'ar' ? 'سيكون تتبع التوصيل متوفراً فور شحن طردك.' : 'Le suivi livraison Fiabilo sera disponible après l\'envoi de votre colis.'}
               </div>
             )}
 
@@ -249,8 +272,8 @@ const GuestOrderTracking = () => {
               <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                   <h3 className="text-lg font-semibold text-orange-900 flex items-center">
-                    <TruckIcon className="h-5 w-5 mr-2" />
-                    État livraison Fiabilo
+                    <TruckIcon className="h-5 w-5 mr-2 rtl:mr-0 rtl:ml-2" />
+                    {lang === 'ar' ? 'حالة التوصيل' : 'État livraison Fiabilo'}
                   </h3>
                   {trackingCode && (
                     <button
@@ -259,15 +282,15 @@ const GuestOrderTracking = () => {
                       disabled={trackingLoading}
                       className="inline-flex items-center justify-center px-3 py-2 text-sm bg-white border border-orange-300 text-orange-800 rounded-lg hover:bg-orange-100 disabled:opacity-50"
                     >
-                      <ArrowPathIcon className={`h-4 w-4 mr-2 ${trackingLoading ? 'animate-spin' : ''}`} />
-                      Actualiser
+                      <ArrowPathIcon className={`h-4 w-4 mr-2 rtl:mr-0 rtl:ml-2 ${trackingLoading ? 'animate-spin' : ''}`} />
+                      {lang === 'ar' ? 'تحديث' : 'Actualiser'}
                     </button>
                   )}
                 </div>
 
                 {trackingCode && (
                   <p className="text-sm text-orange-800 mb-2">
-                    <span className="font-medium">Code colis :</span> {trackingCode}
+                    <span className="font-medium">{lang === 'ar' ? 'رمز الطرد:' : 'Code colis :'}</span> {trackingCode}
                   </p>
                 )}
 
@@ -282,7 +305,7 @@ const GuestOrderTracking = () => {
                     </span>
                     {fiabiloTracking.reason && (
                       <p className="text-sm text-orange-800">
-                        <span className="font-medium">Motif :</span> {fiabiloTracking.reason}
+                        <span className="font-medium">{lang === 'ar' ? 'السبب:' : 'Motif :'}</span> {fiabiloTracking.reason}
                       </p>
                     )}
                   </div>
@@ -293,10 +316,10 @@ const GuestOrderTracking = () => {
             {order && (
               <>
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Articles commandés</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">{lang === 'ar' ? 'المنتجات المطلوبة' : 'Articles commandés'}</h3>
                   <div className="space-y-4">
                     {order.items.map((item, index) => (
-                      <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                      <div key={index} className="flex items-center space-x-4 rtl:space-x-reverse p-4 border border-gray-200 rounded-lg">
                         <img
                           src={item.image || '/placeholder-image.jpg'}
                           alt={item.name}
@@ -305,15 +328,15 @@ const GuestOrderTracking = () => {
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">{item.name}</h4>
                           <div className="text-sm text-gray-600 space-y-1">
-                            {item.size && <p>Taille: {item.size}</p>}
-                            {item.color && <p>Couleur: {item.color}</p>}
-                            <p>Quantité: {item.quantity}</p>
+                            {item.size && <p>{t('size')}: {item.size}</p>}
+                            {item.color && <p>{t('color')}: {item.color}</p>}
+                            <p>{t('quantity')}: {item.quantity}</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium text-gray-900">{item.price.toFixed(2)} DT</p>
+                        <div className="text-right rtl:text-left">
+                          <p className="font-medium text-gray-900">{item.price.toFixed(2)} {t('currency')}</p>
                           <p className="text-sm text-gray-600">
-                            Total: {(item.price * item.quantity).toFixed(2)} DT
+                            {t('total')}: {(item.price * item.quantity).toFixed(2)} {t('currency')}
                           </p>
                         </div>
                       </div>
@@ -323,38 +346,38 @@ const GuestOrderTracking = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Adresse de livraison</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">{lang === 'ar' ? 'عنوان التوصيل' : 'Adresse de livraison'}</h3>
                     <div className="text-gray-600 space-y-1">
                       <p className="font-medium">{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
                       <p>{order.shippingAddress.street}</p>
                       <p>{order.shippingAddress.city} {order.shippingAddress.postalCode}</p>
                       <p>{order.shippingAddress.country}</p>
-                      <p>📞 {order.shippingAddress.phone}</p>
+                      <p dir="ltr">📞 {order.shippingAddress.phone}</p>
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Résumé financier</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">{lang === 'ar' ? 'ملخص الحساب' : 'Résumé financier'}</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Sous-total</span>
-                        <span>{order.subtotal.toFixed(2)} DT</span>
+                        <span className="text-gray-600">{t('subtotal')}</span>
+                        <span>{order.subtotal.toFixed(2)} {t('currency')}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Livraison</span>
-                        <span>{order.shippingCost.toFixed(2)} DT</span>
+                        <span className="text-gray-600">{t('deliveryCost')}</span>
+                        <span>{order.shippingCost.toFixed(2)} {t('currency')}</span>
                       </div>
                       <div className="border-t border-gray-200 pt-2">
                         <div className="flex justify-between font-semibold text-lg">
-                          <span>Total</span>
-                          <span>{order.total.toFixed(2)} DT</span>
+                          <span>{t('total')}</span>
+                          <span>{order.total.toFixed(2)} {t('currency')}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Paiement</span>
+                        <span className="text-sm text-gray-600">{lang === 'ar' ? 'الدفع' : 'Paiement'}</span>
                         <span className="text-sm font-medium text-yellow-600">
                           {getPaymentStatusText(order.paymentStatus)}
                         </span>
@@ -368,13 +391,13 @@ const GuestOrderTracking = () => {
         )}
 
         <div className="mt-8 bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">Besoin d&apos;aide ?</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">{lang === 'ar' ? 'تحتاج مساعدة؟' : 'Besoin d\'aide ?'}</h3>
           <p className="text-blue-700 mb-4">
-            Contactez-nous si vous ne trouvez pas votre suivi.
+            {lang === 'ar' ? 'اتصل بنا إذا لم تجد التتبع الخاص بك.' : 'Contactez-nous si vous ne trouvez pas votre suivi.'}
           </p>
           <div className="space-y-2 text-sm text-blue-600">
-            <p>📞 Téléphone: +216 25 807 407</p>
-            <p>🕒 Horaires: Lun-Ven 9h-18h, Sam 9h-13h</p>
+            <p dir="ltr">📞 +216 25 807 407</p>
+            <p>{lang === 'ar' ? '🕒 المواعيد: الإثنين-الجمعة 9ص-6م، السبت 9ص-1ظ' : '🕒 Horaires: Lun-Ven 9h-18h, Sam 9h-13h'}</p>
           </div>
         </div>
       </div>

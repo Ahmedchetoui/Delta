@@ -1,3 +1,6 @@
+/* Google Fonts for Arabic & English */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
+
 /* Premium Styles */
 @import './styles/premium-styles.css';
 
@@ -10,6 +13,10 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 
+  html[lang="ar"], body.rtl-mode {
+    font-family: 'Cairo', 'Inter', system-ui, sans-serif;
+  }
+
   body {
     @apply bg-gray-50 text-gray-900;
   }
@@ -20,7 +27,16 @@
   h4,
   h5,
   h6 {
-    font-family: 'Poppins', system-ui, sans-serif;
+    font-family: 'Poppins', 'Cairo', system-ui, sans-serif;
+  }
+
+  html[lang="ar"] h1,
+  html[lang="ar"] h2,
+  html[lang="ar"] h3,
+  html[lang="ar"] h4,
+  html[lang="ar"] h5,
+  html[lang="ar"] h6 {
+    font-family: 'Cairo', system-ui, sans-serif;
   }
 }
 

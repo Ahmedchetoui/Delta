@@ -8,11 +8,13 @@ import { normalizeProductColors, colorNameToHex } from '../../utils/colorUtils';
 import { productHasStock, colorsEqual } from '../../utils/productStock';
 import { prefetchProduct } from '../../utils/prefetch';
 import { PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
+import { useLanguage } from '../../context/LanguageContext';
 
 const CARD_IMAGE_WIDTH = 600;
 
 const ProductCard = ({ product, priority = false }) => {
   const dispatch = useDispatch();
+  const { lang, t, isRTL } = useLanguage();
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
   const handlePrefetch = () => {
@@ -22,7 +24,7 @@ const ProductCard = ({ product, priority = false }) => {
   const handleWishlist = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    toast.info('Fonctionnalité wishlist à venir !');
+    toast.info(lang === 'ar' ? 'ميزة المفضلات قادماً قريباً!' : 'Fonctionnalité wishlist à venir !');
   };
 
   const inStock = productHasStock(product);
@@ -111,19 +113,19 @@ const ProductCard = ({ product, priority = false }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
           {/* Badges d'état (PROMO, NOUVEAU) */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
+          <div className="absolute top-3 left-3 rtl:left-auto rtl:right-3 flex flex-col gap-2 z-20">
             {discountPercent ? (
               <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full uppercase shadow-lg tracking-wide">
                 -{discountPercent}%
               </span>
             ) : product.isOnSale ? (
               <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full uppercase shadow-lg tracking-wide">
-                🔥 PROMO
+                🔥 {lang === 'ar' ? 'تخفيض' : 'PROMO'}
               </span>
             ) : product.isNewProduct ? (
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full uppercase shadow-lg tracking-wide">
                 <SparklesIcon className="h-3.5 w-3.5" />
-                NOUVEAU
+                {lang === 'ar' ? 'جديد' : 'NOUVEAU'}
               </span>
             ) : null}
           </div>
@@ -132,13 +134,13 @@ const ProductCard = ({ product, priority = false }) => {
           <button
             type="button"
             onClick={handleWishlist}
-            className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center bg-white/90 hover:bg-white text-gray-700 hover:text-red-500 rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110 z-20"
+            className="absolute top-3 right-3 rtl:right-auto rtl:left-3 w-9 h-9 flex items-center justify-center bg-white/90 hover:bg-white text-gray-700 hover:text-red-500 rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110 z-20"
             aria-label="Ajouter aux favoris"
           >
             <HeartIcon className="h-5 w-5 transition-colors" />
           </button>
 
-          {/* Indicateurs Diaporama (Changement automatique et manuel d'images) */}
+          {/* Indicateurs Diaporama */}
           {allImages.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-md">
               {allImages.map((_, idx) => (
@@ -164,7 +166,7 @@ const ProductCard = ({ product, priority = false }) => {
           {!inStock && (
             <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-xs flex items-center justify-center z-20">
               <span className="text-white font-bold text-sm sm:text-base tracking-wider px-4 py-2 border-2 border-white/80 rounded-lg bg-black/30">
-                RUPTURE DE STOCK
+                {lang === 'ar' ? 'نفذت الكمية' : 'RUPTURE DE STOCK'}
               </span>
             </div>
           )}
@@ -175,7 +177,7 @@ const ProductCard = ({ product, priority = false }) => {
           <div>
             <h3
               className="font-semibold text-gray-900 mb-2.5 line-clamp-2 group-hover:text-blue-600 transition-colors text-base"
-              style={{ fontFamily: "'Montserrat', sans-serif" }}
+              style={{ fontFamily: isRTL ? "'Cairo', sans-serif" : "'Montserrat', sans-serif" }}
             >
               {product.name}
             </h3>
@@ -183,7 +185,9 @@ const ProductCard = ({ product, priority = false }) => {
             {/* Tailles */}
             {derivedSizes?.length > 0 && (
               <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                <span className="text-xs font-semibold text-gray-400">Tailles:</span>
+                <span className="text-xs font-semibold text-gray-400">
+                  {lang === 'ar' ? 'المقاسات:' : 'Tailles:'}
+                </span>
                 {derivedSizes.slice(0, 5).map((size, idx) => (
                   <span
                     key={idx}
@@ -198,9 +202,11 @@ const ProductCard = ({ product, priority = false }) => {
               </div>
             )}
 
-            {/* Couleurs avec changement au survol */}
+            {/* Couleurs */}
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-semibold text-gray-400">Couleurs:</span>
+              <span className="text-xs font-semibold text-gray-400">
+                {lang === 'ar' ? 'الألوان:' : 'Couleurs:'}
+              </span>
               {colorItems.length > 0 ? (
                 <div className="flex gap-1.5">
                   {colorItems.map((c) => {
@@ -211,7 +217,7 @@ const ProductCard = ({ product, priority = false }) => {
                         onMouseEnter={() => handleColorHover(c.name)}
                         className="w-4 h-4 rounded-full border border-gray-300 shadow-xs cursor-pointer hover:scale-125 transition-transform"
                         style={{ backgroundColor: hex }}
-                        title={`Couleur ${c.name} (Survoler pour voir)`}
+                        title={`Couleur ${c.name}`}
                       />
                     );
                   })}
@@ -227,11 +233,11 @@ const ProductCard = ({ product, priority = false }) => {
             <div className="flex items-baseline justify-between mb-4">
               <div className="flex items-baseline gap-2">
                 <span className="text-xl sm:text-2xl font-extrabold text-blue-600">
-                  {product.finalPrice ?? product.price} DT
+                  {product.finalPrice ?? product.price} {t('currency')}
                 </span>
                 {discountPercent && (
                   <span className="text-xs sm:text-sm text-gray-400 line-through">
-                    {product.price} DT
+                    {product.price} {t('currency')}
                   </span>
                 )}
               </div>
@@ -240,16 +246,16 @@ const ProductCard = ({ product, priority = false }) => {
                   inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                 }`}
               >
-                {inStock ? '✓ En stock' : 'Rupture'}
+                {inStock ? (lang === 'ar' ? '✓ متوفر' : '✓ En stock') : (lang === 'ar' ? 'غير متوفر' : 'Rupture')}
               </span>
             </div>
 
             {/* Bouton Voir Détails */}
             <div className="relative overflow-hidden">
               <span className="inline-flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300 border-2 border-blue-600 text-blue-600 group-hover:bg-blue-600 group-hover:text-white cursor-pointer shadow-xs">
-                Voir Détails
+                {lang === 'ar' ? 'عرض التفاصيل' : 'Voir Détails'}
                 <svg
-                  className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
+                  className={`ml-2 rtl:ml-0 rtl:mr-2 h-4 w-4 transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 ${isRTL ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

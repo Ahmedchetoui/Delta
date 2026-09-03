@@ -7,6 +7,7 @@ import './index.css';
 import App from './App';
 import { store } from './store/store';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import { LanguageProvider } from './context/LanguageContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -14,7 +15,9 @@ root.render(
     <Provider store={store}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ErrorBoundary>
-          <App />
+          <LanguageProvider>
+            <App />
+          </LanguageProvider>
         </ErrorBoundary>
       </BrowserRouter>
     </Provider>

@@ -12,10 +12,12 @@ import {
   DEFAULT_GOVERNORATE,
 } from '../constants/tunisiaGovernorates';
 import { calculateShippingCost } from '../constants/shipping';
+import { useLanguage } from '../context/LanguageContext';
 
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t, lang } = useLanguage();
   const items = useSelector(selectCartItems);
   const totalAmount = useSelector(selectCartTotal);
 
@@ -30,7 +32,7 @@ const Cart = () => {
 
   // Charger les informations invité au chargement de la page
   useEffect(() => {
-    document.title = 'Mon Panier - Delta Fashion';
+    document.title = `${t('cart')} - Delta Fashion`;
     const guestInfo = localStorage.getItem('guestOrderInfo');
     if (guestInfo) {
       try {
@@ -45,7 +47,7 @@ const Cart = () => {
       }
     }
     return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
-  }, []);
+  }, [t]);
 
   const deliveryCost = calculateShippingCost();
   const total = totalAmount + deliveryCost;
@@ -53,29 +55,27 @@ const Cart = () => {
   const handleQuantityChange = (itemId, newQuantity) => {
     if (newQuantity < 1) {
       dispatch(removeFromCart(itemId));
-      toast.success('Produit retiré du panier');
+      toast.success(lang === 'ar' ? 'تمت إزالة المنتج من السلة' : 'Produit retiré du panier');
     } else {
       dispatch(updateCartItemQuantity({ itemId, quantity: newQuantity }));
     }
   };
 
-
-
   const handleClearCart = () => {
     dispatch(clearCart());
-    toast.success('Panier vidé');
+    toast.success(lang === 'ar' ? 'تم تفريغ السلة' : 'Panier vidé');
   };
 
   const handleCancelOrder = () => {
     dispatch(clearCart());
     localStorage.removeItem('guestOrderInfo');
-    toast.success('Commande annulée');
+    toast.success(lang === 'ar' ? 'تم إلغاء الطلب' : 'Commande annulée');
     setShowCancelModal(false);
   };
 
   const handleDirectOrder = async () => {
     if (!fullName.trim() || !phone.trim() || !address.trim() || !city.trim()) {
-      toast.error('Veuillez remplir toutes les informations de livraison');
+      toast.error(lang === 'ar' ? 'يرجى إكمال جميع معلومات التوصيل' : 'Veuillez remplir toutes les informations de livraison');
       return;
     }
 
@@ -103,7 +103,7 @@ const Cart = () => {
 
       const response = await api.post('/orders', orderData);
 
-      toast.success('Commande passée avec succès !');
+      toast.success(lang === 'ar' ? 'تم إرسال الطلب بنجاح!' : 'Commande passée avec succès !');
       dispatch(clearCart());
 
       navigate('/order-confirmation', {
@@ -115,7 +115,7 @@ const Cart = () => {
 
     } catch (error) {
       console.error('Erreur lors de la commande:', error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+      toast.error(error.response?.data?.message || (lang === 'ar' ? 'حدث خطأ عند إرسال الطلب' : 'Erreur lors de la commande'));
     } finally {
       setIsOrdering(false);
     }
@@ -128,16 +128,16 @@ const Cart = () => {
           <div className="text-center">
             <ShoppingCartIcon className="mx-auto h-24 w-24 text-gray-400 mb-4" />
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Votre panier est vide
+              {t('emptyCartTitle')}
             </h1>
             <p className="text-lg text-gray-600 mb-8">
-              Découvrez nos produits et ajoutez-les à votre panier
+              {t('emptyCartDesc')}
             </p>
             <Link
               to="/shop"
               className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block"
             >
-              Commencer mes achats
+              {t('startShopping')}
             </Link>
           </div>
         </div>
@@ -149,76 +149,75 @@ const Cart = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Informations de livraison selon l'image 3 */}
+        {/* Informations de livraison */}
         <div className="bg-green-100 border border-green-300 rounded-lg p-4 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations de livraison:</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('shippingInfo')}</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nom:</label>
-              <div className="text-right text-gray-900 font-medium">{fullName}</div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fullName')}:</label>
+              <div className="text-left rtl:text-right text-gray-900 font-medium">{fullName}</div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone:</label>
-              <div className="text-right text-gray-900 font-medium">{phone}</div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone')}:</label>
+              <div className="text-left rtl:text-right text-gray-900 font-medium" dir="ltr">{phone}</div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gouvernorat:</label>
-              <div className="text-right text-gray-900 font-medium">{governorate}</div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('governorate')}:</label>
+              <div className="text-left rtl:text-right text-gray-900 font-medium">{governorate}</div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ville:</label>
-              <div className="text-right text-gray-900 font-medium">{city}</div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('city')}:</label>
+              <div className="text-left rtl:text-right text-gray-900 font-medium">{city}</div>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Adresse:</label>
-              <div className="text-right text-gray-900 font-medium">{address}</div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fullAddress')}:</label>
+              <div className="text-left rtl:text-right text-gray-900 font-medium">{address}</div>
             </div>
           </div>
 
-          <div className="flex space-x-3">
+          <div className="flex space-x-3 rtl:space-x-reverse">
             <button
               onClick={() => {
-                // Permettre la modification des informations
-                const newName = prompt('Modifier le nom:', fullName);
+                const newName = prompt(lang === 'ar' ? 'تعديل الاسم:' : 'Modifier le nom:', fullName);
                 if (newName) setFullName(newName);
               }}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-sm"
             >
-              📝 Modifier
+              📝 {t('editInfo')}
             </button>
             <button
               onClick={handleClearCart}
               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors text-sm"
             >
-              🗑️ Effacer
+              🗑️ {t('clearCart')}
             </button>
           </div>
         </div>
 
-        {/* Récapitulatif des prix selon l'image 3 */}
+        {/* Récapitulatif des prix */}
         <div className="bg-white border rounded-lg p-4 mb-6">
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-700">Sous-total:</span>
-              <span className="font-semibold text-gray-900">{totalAmount.toFixed(2)} DT</span>
+              <span className="text-gray-700">{t('subtotal')}:</span>
+              <span className="font-semibold text-gray-900">{totalAmount.toFixed(2)} {t('currency')}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-700">Livraison:</span>
-              <span className="font-semibold text-gray-900">{deliveryCost.toFixed(2)} DT</span>
+              <span className="text-gray-700">{t('deliveryCost')}:</span>
+              <span className="font-semibold text-gray-900">{deliveryCost.toFixed(2)} {t('currency')}</span>
             </div>
             <hr className="border-gray-200" />
             <div className="flex justify-between text-lg font-bold">
-              <span className="text-gray-900">Total:</span>
-              <span className="text-gray-900">{total.toFixed(2)} DT</span>
+              <span className="text-gray-900">{t('total')}:</span>
+              <span className="text-gray-900">{total.toFixed(2)} {t('currency')}</span>
             </div>
           </div>
         </div>
 
-        {/* Quantité selon l'image 3 */}
+        {/* Quantité */}
         <div className="bg-white border rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Quantité:</h3>
-          <div className="flex items-center space-x-3">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('quantity')}:</h3>
+          <div className="flex items-center space-x-3 rtl:space-x-reverse">
             <button
               onClick={() => {
                 if (items.length > 0) {
@@ -248,12 +247,11 @@ const Cart = () => {
         {/* Section de confirmation finale */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
           <div className="flex items-start">
-            <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600 mr-3 mt-0.5" />
+            <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600 mr-3 rtl:mr-0 rtl:ml-3 mt-0.5" />
             <div>
-              <h3 className="text-lg font-semibold text-yellow-800 mb-2">Confirmation finale</h3>
+              <h3 className="text-lg font-semibold text-yellow-800 mb-2">{t('finalConfirmation')}</h3>
               <p className="text-yellow-700 text-sm mb-3">
-                Vérifiez vos informations avant de confirmer votre commande.
-                Vous pouvez encore modifier ou annuler votre commande.
+                {t('verifyBeforeConfirm')}
               </p>
             </div>
           </div>
@@ -268,13 +266,13 @@ const Cart = () => {
           >
             {isOrdering ? (
               <>
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
-                Commande en cours...
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2 rtl:mr-0 rtl:ml-2"></div>
+                {t('orderInProgress')}
               </>
             ) : (
               <>
-                <ShoppingCartIcon className="h-6 w-6 mr-2" />
-                Confirmer la commande - {total.toFixed(2)} DT
+                <ShoppingCartIcon className="h-6 w-6 mr-2 rtl:mr-0 rtl:ml-2" />
+                {t('confirmOrder')} - {total.toFixed(2)} {t('currency')}
               </>
             )}
           </button>
@@ -284,19 +282,19 @@ const Cart = () => {
             disabled={isOrdering}
             className="flex-1 bg-red-600 text-white py-4 px-6 rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
           >
-            <TrashIcon className="h-6 w-6 mr-2" />
-            Annuler la commande
+            <TrashIcon className="h-6 w-6 mr-2 rtl:mr-0 rtl:ml-2" />
+            {t('cancelOrder')}
           </button>
         </div>
 
-        {/* Articles du panier (version simplifiée) */}
+        {/* Articles du panier */}
         {items.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Articles dans votre panier:</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{lang === 'ar' ? 'المنتجات في السلة:' : 'Articles dans votre panier:'}</h3>
             <div className="space-y-3">
               {items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between border-b pb-2">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 rtl:space-x-reverse">
                     <img
                       src={getProductImageUrl(
                         getImagesForColor(
@@ -313,21 +311,21 @@ const Cart = () => {
                     <div>
                       <div className="font-medium text-gray-900">{item.product?.name}</div>
                       <div className="text-sm text-gray-500">
-                        {item.size && `Taille: ${item.size}`}
+                        {item.size && `${t('size')}: ${item.size}`}
                         {normalizeCartColors(item).length > 0 && (
                           <span>
                             {item.size ? ' · ' : ''}
-                            Couleur{item.quantity > 1 ? 's' : ''}: {formatColorsLabel(normalizeCartColors(item))}
+                            {t('color')}{item.quantity > 1 ? 's' : ''}: {formatColorsLabel(normalizeCartColors(item))}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right rtl:text-left">
                     <div className="font-semibold text-gray-900">
-                      {(item.price * item.quantity).toFixed(2)} DT
+                      {(item.price * item.quantity).toFixed(2)} {t('currency')}
                     </div>
-                    <div className="text-sm text-gray-500">Qté: {item.quantity}</div>
+                    <div className="text-sm text-gray-500">{t('quantity')}: {item.quantity}</div>
                   </div>
                 </div>
               ))}
@@ -341,10 +339,9 @@ const Cart = () => {
             <div className="bg-white rounded-lg max-w-md w-full p-6">
               <div className="text-center mb-6">
                 <ExclamationTriangleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Annuler la commande ?</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">{t('cancelOrderModalTitle')}</h2>
                 <p className="text-gray-600">
-                  Êtes-vous sûr de vouloir annuler votre commande ?
-                  Tous les articles seront supprimés du panier et vos informations seront effacées.
+                  {t('cancelOrderModalDesc')}
                 </p>
               </div>
 
@@ -353,13 +350,13 @@ const Cart = () => {
                   onClick={() => setShowCancelModal(false)}
                   className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                 >
-                  Garder ma commande
+                  {t('keepOrder')}
                 </button>
                 <button
                   onClick={handleCancelOrder}
                   className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
                 >
-                  Oui, annuler
+                  {t('yesCancel')}
                 </button>
               </div>
             </div>

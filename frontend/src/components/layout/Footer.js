@@ -9,9 +9,11 @@ import {
   HeartIcon, 
   StarIcon 
 } from '@heroicons/react/24/outline';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Footer = () => {
   const [footerEmail, setFooterEmail] = useState('');
+  const { t } = useLanguage();
 
   const handleFooterNewsletter = (e) => {
     e.preventDefault();
@@ -33,10 +35,9 @@ const Footer = () => {
               Delta Fashion
             </h3>
             <p className="text-gray-300 mb-4">
-              Votre boutique de mode en ligne pour tous vos besoins vestimentaires. 
-              Qualité, style et prix imbattables.
+              {t('footerDesc')}
             </p>
-            <div className="flex space-x-4 mt-6">
+            <div className="flex space-x-4 rtl:space-x-reverse mt-6">
               <button type="button" className="text-gray-400 hover:text-white transition-colors" aria-label="Partager">
                 <ShareIcon className="h-6 w-6" />
               </button>
@@ -51,26 +52,26 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-lg font-semibold mb-6">Navigation</h4>
+            <h4 className="text-lg font-semibold mb-6">{t('navigationHeading')}</h4>
             <ul className="space-y-3">
               <li>
                 <Link to="/" className="text-gray-300 hover:text-white transition-colors">
-                  Accueil
+                  {t('homeNav')}
                 </Link>
               </li>
               <li>
                 <Link to="/shop" className="text-gray-300 hover:text-white transition-colors">
-                  Boutique
+                  {t('shopNav')}
                 </Link>
               </li>
               <li>
                 <Link to="/contact" className="text-gray-300 hover:text-white transition-colors">
-                  Contact
+                  {t('contactNav')}
                 </Link>
               </li>
               <li>
                 <Link to="/delivery" className="text-gray-300 hover:text-white transition-colors">
-                  Livraison
+                  {t('deliveryNav')}
                 </Link>
               </li>
             </ul>
@@ -78,33 +79,33 @@ const Footer = () => {
 
           {/* Customer Service */}
           <div>
-            <h4 className="text-lg font-semibold mb-6">Service Client</h4>
+            <h4 className="text-lg font-semibold mb-6">{t('customerServiceHeading')}</h4>
             <ul className="space-y-3">
               <li>
                 <Link to="/guest-order-tracking" className="text-gray-300 hover:text-white transition-colors">
-                  Suivi de commande
+                  {t('orderTrackingLink')}
                 </Link>
               </li>
-              <li><span className="text-gray-400">Retours & Échanges</span></li>
-              <li><span className="text-gray-400">FAQ</span></li>
-              <li><span className="text-gray-400">Guide des tailles</span></li>
-              <li><span className="text-gray-400">Conditions d'utilisation</span></li>
+              <li><span className="text-gray-400">{t('returnsExchanges')}</span></li>
+              <li><span className="text-gray-400">{t('faq')}</span></li>
+              <li><span className="text-gray-400">{t('sizeGuide')}</span></li>
+              <li><span className="text-gray-400">{t('termsOfUse')}</span></li>
             </ul>
           </div>
 
           {/* Contact Info */}
           <div>
-            <h4 className="text-lg font-semibold mb-6">Contact</h4>
+            <h4 className="text-lg font-semibold mb-6">{t('contactHeading')}</h4>
             <div className="space-y-3">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <PhoneIcon className="h-5 w-5 text-blue-400" />
-                <span className="text-gray-300">+216 25 807 407</span>
+                <span className="text-gray-300" dir="ltr">+216 25 807 407</span>
               </div>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <EnvelopeIcon className="h-5 w-5 text-blue-400" />
-                <span className="text-gray-300">contact@deltafashion.tn</span>
+                <span className="text-gray-300" dir="ltr">contact@deltafashion.tn</span>
               </div>
-              <div className="flex items-start space-x-3">
+              <div className="flex items-start space-x-3 rtl:space-x-reverse">
                 <MapPinIcon className="h-5 w-5 text-blue-400 mt-1" />
                 <span className="text-gray-300">
                   Monastir, Manzel ennour
@@ -114,20 +115,20 @@ const Footer = () => {
             
             {/* Newsletter */}
             <div className="mt-8 w-full">
-              <h5 className="text-sm font-semibold mb-2">Newsletter</h5>
+              <h5 className="text-sm font-semibold mb-2">{t('stayInformed')}</h5>
               <p className="text-gray-300 text-sm mb-3">
-                Recevez nos dernières offres et nouveautés
+                {t('newsletterSubtitle')}
               </p>
               <form onSubmit={handleFooterNewsletter} className="grid grid-cols-[1fr_auto] w-full">
                 <input
                   type="email"
-                  placeholder="Votre email"
+                  placeholder={t('yourEmail')}
                   value={footerEmail}
                   onChange={(e) => setFooterEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-l-lg rtl:rounded-l-none rtl:rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 text-sm"
                 />
-                <button type="submit" className="px-5 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors">
-                  S'abonner
+                <button type="submit" className="px-5 py-2 bg-blue-600 text-white rounded-r-lg rtl:rounded-r-none rtl:rounded-l-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                  {t('subscribe')}
                 </button>
               </form>
             </div>
@@ -135,15 +136,15 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 mt-3 py-2">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+        <div className="border-t border-gray-800 mt-6 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} Delta Fashion. Tous droits réservés.
+              © {new Date().getFullYear()} Delta Fashion. {t('allRightsReserved')}
             </p>
-            <div className="flex space-x-6 mt-0 md:mt-0 text-gray-400 text-sm">
-              <span>Politique de confidentialité</span>
-              <span>Conditions générales</span>
-              <span>Mentions légales</span>
+            <div className="flex space-x-6 rtl:space-x-reverse text-gray-400 text-sm">
+              <span>{t('privacyPolicy')}</span>
+              <span>{t('generalConditions')}</span>
+              <span>{t('legalNotices')}</span>
             </div>
           </div>
         </div>

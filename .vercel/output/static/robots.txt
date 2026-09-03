@@ -1,0 +1,8 @@
+# Delta Fashion — robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/
+
+Sitemap: https://delta-fashion.vercel.app/sitemap.xml
