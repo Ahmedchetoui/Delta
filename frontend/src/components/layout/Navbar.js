@@ -125,8 +125,10 @@ const Navbar = () => {
 
           {/* Right Side Controls & Icons */}
           <div className="flex items-center space-x-4 rtl:space-x-reverse">
-            {/* Language Switcher */}
-            <LanguageSwitcher />
+            {/* Language Switcher (Desktop seulement) */}
+            <div className="hidden md:block">
+              <LanguageSwitcher />
+            </div>
 
             {/* Search Icon (Mobile) */}
             <button
