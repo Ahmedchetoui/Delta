@@ -59,9 +59,41 @@ const Product = () => {
 
 
   const deliveryCost = calculateShippingCost();
-  const productPrice = currentProduct
-    ? (currentProduct.finalPrice ?? currentProduct.price ?? 0)
-    : 0;
+
+  const displayFinalPrice = useMemo(() => {
+    if (!currentProduct) return 0;
+    if (currentProduct.finalPrice != null && Number(currentProduct.finalPrice) > 0) {
+      return Number(currentProduct.finalPrice);
+    }
+    return Number(currentProduct.price || 0);
+  }, [currentProduct]);
+
+  const displayOriginalPrice = useMemo(() => {
+    if (!currentProduct) return null;
+    if (currentProduct.originalPrice != null && Number(currentProduct.originalPrice) > displayFinalPrice) {
+      return Number(currentProduct.originalPrice);
+    }
+    if (currentProduct.price != null && Number(currentProduct.price) > displayFinalPrice) {
+      return Number(currentProduct.price);
+    }
+    if (currentProduct.discount && Number(currentProduct.discount) > 0 && displayFinalPrice > 0) {
+      return Math.round(displayFinalPrice / (1 - Number(currentProduct.discount) / 100));
+    }
+    return null;
+  }, [currentProduct, displayFinalPrice]);
+
+  const discountPercent = useMemo(() => {
+    if (!currentProduct) return null;
+    if (currentProduct.discount && Number(currentProduct.discount) > 0) {
+      return Math.round(Number(currentProduct.discount));
+    }
+    if (displayOriginalPrice && displayOriginalPrice > displayFinalPrice) {
+      return Math.round((1 - displayFinalPrice / displayOriginalPrice) * 100);
+    }
+    return null;
+  }, [currentProduct, displayOriginalPrice, displayFinalPrice]);
+
+  const productPrice = displayFinalPrice;
   const subtotal = productPrice * quantity;
   const total = subtotal + deliveryCost;
 
@@ -508,8 +540,20 @@ const Product = () => {
                 {currentProduct.name}
               </h1>
 
-              <div className="text-3xl font-bold mb-6" style={{ color: '#B8860B' }}>
-                {productPrice.toFixed(2)} {t('currency')}
+              <div className="flex items-center gap-3 mb-6 flex-wrap">
+                <div className="text-3xl font-bold" style={{ color: '#B8860B' }}>
+                  {productPrice.toFixed(2)} {t('currency')}
+                </div>
+                {displayOriginalPrice && (
+                  <div className="text-xl text-gray-400 line-through">
+                    {displayOriginalPrice.toFixed(2)} {t('currency')}
+                  </div>
+                )}
+                {discountPercent && (
+                  <span className="px-2.5 py-1 bg-red-600 text-white text-xs font-bold rounded-full uppercase">
+                    -{discountPercent}%
+                  </span>
+                )}
               </div>
             </div>
 

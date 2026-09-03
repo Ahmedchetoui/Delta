@@ -44,18 +44,35 @@ const ProductCard = ({ product, priority = false }) => {
     return () => clearInterval(interval);
   }, [allImages.length]);
 
+  const displayFinalPrice = useMemo(() => {
+    if (product?.finalPrice != null && Number(product.finalPrice) > 0) {
+      return Number(product.finalPrice);
+    }
+    return Number(product?.price || 0);
+  }, [product?.finalPrice, product?.price]);
+
+  const displayOriginalPrice = useMemo(() => {
+    if (product?.originalPrice != null && Number(product.originalPrice) > displayFinalPrice) {
+      return Number(product.originalPrice);
+    }
+    if (product?.price != null && Number(product.price) > displayFinalPrice) {
+      return Number(product.price);
+    }
+    if (product?.discount && Number(product.discount) > 0 && displayFinalPrice > 0) {
+      return Math.round(displayFinalPrice / (1 - Number(product.discount) / 100));
+    }
+    return null;
+  }, [product?.originalPrice, product?.price, product?.discount, displayFinalPrice]);
+
   const discountPercent = useMemo(() => {
     if (product?.discount && Number(product.discount) > 0) {
       return Math.round(Number(product.discount));
     }
-    if (product?.originalPrice && product?.price && Number(product.originalPrice) > Number(product.price)) {
-      return Math.round((1 - Number(product.price) / Number(product.originalPrice)) * 100);
-    }
-    if (product?.price && product?.finalPrice && Number(product.price) > Number(product.finalPrice)) {
-      return Math.round((1 - Number(product.finalPrice) / Number(product.price)) * 100);
+    if (displayOriginalPrice && displayOriginalPrice > displayFinalPrice) {
+      return Math.round((1 - displayFinalPrice / displayOriginalPrice) * 100);
     }
     return null;
-  }, [product?.discount, product?.originalPrice, product?.price, product?.finalPrice]);
+  }, [product?.discount, displayOriginalPrice, displayFinalPrice]);
 
   const derivedSizes = useMemo(() => {
     if (product?.sizes && product.sizes.length > 0) return product.sizes;
@@ -233,11 +250,11 @@ const ProductCard = ({ product, priority = false }) => {
             <div className="flex items-baseline justify-between mb-4">
               <div className="flex items-baseline gap-2">
                 <span className="text-xl sm:text-2xl font-extrabold text-blue-600">
-                  {product.finalPrice ?? product.price} {t('currency')}
+                  {displayFinalPrice.toFixed(2)} {t('currency')}
                 </span>
-                {discountPercent && (
+                {displayOriginalPrice && (
                   <span className="text-xs sm:text-sm text-gray-400 line-through">
-                    {product.price} {t('currency')}
+                    {displayOriginalPrice.toFixed(2)} {t('currency')}
                   </span>
                 )}
               </div>

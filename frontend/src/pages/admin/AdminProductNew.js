@@ -22,6 +22,7 @@ const AdminProductNew = () => {
     name: '',
     description: '',
     price: '',
+    originalPrice: '',
     category: '',
     isActive: true,
     isFeatured: true,
@@ -96,6 +97,7 @@ const AdminProductNew = () => {
       fd.append('description', form.description.trim());
       fd.append('shortDescription', form.description.trim().substring(0, 100));
       fd.append('price', String(form.price));
+      if (form.originalPrice) fd.append('originalPrice', String(form.originalPrice));
       fd.append('category', form.category);
       if (form.discount) fd.append('discount', String(form.discount));
       fd.append('isFeatured', String(form.isFeatured));
@@ -146,10 +148,14 @@ const AdminProductNew = () => {
           <textarea className="mt-1 w-full border rounded px-3 py-2" rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Prix</label>
+            <label className="block text-sm font-medium text-gray-700">Prix de vente</label>
             <input type="number" step="0.01" className="mt-1 w-full border rounded px-3 py-2" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Prix original</label>
+            <input type="number" step="0.01" className="mt-1 w-full border rounded px-3 py-2" value={form.originalPrice} onChange={(e) => setForm({ ...form, originalPrice: e.target.value })} placeholder="ex: 30" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Remise (%)</label>
