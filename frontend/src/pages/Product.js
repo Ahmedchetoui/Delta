@@ -30,12 +30,13 @@ import {
 import { calculateShippingCost } from '../constants/shipping';
 import ProductReviews from '../components/product/ProductReviews';
 import { trackViewContent, trackAddToCart, trackInitiateCheckout, trackPurchase } from '../utils/metaPixel';
-
+import { useLanguage } from '../context/LanguageContext';
 
 const Product = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t } = useLanguage();
 
   const { currentProduct, isLoading, isRefreshing } = useSelector((state) => state.products);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -492,7 +493,7 @@ const Product = () => {
 
             {/* Description */}
             <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('description')}</h3>
               <p className="text-gray-600 leading-relaxed">
                 {currentProduct.description}
               </p>
@@ -508,7 +509,7 @@ const Product = () => {
               </h1>
 
               <div className="text-3xl font-bold mb-6" style={{ color: '#B8860B' }}>
-                {productPrice.toFixed(2)} DT
+                {productPrice.toFixed(2)} {t('currency')}
               </div>
             </div>
 
@@ -516,8 +517,8 @@ const Product = () => {
             <div className="space-y-6">
               {/* Quantité */}
               <div className="bg-white border border-gray-300 rounded-lg p-3">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Quantité</h3>
-                <div className="flex items-center space-x-2">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">{t('quantity')}</h3>
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
                   <button
                     type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -543,7 +544,7 @@ const Product = () => {
                   {hasVariants && (
                     <div className="mb-6">
                       <h3 className="text-sm font-medium text-gray-700 mb-3">
-                        Taille <span className="text-red-500">*</span>
+                        {t('size')} <span className="text-red-500">*</span>
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {productSizes.map((size) => {
@@ -576,7 +577,7 @@ const Product = () => {
                   {availableColors.length > 0 && (
                     <div className="mb-6">
                       <h3 className="text-sm font-medium text-gray-700 mb-3">
-                        Couleur <span className="text-red-500">*</span>
+                        {t('color')} <span className="text-red-500">*</span>
                       </h3>
                       {renderColorSwatches(
                         selectedColors[0] || '',
@@ -593,14 +594,14 @@ const Product = () => {
                   {Array.from({ length: quantity }, (_, index) => (
                     <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
                       <p className="text-sm font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                        Article {index + 1}
+                        {t('article')} {index + 1}
                       </p>
 
                       {/* Taille pour l'article */}
                       {hasVariants && (
                         <div>
                           <h4 className="text-xs font-semibold text-gray-600 mb-2">
-                            Taille <span className="text-red-500">*</span>
+                            {t('size')} <span className="text-red-500">*</span>
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {productSizes.map((size) => {
@@ -633,7 +634,7 @@ const Product = () => {
                       {availableColors.length > 0 && (
                         <div>
                           <h4 className="text-xs font-semibold text-gray-600 mb-2">
-                            Couleur <span className="text-red-500">*</span>
+                            {t('color')} <span className="text-red-500">*</span>
                           </h4>
                           {renderColorSwatches(
                             selectedColors[index] || '',
@@ -651,12 +652,12 @@ const Product = () => {
 
             {/* Informations de livraison */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
-              <h3 className="text-sm font-medium text-blue-900 mb-3">Informations de livraison:</h3>
+              <h3 className="text-sm font-medium text-blue-900 mb-3">{t('shippingInfo')}</h3>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Prénom <span className="text-red-500">*</span>
+                    {t('firstName')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -664,12 +665,12 @@ const Product = () => {
                     onChange={(e) => setFirstName(e.target.value)}
                     required
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
-                    placeholder="Prénom"
+                    placeholder={t('firstName')}
                   />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Nom <span className="text-red-500">*</span>
+                    {t('lastName')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -677,7 +678,7 @@ const Product = () => {
                     onChange={(e) => setLastName(e.target.value)}
                     required
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
-                    placeholder="Nom"
+                    placeholder={t('lastName')}
                   />
                 </div>
               </div>
@@ -685,7 +686,7 @@ const Product = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Téléphone <span className="text-red-500">*</span>
+                    {t('phone')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -693,12 +694,12 @@ const Product = () => {
                     onChange={(e) => setPhone(e.target.value)}
                     required
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
-                    placeholder="Ex: 22000000"
+                    placeholder={t('phonePlaceholder')}
                   />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Gouvernorat <span className="text-red-500">*</span>
+                    {t('governorate')} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={governorate}
@@ -716,7 +717,7 @@ const Product = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">
-                    Ville <span className="text-red-500">*</span>
+                    {t('city')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -724,14 +725,14 @@ const Product = () => {
                     onChange={(e) => setCity(e.target.value)}
                     required
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
-                    placeholder="Votre ville"
+                    placeholder={t('yourCity')}
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs text-gray-600 mb-1">
-                  Adresse complète <span className="text-red-500">*</span>
+                  {t('fullAddress')} <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={streetAddress}
@@ -739,7 +740,7 @@ const Product = () => {
                   rows={2}
                   required
                   className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
-                  placeholder="Rue, numéro, quartier..."
+                  placeholder={t('streetPlaceholder')}
                 />
               </div>
             </div>
@@ -747,27 +748,27 @@ const Product = () => {
             {/* Récapitulatif prix */}
             <div className="bg-gray-100 rounded-lg p-3 space-y-1">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-700">Sous-total:</span>
-                <span className="font-semibold text-gray-900">{subtotal.toFixed(2)} DT</span>
+                <span className="text-gray-700">{t('subtotal')}:</span>
+                <span className="font-semibold text-gray-900">{subtotal.toFixed(2)} {t('currency')}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-700">Livraison:</span>
-                <span className="font-semibold text-gray-900">{deliveryCost.toFixed(2)} DT</span>
+                <span className="text-gray-700">{t('deliveryCost')}:</span>
+                <span className="font-semibold text-gray-900">{deliveryCost.toFixed(2)} {t('currency')}</span>
               </div>
               <hr className="border-gray-400 my-2" />
               <div className="flex justify-between text-base font-bold">
-                <span className="text-gray-900">Total:</span>
-                <span className="text-gray-900">{total.toFixed(2)} DT</span>
+                <span className="text-gray-900">{t('total')}:</span>
+                <span className="text-gray-900">{total.toFixed(2)} {t('currency')}</span>
               </div>
             </div>
 
             <button
               onClick={handleAddToCart}
               disabled={!productHasStock(currentProduct)}
-              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 rtl:space-x-reverse"
             >
-              <ShoppingCartIcon className="h-5 w-5 mr-2" />
-              Commander - {total.toFixed(2)} DT
+              <ShoppingCartIcon className="h-5 w-5" />
+              <span>{t('orderButtonText')} - {total.toFixed(2)} {t('currency')}</span>
             </button>
 
           </div>
@@ -779,7 +780,7 @@ const Product = () => {
             <div className="bg-white rounded-lg max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => !isOrdering && setShowOrderModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                className="absolute top-4 right-4 rtl:right-auto rtl:left-4 text-gray-400 hover:text-gray-600"
                 disabled={isOrdering}
               >
                 ✕
@@ -789,31 +790,31 @@ const Product = () => {
                 <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <ShoppingCartIcon className="w-8 h-8 text-yellow-600" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Confirmer votre commande</h2>
-                <p className="text-gray-600 text-sm">Vérifiez les informations avant de confirmer.</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">{t('confirmOrder')}</h2>
+                <p className="text-gray-600 text-sm">{t('verifyBeforeConfirm')}</p>
               </div>
 
               <div className="space-y-3 mb-6 text-sm">
                 <div className="bg-gray-50 rounded-lg p-3 space-y-1">
                   <p className="font-semibold text-gray-900 mb-1">{currentProduct.name}</p>
-                  <p className="text-gray-600">Quantité : {quantity}</p>
+                  <p className="text-gray-600">{t('quantity')} : {quantity}</p>
                   {Array.from({ length: quantity }, (_, idx) => {
                     const size = selectedSizes[idx];
                     const color = selectedColors[idx];
                     const labels = [];
-                    if (size) labels.push(`Taille: ${size}`);
-                    if (color) labels.push(`Couleur: ${color}`);
+                    if (size) labels.push(`${t('size')}: ${size}`);
+                    if (color) labels.push(`${t('color')}: ${color}`);
                     if (labels.length === 0) return null;
                     return (
                       <p key={idx} className="text-xs text-gray-500">
-                        Article {idx + 1} : {labels.join(' · ')}
+                        {t('article')} {idx + 1} : {labels.join(' · ')}
                       </p>
                     );
                   })}
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="font-semibold text-gray-900 mb-1">Livraison</p>
+                  <p className="font-semibold text-gray-900 mb-1">{t('deliveryCost')}</p>
                   <p className="text-gray-600">{firstName} {lastName}</p>
                   <p className="text-gray-600">{phone}</p>
                   <p className="text-gray-600">{streetAddress}</p>
@@ -821,8 +822,8 @@ const Product = () => {
                 </div>
 
                 <div className="flex justify-between font-bold text-base pt-1">
-                  <span>Total</span>
-                  <span>{total.toFixed(2)} DT</span>
+                  <span>{t('total')}</span>
+                  <span>{total.toFixed(2)} {t('currency')}</span>
                 </div>
               </div>
 
@@ -832,14 +833,14 @@ const Product = () => {
                   disabled={isOrdering}
                   className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50"
                 >
-                  {isOrdering ? 'Enregistrement...' : `Confirmer la commande - ${total.toFixed(2)} DT`}
+                  {isOrdering ? t('orderInProgress') : `${t('confirmOrder')} - ${total.toFixed(2)} ${t('currency')}`}
                 </button>
                 <button
                   onClick={() => setShowOrderModal(false)}
                   disabled={isOrdering}
                   className="w-full bg-gray-200 text-gray-800 py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
                 >
-                  Annuler
+                  {t('cancelOrder')}
                 </button>
               </div>
             </div>
