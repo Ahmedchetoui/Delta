@@ -2,37 +2,73 @@ name: Keep Render Backend Alive
 
 on:
   schedule:
-    # Marge suffisante avant le délai de veille éventuel de Render.
-    - cron: '*/10 * * * *'
-  workflow_dispatch: # Permet le déclenchement manuel depuis GitHub
+    # Évite les minutes les plus chargées de GitHub Actions (00, 10, 20, ...).
+    - cron: '7-57/10 * * * *'
+  workflow_dispatch:
+
+# Le workflow ne lit ni n'écrit le dépôt.
+permissions: {}
+
+# Empêche deux réveils simultanés si GitHub retarde une exécution planifiée.
+concurrency:
+  group: keep-render-backend-alive
+  cancel-in-progress: false
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BACKEND_URL: https://delta-n5d8.onrender.com/api/health
+      USER_AGENT: DeltaFashionKeepAlive/1.0
+      MAX_ATTEMPTS: 4
+      CONNECT_TIMEOUT: 15
+      REQUEST_TIMEOUT: 120
+      RETRY_DELAY: 30
     steps:
-      - name: Ping Render Backend
+      - name: Wake and verify Render backend
+        shell: bash
         run: |
-          BACKEND_URL="https://delta-n5d8.onrender.com/api/health"
-          MAX_RETRIES=3
-          TIMEOUT=120
-          USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) KeepAliveBot/1.0"
+          set -uo pipefail
 
-          for attempt in $(seq 1 $MAX_RETRIES); do
-            echo "Tentative $attempt/$MAX_RETRIES - Ping $BACKEND_URL"
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -A "$USER_AGENT" -L --max-time $TIMEOUT "$BACKEND_URL" || echo "000")
-            
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ Backend en ligne (HTTP $HTTP_CODE)"
+          response_body="$(mktemp)"
+          trap 'rm -f "$response_body"' EXIT
+
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            : > "$response_body"
+            echo "Tentative $attempt/$MAX_ATTEMPTS - ping de $BACKEND_URL"
+
+            http_code="$(curl \
+              --silent \
+              --show-error \
+              --location \
+              --retry 2 \
+              --retry-all-errors \
+              --retry-delay 5 \
+              --connect-timeout "$CONNECT_TIMEOUT" \
+              --max-time "$REQUEST_TIMEOUT" \
+              --output "$response_body" \
+              --write-out '%{http_code}' \
+              --user-agent "$USER_AGENT" \
+              "$BACKEND_URL")"
+            curl_exit=$?
+
+            if [ "$curl_exit" -eq 0 ] && [[ "$http_code" =~ ^2[0-9][0-9]$ ]]; then
+              echo "Backend disponible (HTTP $http_code)."
               exit 0
             fi
-            
-            echo "⏳ Réponse HTTP $HTTP_CODE - Le serveur se réveille..."
-            
-            if [ "$attempt" -lt "$MAX_RETRIES" ]; then
-              echo "Attente de 10 secondes..."
-              sleep 10
+
+            echo "Réveil non terminé : curl=$curl_exit, HTTP=${http_code:-000}."
+            if [ -s "$response_body" ]; then
+              tr '\r\n' ' ' < "$response_body" | cut -c1-500
+              echo
+            fi
+
+            if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+              echo "Nouvelle tentative dans $RETRY_DELAY secondes..."
+              sleep "$RETRY_DELAY"
             fi
           done
 
-          echo "⚠️ Le serveur a répondu HTTP $HTTP_CODE"
+          echo "Le backend reste indisponible après $MAX_ATTEMPTS tentatives."
           exit 1
