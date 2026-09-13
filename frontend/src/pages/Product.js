@@ -113,7 +113,6 @@ const Product = () => {
   );
 
   const hasVariants = productSizes.length > 0;
-  const inStock = productHasStock(currentProduct);
 
   const colorRequired = availableColors.length > 0;
 
@@ -494,13 +493,6 @@ const Product = () => {
                 onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMAGE; }}
                 className="w-full h-full object-cover transition-opacity duration-500"
               />
-              {!inStock && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-900/60 backdrop-blur-xs">
-                  <span className="rounded-lg border-2 border-white/80 bg-black/30 px-5 py-3 text-base font-bold tracking-wider text-white sm:text-lg">
-                    {t('outOfStock')}
-                  </span>
-                </div>
-              )}
             </div>
 
             {/* Thumbnail Images */}

@@ -180,13 +180,6 @@ const ProductCard = ({ product, priority = false }) => {
             </div>
           )}
 
-          {!inStock && (
-            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-xs flex items-center justify-center z-20">
-              <span className="text-white font-bold text-sm sm:text-base tracking-wider px-4 py-2 border-2 border-white/80 rounded-lg bg-black/30">
-                {t('outOfStock')}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Détails du Produit */}
