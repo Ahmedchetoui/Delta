@@ -124,19 +124,24 @@ const Navbar = () => {
           </div>
 
           {/* Right Side Controls & Icons */}
-          <div className="flex items-center space-x-4 rtl:space-x-reverse">
+          <div className="flex items-center gap-2 md:gap-4">
             {/* Language Switcher (Desktop seulement) */}
             <div className="hidden md:block">
               <LanguageSwitcher />
             </div>
 
-            {/* Search Icon (Mobile) */}
-            <button
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className={`md:hidden p-1.5 ${iconClasses}`}
-            >
-              <MagnifyingGlassIcon className="h-6 w-6" />
-            </button>
+            <div className="flex items-center gap-1 md:hidden" dir="ltr">
+              <LanguageSwitcher variant="mobile" />
+
+              {/* Search Icon (Mobile) */}
+              <button
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className={`p-1.5 ${iconClasses}`}
+                aria-label="Ouvrir la recherche"
+              >
+                <MagnifyingGlassIcon className="h-6 w-6" />
+              </button>
+            </div>
 
             {/* Cart */}
             <Link to="/cart" className={`relative p-1.5 ${iconClasses}`}>
@@ -245,10 +250,6 @@ const Navbar = () => {
               <Link to="/contact" className="text-gray-800 hover:text-blue-600 font-bold text-xl py-3 w-3/4 mx-auto">
                 {t('contactNav')}
               </Link>
-
-              <div className="pt-4 flex justify-center">
-                <LanguageSwitcher className="scale-110" />
-              </div>
 
               <div className="pt-4 flex flex-col items-center gap-4">
                 {!isAuthenticated && (
