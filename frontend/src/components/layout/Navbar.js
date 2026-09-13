@@ -18,7 +18,7 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { items } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
@@ -124,7 +124,7 @@ const Navbar = () => {
           </div>
 
           {/* Right Side Controls & Icons */}
-          <div className="flex items-center gap-2 md:gap-4 [direction:ltr] md:[direction:inherit]">
+          <div className={`flex items-center gap-2 md:gap-4 ${isRTL ? '[direction:rtl]' : '[direction:ltr]'} md:[direction:inherit]`}>
             {/* Language Switcher (Desktop seulement) */}
             <div className="hidden md:block">
               <LanguageSwitcher />
