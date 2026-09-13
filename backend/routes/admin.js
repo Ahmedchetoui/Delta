@@ -14,6 +14,90 @@ const { publishCatalogUpdate } = require('../services/catalogRealtime');
 
 const router = express.Router();
 
+const REVENUE_ORDER_STATUSES = ['confirmed', 'processing', 'shipped', 'delivered'];
+const ANALYTICS_PERIODS = new Set(['7d', '30d', '90d', '1y']);
+
+const getPeriodStartDate = (period, endDate = new Date()) => {
+  const startDate = new Date(endDate);
+
+  switch (period) {
+    case '7d':
+      startDate.setDate(startDate.getDate() - 7);
+      break;
+    case '90d':
+      startDate.setDate(startDate.getDate() - 90);
+      break;
+    case '1y':
+      startDate.setFullYear(startDate.getFullYear() - 1);
+      break;
+    case '30d':
+    default:
+      startDate.setDate(startDate.getDate() - 30);
+      break;
+  }
+
+  startDate.setHours(0, 0, 0, 0);
+  return startDate;
+};
+
+const formatTimelineKey = (date, groupBy) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return groupBy === 'month' ? `${year}-${month}` : `${year}-${month}-${day}`;
+};
+
+const formatTimelineLabel = (date, groupBy) => {
+  if (groupBy === 'month') {
+    return new Intl.DateTimeFormat('fr-TN', { month: 'short', year: 'numeric' }).format(date);
+  }
+
+  return new Intl.DateTimeFormat('fr-TN', { day: '2-digit', month: 'short' }).format(date);
+};
+
+const buildSalesTimeline = (salesData, startDate, endDate, groupBy) => {
+  const valuesByPeriod = new Map(salesData.map((entry) => [entry._id, entry]));
+
+  if (!['day', 'month'].includes(groupBy)) {
+    return salesData.map((entry) => ({
+      _id: entry._id,
+      label: entry._id,
+      revenue: entry.totalRevenue,
+      orders: entry.totalOrders,
+      averageOrderValue: entry.averageOrderValue,
+      totalItems: entry.totalItems,
+    }));
+  }
+
+  const series = [];
+  const cursor = new Date(startDate);
+  if (groupBy === 'month') cursor.setDate(1);
+
+  while (cursor <= endDate) {
+    const key = formatTimelineKey(cursor, groupBy);
+    const values = valuesByPeriod.get(key);
+    const orders = values?.totalOrders || 0;
+
+    series.push({
+      _id: key,
+      label: formatTimelineLabel(cursor, groupBy),
+      revenue: values?.totalRevenue || 0,
+      orders,
+      averageOrderValue: values?.averageOrderValue || 0,
+      totalItems: values?.totalItems || 0,
+    });
+
+    if (groupBy === 'month') {
+      cursor.setMonth(cursor.getMonth() + 1);
+    } else {
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  }
+
+  return series;
+};
+
 // Toutes les routes admin nécessitent une authentification admin
 router.use(authenticateToken, requireAdmin);
 
@@ -34,26 +118,10 @@ router.use((req, res, next) => {
 // @access  Private (Admin)
 router.get('/dashboard', async (req, res) => {
   try {
-    const { period = '30d' } = req.query;
-
-    // Calculer la date de début selon la période
-    let startDate = new Date();
-    switch (period) {
-      case '7d':
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(startDate.getDate() - 30);
-        break;
-      case '90d':
-        startDate.setDate(startDate.getDate() - 90);
-        break;
-      case '1y':
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-      default:
-        startDate.setDate(startDate.getDate() - 30);
-    }
+    const requestedPeriod = req.query.period || '30d';
+    const period = ANALYTICS_PERIODS.has(requestedPeriod) ? requestedPeriod : '30d';
+    const endDate = new Date();
+    const startDate = getPeriodStartDate(period, endDate);
 
     // Statistiques générales
     const [
@@ -81,7 +149,7 @@ router.get('/dashboard', async (req, res) => {
       {
         $match: {
           createdAt: { $gte: startDate },
-          orderStatus: { $in: ['confirmed', 'processing', 'shipped', 'delivered'] }
+          orderStatus: { $in: REVENUE_ORDER_STATUSES }
         }
       },
       {
@@ -109,43 +177,52 @@ router.get('/dashboard', async (req, res) => {
       }
     ]);
 
-    // Statistiques des commandes par mois (pour les 12 derniers mois)
-    const monthlyStats = await Order.aggregate([
+    const groupBy = period === '1y' ? 'month' : 'day';
+    const timelineFormat = groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d';
+    const revenueTimeline = await Order.aggregate([
       {
         $match: {
-          createdAt: { $gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) }
+          createdAt: { $gte: startDate, $lte: endDate },
+          orderStatus: { $in: REVENUE_ORDER_STATUSES }
         }
       },
       {
         $group: {
-          _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
-          },
+          _id: { $dateToString: { format: timelineFormat, date: '$createdAt', timezone: 'Africa/Tunis' } },
           orders: { $sum: 1 },
           revenue: { $sum: '$total' }
         }
       },
       {
-        $sort: { '_id.year': 1, '_id.month': 1 }
-      },
-      {
-        $limit: 12
+        $sort: { _id: 1 }
       }
     ]);
+
+    const monthlyStats = buildSalesTimeline(
+      revenueTimeline.map((entry) => ({
+        ...entry,
+        totalOrders: entry.orders,
+        totalRevenue: entry.revenue,
+      })),
+      startDate,
+      endDate,
+      groupBy,
+    );
 
     // Produits les plus vendus
     const topProducts = await Order.aggregate([
       {
         $match: {
           createdAt: { $gte: startDate },
-          orderStatus: { $in: ['confirmed', 'processing', 'shipped', 'delivered'] }
+          orderStatus: { $in: REVENUE_ORDER_STATUSES }
         }
       },
       { $unwind: '$items' },
       {
         $group: {
           _id: '$items.product',
+          fallbackName: { $first: '$items.name' },
+          fallbackImage: { $first: '$items.image' },
           totalSold: { $sum: '$items.quantity' },
           totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
         }
@@ -158,11 +235,21 @@ router.get('/dashboard', async (req, res) => {
           as: 'product'
         }
       },
-      { $unwind: '$product' },
+      {
+        $unwind: {
+          path: '$product',
+          preserveNullAndEmptyArrays: true
+        }
+      },
       {
         $project: {
-          productName: '$product.name',
-          productImage: { $arrayElemAt: ['$product.images', 0] },
+          productName: { $ifNull: ['$product.name', '$fallbackName'] },
+          productImage: {
+            $ifNull: [
+              { $arrayElemAt: ['$product.images', 0] },
+              '$fallbackImage'
+            ]
+          },
           totalSold: 1,
           totalRevenue: 1
         }
@@ -205,7 +292,7 @@ router.get('/dashboard', async (req, res) => {
       { $limit: 10 }
     ]);
 
-    // Utilisateurs les plus actifs
+    // Utilisateurs les plus actifs (comptes enregistrés et invités)
     const topUsers = await Order.aggregate([
       {
         $match: {
@@ -213,8 +300,35 @@ router.get('/dashboard', async (req, res) => {
         }
       },
       {
+        $addFields: {
+          customerKey: {
+            $cond: [
+              { $ifNull: ['$user', false] },
+              { $concat: ['user:', { $toString: '$user' }] },
+              {
+                $concat: [
+                  'guest:',
+                  {
+                    $ifNull: [
+                      '$guestEmail',
+                      { $ifNull: ['$shippingAddress.phone', { $toString: '$_id' }] },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
         $group: {
-          _id: '$user',
+          _id: '$customerKey',
+          userId: { $first: '$user' },
+          firstName: { $first: '$shippingAddress.firstName' },
+          lastName: { $first: '$shippingAddress.lastName' },
+          phone: { $first: '$shippingAddress.phone' },
+          guestEmail: { $first: '$guestEmail' },
+          shippingEmail: { $first: '$shippingAddress.email' },
           totalOrders: { $sum: 1 },
           totalSpent: { $sum: '$total' }
         }
@@ -222,16 +336,47 @@ router.get('/dashboard', async (req, res) => {
       {
         $lookup: {
           from: 'users',
-          localField: '_id',
+          localField: 'userId',
           foreignField: '_id',
-          as: 'user'
+          as: 'userDoc'
         }
       },
-      { $unwind: '$user' },
       {
         $project: {
-          userName: { $concat: ['$user.firstName', ' ', '$user.lastName'] },
-          userEmail: '$user.email',
+          userName: {
+            $cond: [
+              { $gt: [{ $size: '$userDoc' }, 0] },
+              {
+                $concat: [
+                  { $arrayElemAt: ['$userDoc.firstName', 0] },
+                  ' ',
+                  { $arrayElemAt: ['$userDoc.lastName', 0] }
+                ]
+              },
+              { $concat: [{ $ifNull: ['$firstName', 'Client'] }, ' ', { $ifNull: ['$lastName', ''] }] }
+            ]
+          },
+          firstName: {
+            $cond: [
+              { $gt: [{ $size: '$userDoc' }, 0] },
+              { $arrayElemAt: ['$userDoc.firstName', 0] },
+              { $ifNull: ['$firstName', 'Client'] }
+            ]
+          },
+          lastName: {
+            $cond: [
+              { $gt: [{ $size: '$userDoc' }, 0] },
+              { $arrayElemAt: ['$userDoc.lastName', 0] },
+              { $ifNull: ['$lastName', ''] }
+            ]
+          },
+          userEmail: {
+            $cond: [
+              { $gt: [{ $size: '$userDoc' }, 0] },
+              { $arrayElemAt: ['$userDoc.email', 0] },
+              { $ifNull: ['$shippingEmail', { $ifNull: ['$guestEmail', '$phone'] }] }
+            ]
+          },
           totalOrders: 1,
           totalSpent: 1
         }
@@ -249,7 +394,7 @@ router.get('/dashboard', async (req, res) => {
     res.json({
       period,
       startDate,
-      endDate: new Date(),
+      endDate,
       summary: {
         totalUsers,
         totalProducts,
@@ -261,10 +406,10 @@ router.get('/dashboard', async (req, res) => {
         pendingOrders
       },
       revenue,
-      orderStats: orderStats.reduce((acc, stat) => {
-        acc[stat._id] = stat.count;
-        return acc;
-      }, {}),
+      orderStats: {
+        byStatus: orderStats,
+        total: orderStats.reduce((total, stat) => total + stat.count, 0),
+      },
       monthlyStats,
       topProducts: topProducts.map((product) => ({
         ...product,
@@ -274,9 +419,9 @@ router.get('/dashboard', async (req, res) => {
       topCategories,
       topUsers: topUsers.map((user) => ({
         ...user,
-        firstName: user.userName?.split(' ')[0] || '',
-        lastName: user.userName?.split(' ').slice(1).join(' ') || '',
-        email: user.userEmail,
+        firstName: user.firstName || user.userName?.split(' ')[0] || 'Client',
+        lastName: user.lastName || user.userName?.split(' ').slice(1).join(' ') || '',
+        email: user.userEmail || '',
         orderCount: user.totalOrders,
       })),
     });
@@ -293,6 +438,7 @@ router.get('/dashboard', async (req, res) => {
 // @desc    Obtenir les statistiques de ventes détaillées
 // @access  Private (Admin)
 router.get('/analytics/sales', [
+  query('period').optional().isIn(['7d', '30d', '90d', '1y']).withMessage('Période invalide'),
   query('startDate').optional().isISO8601().withMessage('Date de début invalide'),
   query('endDate').optional().isISO8601().withMessage('Date de fin invalide'),
   query('groupBy').optional().isIn(['day', 'week', 'month', 'year']).withMessage('Groupement invalide')
@@ -306,21 +452,16 @@ router.get('/analytics/sales', [
       });
     }
 
-    const {
-      startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      endDate = new Date(),
-      groupBy = 'day'
-    } = req.query;
+    const period = ANALYTICS_PERIODS.has(req.query.period) ? req.query.period : '30d';
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : getPeriodStartDate(period, endDate);
+    const groupBy = req.query.groupBy || (period === '1y' ? 'month' : 'day');
 
     // Construire le groupement selon le paramètre
     let groupFormat;
     switch (groupBy) {
       case 'day':
-        groupFormat = {
-          year: { $year: '$createdAt' },
-          month: { $month: '$createdAt' },
-          day: { $dayOfMonth: '$createdAt' }
-        };
+        groupFormat = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Africa/Tunis' } };
         break;
       case 'week':
         groupFormat = {
@@ -329,10 +470,7 @@ router.get('/analytics/sales', [
         };
         break;
       case 'month':
-        groupFormat = {
-          year: { $year: '$createdAt' },
-          month: { $month: '$createdAt' }
-        };
+        groupFormat = { $dateToString: { format: '%Y-%m', date: '$createdAt', timezone: 'Africa/Tunis' } };
         break;
       case 'year':
         groupFormat = {
@@ -348,7 +486,7 @@ router.get('/analytics/sales', [
             $gte: new Date(startDate),
             $lte: new Date(endDate)
           },
-          orderStatus: { $in: ['confirmed', 'processing', 'shipped', 'delivered'] }
+          orderStatus: { $in: REVENUE_ORDER_STATUSES }
         }
       },
       {
@@ -360,14 +498,22 @@ router.get('/analytics/sales', [
           totalItems: { $sum: { $sum: '$items.quantity' } }
         }
       },
-      {
-        $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.week': 1 }
-      }
+      { $sort: { _id: 1 } }
     ]);
+
+    const salesOverTime = buildSalesTimeline(salesData, startDate, endDate, groupBy);
+    const totalRevenue = salesData.reduce((total, item) => total + item.totalRevenue, 0);
+    const totalOrders = salesData.reduce((total, item) => total + item.totalOrders, 0);
+    const totalItems = salesData.reduce((total, item) => total + item.totalItems, 0);
 
     res.json({
       period: { startDate, endDate, groupBy },
-      salesData
+      totalRevenue,
+      totalOrders,
+      totalItems,
+      averageOrderValue: totalOrders ? totalRevenue / totalOrders : 0,
+      salesOverTime,
+      salesData,
     });
 
   } catch (error) {
@@ -383,26 +529,9 @@ router.get('/analytics/sales', [
 // @access  Private (Admin)
 router.get('/analytics/products', async (req, res) => {
   try {
-    const { period = '30d' } = req.query;
-
-    // Calculer la date de début
-    let startDate = new Date();
-    switch (period) {
-      case '7d':
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(startDate.getDate() - 30);
-        break;
-      case '90d':
-        startDate.setDate(startDate.getDate() - 90);
-        break;
-      case '1y':
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-      default:
-        startDate.setDate(startDate.getDate() - 30);
-    }
+    const requestedPeriod = req.query.period || '30d';
+    const period = ANALYTICS_PERIODS.has(requestedPeriod) ? requestedPeriod : '30d';
+    const startDate = getPeriodStartDate(period);
 
     // Statistiques générales des produits
     const productStats = await Product.aggregate([
@@ -440,6 +569,11 @@ router.get('/analytics/products', async (req, res) => {
       .sort({ updatedAt: -1 })
       .limit(20)
       .lean();
+
+    const [lowStockCount, outOfStockCount] = await Promise.all([
+      Product.countDocuments({ isActive: true, totalStock: { $lte: 10, $gt: 0 } }),
+      Product.countDocuments({ isActive: true, totalStock: 0 }),
+    ]);
 
     // Produits les plus vus
     const mostViewedProducts = await Product.find({
@@ -479,31 +613,40 @@ router.get('/analytics/products', async (req, res) => {
       totalSold: 0
     };
 
+    const withImageUrls = (product) => ({
+      ...product,
+      images: (product.images || []).map((image) => getImageUrl(image)),
+    });
+
+    const lowStock = lowStockProducts.map((product) => ({
+      ...withImageUrls(product),
+      stock: product.totalStock,
+    }));
+    const outOfStock = outOfStockProducts.map(withImageUrls);
+    const topProducts = bestSellingProducts.map((product) => ({
+      ...withImageUrls(product),
+      totalSold: product.soldCount || 0,
+    }));
+
     res.json({
       period,
       startDate,
       endDate: new Date(),
       stats,
-      lowStockProducts: lowStockProducts.map(product => ({
-        ...product,
-        images: product.images.map(image => getImageUrl(image))
-      })),
-      outOfStockProducts: outOfStockProducts.map(product => ({
-        ...product,
-        images: product.images.map(image => getImageUrl(image))
-      })),
-      mostViewedProducts: mostViewedProducts.map(product => ({
-        ...product,
-        images: product.images.map(image => getImageUrl(image))
-      })),
-      bestSellingProducts: bestSellingProducts.map(product => ({
-        ...product,
-        images: product.images.map(image => getImageUrl(image))
-      })),
-      recentProducts: recentProducts.map(product => ({
-        ...product,
-        images: product.images.map(image => getImageUrl(image))
-      }))
+      ...stats,
+      featuredCount: stats.featuredProducts,
+      newCount: stats.newProducts,
+      onSaleCount: stats.onSaleProducts,
+      lowStockCount,
+      outOfStockCount,
+      lowStock,
+      outOfStock,
+      topProducts,
+      lowStockProducts: lowStock,
+      outOfStockProducts: outOfStock,
+      mostViewedProducts: mostViewedProducts.map(withImageUrls),
+      bestSellingProducts: topProducts,
+      recentProducts: recentProducts.map(withImageUrls),
     });
 
   } catch (error) {
@@ -647,14 +790,21 @@ router.get('/analytics/customers', async (req, res) => {
       newUsers: 0
     };
 
+    const customers = topCustomers.map((customer) => ({
+      ...customer,
+      orderCount: customer.totalOrders,
+    }));
+
     res.json({
       period,
       startDate,
       endDate: new Date(),
       stats,
-      topCustomers,
-      newCustomers,
-      inactiveCustomers
+      ...stats,
+      topCustomers: customers,
+      newCustomers: stats.newUsers,
+      recentCustomers: newCustomers,
+      inactiveCustomers,
     });
 
   } catch (error) {

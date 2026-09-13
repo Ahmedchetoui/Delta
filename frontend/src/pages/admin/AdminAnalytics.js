@@ -122,18 +122,18 @@ const AdminAnalytics = () => {
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-96">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Évolution du Chiffre d'Affaires</h3>
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data?.salesOverTime}>
+                        <AreaChart data={data?.salesOverTime} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0.05} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="_id" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => formatCurrency(value)} />
-                            <Area type="monotone" dataKey="revenue" stroke="#8884d8" fillOpacity={1} fill="url(#colorRevenue)" name="Revenu" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#6B7280' }} />
+                            <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(val) => `${val} DT`} />
+                            <Tooltip formatter={(value) => [formatCurrency(value), "Revenu"]} />
+                            <Area type="monotone" dataKey="revenue" stroke="#8884d8" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" name="Revenu" dot={{ r: 3 }} activeDot={{ r: 6 }} />
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
@@ -141,10 +141,10 @@ const AdminAnalytics = () => {
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-96">
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Commandes par Jour</h3>
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data?.salesOverTime}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="_id" />
-                            <YAxis />
+                        <BarChart data={data?.salesOverTime} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#6B7280' }} />
+                            <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} allowDecimals={false} />
                             <Tooltip />
                             <Bar dataKey="orders" fill="#82ca9d" name="Commandes" radius={[4, 4, 0, 0]} />
                         </BarChart>
@@ -368,7 +368,7 @@ const AdminAnalytics = () => {
                         <button onClick={() => window.history.back()} className="text-gray-400 hover:text-gray-600">
                             ← Retour
                         </button>
-                        <h1 className="text-3xl font-bold text-gray-900">Analytics Power BI</h1>
+                        <h1 className="text-3xl font-bold text-gray-900">Analytics & Rapports Avancés</h1>
                     </div>
                     <p className="text-gray-500">Analyse approfondie de vos données</p>
                 </div>

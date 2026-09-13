@@ -148,9 +148,10 @@ const AdminDashboard = () => {
                     <button
                         onClick={() => navigate('/admin/analytics')}
                         className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition shadow-lg transform hover:-translate-y-0.5"
+                        title="Voir les statistiques détaillées et exporter les données"
                     >
                         <ChartBarIcon className="w-5 h-5" />
-                        Analytics Power BI
+                        Analytics & Rapports
                     </button>
                 </div>
             </div>
@@ -187,43 +188,56 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                 {/* Revenue Chart */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                        <ArrowTrendingUpIcon className="w-5 h-5 text-blue-500" />
-                        Évolution du Chiffre d'Affaires
-                    </h2>
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <ArrowTrendingUpIcon className="w-5 h-5 text-blue-500" />
+                            Évolution du Chiffre d'Affaires
+                        </h2>
+                        <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full">
+                            Total : {formatCurrency(dashboardData?.revenue?.totalRevenue || 0)}
+                        </span>
+                    </div>
                     <div className="h-80 w-full" style={{ minWidth: 0 }}>
                         {dashboardData && (
                         <ResponsiveContainer width="100%" height={320}>
-                            <AreaChart data={dashboardData?.monthlyStats || []}>
+                            <AreaChart data={dashboardData?.monthlyStats || []} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.05} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                 <XAxis
-                                    dataKey="_id"
-                                    tickFormatter={(item) => typeof item === 'string' ? item : `${item.month}/${item.year}`}
-                                    axisLine={false}
+                                    dataKey="label"
+                                    axisLine={{ stroke: '#E5E7EB' }}
                                     tickLine={false}
+                                    tick={{ fill: '#6B7280', fontSize: 11 }}
+                                    interval={period === '30d' ? 4 : period === '7d' ? 0 : 'preserveEnd'}
                                 />
                                 <YAxis
                                     axisLine={false}
                                     tickLine={false}
-                                    tickFormatter={(value) => `${value / 1000}k`}
+                                    tick={{ fill: '#6B7280', fontSize: 11 }}
+                                    tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : `${value} DT`}
                                 />
                                 <Tooltip
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(value) => formatCurrency(value)}
+                                    contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    formatter={(value) => [formatCurrency(value), 'Revenu']}
+                                    labelFormatter={(label, items) => {
+                                        const dateKey = items?.[0]?.payload?._id;
+                                        return dateKey ? `${label} (${dateKey})` : label;
+                                    }}
                                 />
                                 <Area
                                     type="monotone"
                                     dataKey="revenue"
                                     stroke="#3B82F6"
-                                    strokeWidth={2}
+                                    strokeWidth={2.5}
                                     fillOpacity={1}
                                     fill="url(#colorRevenue)"
+                                    dot={{ r: 3, fill: '#3B82F6', strokeWidth: 1 }}
+                                    activeDot={{ r: 6, fill: '#1D4ED8', stroke: '#fff', strokeWidth: 2 }}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -239,34 +253,38 @@ const AdminDashboard = () => {
                     </h2>
                     <div className="h-64 w-full relative" style={{ minWidth: 0 }}>
                         {orderStatusData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={256}>
-                            <PieChart>
-                                <Pie
-                                    data={orderStatusData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {orderStatusData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <>
+                            <ResponsiveContainer width="100%" height={256}>
+                                <PieChart>
+                                    <Pie
+                                        data={orderStatusData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {orderStatusData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(value, name) => [`${value} commande(s)`, name]} />
+                                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-[60%] text-center pointer-events-none">
+                                <span className="text-3xl font-bold text-gray-800">{dashboardData?.summary?.totalOrders ?? 0}</span>
+                                <p className="text-xs text-gray-500">Total</p>
+                            </div>
+                        </>
                         ) : (
-                        <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                            Aucune donnée de commande
+                        <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                            <span className="text-3xl font-bold text-gray-400 mb-1">{dashboardData?.summary?.totalOrders ?? 0}</span>
+                            <p className="text-sm text-gray-600 font-semibold">Commandes au total</p>
+                            <p className="text-xs text-gray-400 mt-2">Aucun statut actif disponible sur cette période</p>
                         </div>
                         )}
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-[60%] text-center pointer-events-none">
-                            <span className="text-3xl font-bold text-gray-800">{dashboardData?.summary?.totalOrders}</span>
-                            <p className="text-xs text-gray-500">Total</p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -288,19 +306,27 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {dashboardData?.topProducts?.slice(0, 5).map((product, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                            {product.name || product.productName}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
-                                            {product.totalSold}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
-                                            {formatCurrency(product.totalRevenue || product.price * product.totalSold)}
+                                {dashboardData?.topProducts?.length > 0 ? (
+                                    dashboardData.topProducts.slice(0, 5).map((product, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                                {product.name || product.productName}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
+                                                {product.totalSold}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
+                                                {formatCurrency(product.totalRevenue || product.price * product.totalSold)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-400">
+                                            Aucune vente enregistrée sur cette période
                                         </td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -322,32 +348,40 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {dashboardData?.topUsers?.slice(0, 5).map((user, idx) => {
-                                    const displayFirst = user.firstName || user.userName?.split(' ')[0] || '';
-                                    const displayLast = user.lastName || user.userName?.split(' ').slice(1).join(' ') || '';
-                                    const displayEmail = user.email || user.userEmail || user.phone || '';
-                                    return (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
-                                                    {displayFirst?.charAt(0)}{displayLast?.charAt(0)}
+                                {dashboardData?.topUsers?.length > 0 ? (
+                                    dashboardData.topUsers.slice(0, 5).map((user, idx) => {
+                                        const displayFirst = user.firstName || user.userName?.split(' ')[0] || 'Client';
+                                        const displayLast = user.lastName || user.userName?.split(' ').slice(1).join(' ') || '';
+                                        const displayEmail = user.email || user.userEmail || user.phone || 'Invité';
+                                        return (
+                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+                                                        {displayFirst?.charAt(0)}{displayLast?.charAt(0) || displayFirst?.charAt(1) || 'C'}
+                                                    </div>
+                                                    <div className="ml-3">
+                                                        <p className="text-sm font-medium text-gray-900">{displayFirst} {displayLast}</p>
+                                                        <p className="text-xs text-gray-500">{displayEmail}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="ml-3">
-                                                    <p className="text-sm font-medium text-gray-900">{displayFirst} {displayLast}</p>
-                                                    <p className="text-xs text-gray-500">{displayEmail}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
-                                            {user.orderCount ?? user.totalOrders}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
-                                            {formatCurrency(user.totalSpent)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
+                                                {user.orderCount ?? user.totalOrders}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
+                                                {formatCurrency(user.totalSpent)}
+                                            </td>
+                                        </tr>
+                                        );
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-400">
+                                            Aucun client enregistré sur cette période
                                         </td>
                                     </tr>
-                                    );
-                                })}
+                                )}
                             </tbody>
                         </table>
                     </div>
