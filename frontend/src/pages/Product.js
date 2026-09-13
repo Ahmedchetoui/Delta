@@ -526,7 +526,7 @@ const Product = () => {
             {/* Description */}
             <div className="mt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('description')}</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="whitespace-pre-line text-gray-600 leading-relaxed">
                 {currentProduct.description}
               </p>
             </div>
