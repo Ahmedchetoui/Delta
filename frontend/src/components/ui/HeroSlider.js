@@ -71,25 +71,29 @@ const HeroSlider = ({ slides = [] }) => {
                 <div className="max-w-3xl mx-auto text-center">
 
                   {/* Collection Badge */}
-                  <div className="mb-6 fade-in-up">
-                    <span className="inline-block px-6 py-2 bg-white/10 backdrop-blur-md border-2 border-white/30 text-white text-sm font-bold rounded-full uppercase tracking-wider">
-                      ✨ Nouvelle Collection ✨
-                    </span>
-                  </div>
+                  {slide.showCollectionBadge !== false && (
+                    <div className="mb-6 fade-in-up">
+                      <span className="inline-block px-6 py-2 bg-white/10 backdrop-blur-md border-2 border-white/30 text-white text-sm font-bold rounded-full uppercase tracking-wider">
+                        ✨ Nouvelle Collection ✨
+                      </span>
+                    </div>
+                  )}
 
                   {/* Main Title */}
-                  <h1
-                    className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 fade-in-up heading-premium"
-                    style={{
-                      fontFamily: "'Playfair Display', serif",
-                      color: 'white',
-                      textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-                      animationDelay: '0.2s'
-                    }}
-                  >
-                    <span className="block">DELTA</span>
-                    <span className="block text-blue-400">FASHION</span>
-                  </h1>
+                  {slide.showBrandTitle !== false && (
+                    <h1
+                      className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 fade-in-up heading-premium"
+                      style={{
+                        fontFamily: "'Playfair Display', serif",
+                        color: 'white',
+                        textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                        animationDelay: '0.2s'
+                      }}
+                    >
+                      <span className="block">DELTA</span>
+                      <span className="block text-blue-400">FASHION</span>
+                    </h1>
+                  )}
 
                   {/* Subtitle */}
                   <p
@@ -116,15 +120,17 @@ const HeroSlider = ({ slides = [] }) => {
                   </p>
 
                   {/* CTA Button */}
-                  <div className="fade-in-up" style={{ animationDelay: '0.8s' }}>
-                    <Link
-                      to={slide.link}
-                      className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-300 shadow-xl hover:shadow-2xl text-sm md:text-base"
-                    >
-                      {slide.buttonText}
-                      <ArrowRightIcon className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                    </Link>
-                  </div>
+                  {slide.showButton !== false && slide.buttonText && (
+                    <div className="fade-in-up" style={{ animationDelay: '0.8s' }}>
+                      <Link
+                        to={slide.link}
+                        className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-300 shadow-xl hover:shadow-2xl text-sm md:text-base"
+                      >
+                        {slide.buttonText}
+                        <ArrowRightIcon className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </div>
+                  )}
 
                 </div>
               </div>

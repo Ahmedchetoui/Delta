@@ -32,6 +32,18 @@ const bannerSchema = new mongoose.Schema({
     trim: true,
     default: '/boutique'
   },
+  showCollectionBadge: {
+    type: Boolean,
+    default: true
+  },
+  showBrandTitle: {
+    type: Boolean,
+    default: true
+  },
+  showButton: {
+    type: Boolean,
+    default: true
+  },
   order: {
     type: Number,
     default: 0

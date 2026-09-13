@@ -8,6 +8,12 @@ const { publishCatalogUpdate } = require('../services/catalogRealtime');
 
 const router = express.Router();
 
+const parseBoolean = (value, defaultValue = true) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value.toLowerCase() !== 'false';
+  return defaultValue;
+};
+
 router.use((req, res, next) => {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
 
@@ -35,6 +41,10 @@ const bannerValidation = [
     .optional()
     .isLength({ max: 50 })
     .withMessage('Le texte du bouton ne peut pas dépasser 50 caractères'),
+  body(['showCollectionBadge', 'showBrandTitle', 'showButton'])
+    .optional()
+    .isBoolean()
+    .withMessage('Les options d’affichage doivent être des booléens'),
   body('order')
     .optional()
     .isInt({ min: 0 })
@@ -123,6 +133,9 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffe
       description,
       buttonText,
       buttonLink,
+      showCollectionBadge,
+      showBrandTitle,
+      showButton,
       order,
       isActive,
       startDate,
@@ -153,6 +166,9 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffe
       image,
       buttonText: buttonText || 'Voir les offres',
       buttonLink: buttonLink || '/boutique',
+      showCollectionBadge: parseBoolean(showCollectionBadge),
+      showBrandTitle: parseBoolean(showBrandTitle),
+      showButton: parseBoolean(showButton),
       order: order ? parseInt(order) : 0,
       isActive: isActive !== 'false',
       startDate: startDate ? new Date(startDate) : new Date(),
@@ -206,6 +222,9 @@ router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, uploadBuf
       description,
       buttonText,
       buttonLink,
+      showCollectionBadge,
+      showBrandTitle,
+      showButton,
       order,
       isActive,
       startDate,
@@ -238,6 +257,9 @@ router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, uploadBuf
     if (description !== undefined) banner.description = description;
     if (buttonText !== undefined) banner.buttonText = buttonText;
     if (buttonLink !== undefined) banner.buttonLink = buttonLink;
+    if (showCollectionBadge !== undefined) banner.showCollectionBadge = parseBoolean(showCollectionBadge);
+    if (showBrandTitle !== undefined) banner.showBrandTitle = parseBoolean(showBrandTitle);
+    if (showButton !== undefined) banner.showButton = parseBoolean(showButton);
     if (order !== undefined) banner.order = parseInt(order);
     if (isActive !== undefined) banner.isActive = isActive === 'true';
     if (startDate !== undefined) banner.startDate = startDate ? new Date(startDate) : new Date();
