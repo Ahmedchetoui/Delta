@@ -124,13 +124,13 @@ const Navbar = () => {
           </div>
 
           {/* Right Side Controls & Icons */}
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-4 [direction:ltr] md:[direction:inherit]">
             {/* Language Switcher (Desktop seulement) */}
             <div className="hidden md:block">
               <LanguageSwitcher />
             </div>
 
-            <div className="flex items-center gap-1 md:hidden" dir="ltr">
+            <div className="flex items-center gap-2 md:hidden">
               <LanguageSwitcher variant="mobile" />
 
               {/* Search Icon (Mobile) */}
