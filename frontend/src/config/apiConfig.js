@@ -17,7 +17,13 @@ export function getApiBaseUrl() {
     // En production, les requêtes passent par le proxy Vercel (/api). Ainsi
     // le navigateur ne doit jamais contacter Render directement : cela évite
     // les échecs CORS qui ne touchaient que certains appareils/réseaux.
-    if (hostname.endsWith('.vercel.app') || hostname === 'delta-fashion.vercel.app') {
+    if (
+      hostname.endsWith('.vercel.app') ||
+      hostname === 'delta-fashion.vercel.app' ||
+      hostname === 'delta-fashion.tn' ||
+      hostname === 'www.delta-fashion.tn' ||
+      (hostname !== 'localhost' && hostname !== '127.0.0.1' && !process.env.REACT_APP_API_URL)
+    ) {
       return '/api';
     }
 
