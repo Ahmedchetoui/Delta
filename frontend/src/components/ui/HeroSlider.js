@@ -33,15 +33,16 @@ const HeroSlider = ({ slides = [] }) => {
   };
 
   return (
-    <div className="relative h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
+    <div className="relative h-[560px] sm:h-[640px] md:h-[720px] lg:h-[780px] rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl bg-slate-900">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
-          className={`absolute inset-0 transition-all duration-1000 ${index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-            }`}
+          className={`absolute inset-0 transition-all duration-1000 ${
+            index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'
+          }`}
         >
           <div className="h-full relative">
-            {/* Image optimisée */}
+            {/* Image nette, haute résolution, claire et vibrante */}
             <img
               src={slide.image}
               srcSet={slide.imageSrcSet}
@@ -51,19 +52,16 @@ const HeroSlider = ({ slides = [] }) => {
               fetchPriority={index === 0 ? 'high' : 'low'}
               decoding={index === 0 ? 'sync' : 'async'}
               width="1920"
-              height="700"
+              height="800"
               onError={(e) => {
                 e.currentTarget.src = PLACEHOLDER_IMAGE;
                 e.currentTarget.srcset = '';
               }}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover object-center"
             />
 
-            {/* Subtle Gradient Overlay so Banner is clearly visible */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30"></div>
-
-            {/* Pattern Overlay */}
-            <div className="absolute inset-0 pattern-overlay opacity-20"></div>
+            {/* Gradient subtil et clair (plus clair pour laisser briller les visuels et détails du visuel) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent pointer-events-none"></div>
 
             {/* Content */}
             <div className="relative h-full flex items-center">
@@ -73,8 +71,8 @@ const HeroSlider = ({ slides = [] }) => {
                   {/* Collection Badge */}
                   {slide.showCollectionBadge !== false && (
                     <div className="mb-6 fade-in-up">
-                      <span className="inline-block px-6 py-2 bg-white/10 backdrop-blur-md border-2 border-white/30 text-white text-sm font-bold rounded-full uppercase tracking-wider">
-                        ✨ Nouvelle Collection ✨
+                      <span className="inline-block px-6 py-2 bg-black/30 backdrop-blur-md border border-white/40 text-white text-xs md:text-sm font-bold rounded-full uppercase tracking-wider shadow-lg">
+                        ✨ NOUVELLE COLLECTION ✨
                       </span>
                     </div>
                   )}
@@ -82,26 +80,26 @@ const HeroSlider = ({ slides = [] }) => {
                   {/* Main Title */}
                   {slide.showBrandTitle !== false && (
                     <h1
-                      className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 fade-in-up heading-premium"
+                      className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 fade-in-up heading-premium tracking-wide"
                       style={{
                         fontFamily: "'Playfair Display', serif",
                         color: 'white',
-                        textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                        textShadow: '0 4px 24px rgba(0, 0, 0, 0.7)',
                         animationDelay: '0.2s'
                       }}
                     >
-                      <span className="block">DELTA</span>
-                      <span className="block text-blue-400">FASHION</span>
+                      <span className="block drop-shadow-md">DELTA</span>
+                      <span className="block text-blue-400 drop-shadow-md">FASHION</span>
                     </h1>
                   )}
 
                   {/* Subtitle */}
                   <p
-                    className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-4 fade-in-up"
+                    className="text-xl md:text-2xl lg:text-3xl text-white font-medium mb-3 fade-in-up drop-shadow-md"
                     style={{
                       fontFamily: "'Montserrat', sans-serif",
-                      fontWeight: 300,
-                      letterSpacing: '2px',
+                      letterSpacing: '1px',
+                      textShadow: '0 2px 12px rgba(0, 0, 0, 0.7)',
                       animationDelay: '0.4s'
                     }}
                   >
@@ -110,9 +108,10 @@ const HeroSlider = ({ slides = [] }) => {
 
                   {/* Description */}
                   <p
-                    className="text-base md:text-lg text-white/80 mb-10 max-w-2xl mx-auto fade-in-up"
+                    className="text-base md:text-lg text-white/95 mb-8 max-w-2xl mx-auto fade-in-up drop-shadow"
                     style={{
                       fontFamily: "'Montserrat', sans-serif",
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.7)',
                       animationDelay: '0.6s'
                     }}
                   >
@@ -124,10 +123,10 @@ const HeroSlider = ({ slides = [] }) => {
                     <div className="fade-in-up" style={{ animationDelay: '0.8s' }}>
                       <Link
                         to={slide.link}
-                        className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-300 shadow-xl hover:shadow-2xl text-sm md:text-base"
+                        className="inline-flex items-center px-8 py-3.5 md:py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full md:rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl text-sm md:text-base hover:scale-105"
                       >
                         {slide.buttonText}
-                        <ArrowRightIcon className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                        <ArrowRightIcon className="ml-2 h-5 w-5 rtl:rotate-180 transition-transform group-hover:translate-x-1" />
                       </Link>
                     </div>
                   )}
@@ -139,39 +138,43 @@ const HeroSlider = ({ slides = [] }) => {
         </div>
       ))}
 
-      {/* Navigation Arrows */}
+      {/* Navigation Arrows like Alfarouk */}
       {slides.length > 1 && (
-      <button
-        onClick={goToPrevious}
-        className="absolute left-6 md:left-10 top-1/2 transform -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-white/50 bg-white/10 backdrop-blur-md hover:bg-blue-600 hover:border-blue-600 text-white transition-all duration-300 flex items-center justify-center hover:scale-110"
-      >
-        <ChevronLeftIcon className="h-6 w-6" />
-      </button>
+        <button
+          onClick={goToPrevious}
+          className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 w-11 h-11 md:w-13 md:h-13 rounded-full bg-black/30 backdrop-blur-md hover:bg-black/60 text-white border border-white/25 transition-all duration-300 flex items-center justify-center hover:scale-110 z-20"
+          aria-label="Previous slide"
+        >
+          <ChevronLeftIcon className="h-6 w-6 rtl:rotate-180" />
+        </button>
       )}
 
       {slides.length > 1 && (
-      <button
-        onClick={goToNext}
-        className="absolute right-6 md:right-10 top-1/2 transform -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-white/50 bg-white/10 backdrop-blur-md hover:bg-blue-600 hover:border-blue-600 text-white transition-all duration-300 flex items-center justify-center hover:scale-110"
-      >
-        <ChevronRightIcon className="h-6 w-6" />
-      </button>
+        <button
+          onClick={goToNext}
+          className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 w-11 h-11 md:w-13 md:h-13 rounded-full bg-black/30 backdrop-blur-md hover:bg-black/60 text-white border border-white/25 transition-all duration-300 flex items-center justify-center hover:scale-110 z-20"
+          aria-label="Next slide"
+        >
+          <ChevronRightIcon className="h-6 w-6 rtl:rotate-180" />
+        </button>
       )}
 
-      {/* Dots Indicator */}
+      {/* Horizontal Bar Indicators like Alfarouk */}
       {slides.length > 1 && (
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`transition-all duration-300 rounded-full ${index === currentSlide
-              ? 'w-10 h-3 bg-blue-500 shadow-lg'
-              : 'w-3 h-3 bg-white/50 hover:bg-white/75 hover:scale-110'
+        <div className="absolute bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2 flex items-center space-x-2.5 rtl:space-x-reverse z-20">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                index === currentSlide
+                  ? 'w-10 md:w-14 bg-blue-500 shadow-md'
+                  : 'w-5 md:w-7 bg-white/40 hover:bg-white/70'
               }`}
-          />
-        ))}
-      </div>
+              aria-label={`Slide ${index + 1}`}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

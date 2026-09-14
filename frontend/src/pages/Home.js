@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import Skeleton from '../components/ui/Skeleton';
 import ProductCard from '../components/product/ProductCard';
 import HeroSlider from '../components/ui/HeroSlider';
@@ -72,43 +73,46 @@ const Home = () => {
 
   const showHeroSkeleton = homeLoading && banners.length === 0;
 
+  const activeCategories = categories.filter((c) => !c.parentCategory);
+
   return (
-    <div className="min-h-screen bg-white -mt-14 md:-mt-16">
-      {showHeroSkeleton ? (
-        <section className="relative h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
-          <div className="absolute inset-0 pattern-overlay opacity-20" />
-          <div className="relative flex h-full items-center justify-center px-4 text-center">
-            <div>
-              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>
-              <h1 className="mb-6 text-5xl font-bold md:text-6xl">{t('heroTitle')}</h1>
-              <Link
-                to="/shop"
-                className="inline-block rounded-lg bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
-              >
-                {t('discoverShop')}
-              </Link>
+    <div className="min-h-screen bg-white">
+      {/* Hero Banner styled like Alfarouk with rounded corners, side margins, and grand height */}
+      <div className="pt-2 sm:pt-3 md:pt-4 pb-4 md:pb-6 px-3 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
+        {showHeroSkeleton ? (
+          <section className="relative h-[560px] sm:h-[640px] md:h-[720px] lg:h-[780px] rounded-3xl md:rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white shadow-2xl">
+            <div className="relative flex h-full items-center justify-center px-4 text-center">
+              <div>
+                <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>
+                <h1 className="mb-6 text-5xl font-bold md:text-6xl">{t('heroTitle')}</h1>
+                <Link
+                  to="/shop"
+                  className="inline-block rounded-xl bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
+                >
+                  {t('discoverShop')}
+                </Link>
+              </div>
             </div>
-          </div>
-        </section>
-      ) : heroSlides.length > 0 ? (
-        <HeroSlider slides={heroSlides} />
-      ) : (
-        <section className="relative h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
-          <div className="absolute inset-0 pattern-overlay opacity-20" />
-          <div className="relative flex h-full items-center justify-center px-4 text-center">
-            <div>
-              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>
-              <h1 className="mb-6 text-5xl font-bold md:text-6xl">{t('heroTitle')}</h1>
-              <Link
-                to="/shop"
-                className="inline-block rounded-lg bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
-              >
-                {t('discoverShop')}
-              </Link>
+          </section>
+        ) : heroSlides.length > 0 ? (
+          <HeroSlider slides={heroSlides} />
+        ) : (
+          <section className="relative h-[560px] sm:h-[640px] md:h-[720px] lg:h-[780px] rounded-3xl md:rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white shadow-2xl">
+            <div className="relative flex h-full items-center justify-center px-4 text-center">
+              <div>
+                <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>
+                <h1 className="mb-6 text-5xl font-bold md:text-6xl">{t('heroTitle')}</h1>
+                <Link
+                  to="/shop"
+                  className="inline-block rounded-xl bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
+                >
+                  {t('discoverShop')}
+                </Link>
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+      </div>
 
       {showLoadError && (
         <div className="max-w-lg mx-auto my-8 p-6 bg-amber-50 border border-amber-200 rounded-xl text-center">
@@ -135,42 +139,55 @@ const Home = () => {
             <p className="text-lg text-gray-600">{t('exploreCollection')}</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+          <div
+            className={`grid gap-8 ${
+              activeCategories.length === 1
+                ? 'grid-cols-1 max-w-sm sm:max-w-md mx-auto justify-center'
+                : activeCategories.length === 2
+                ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto justify-center'
+                : activeCategories.length === 3
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto'
+                : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+            }`}
+          >
             {showCategorySkeleton ? (
-              [...Array(4)].map((_, i) => (
-                <div key={i} className="relative h-72 rounded-2xl overflow-hidden shadow-lg">
+              [...Array(activeCategories.length || 2)].map((_, i) => (
+                <div key={i} className="relative h-[420px] sm:h-[460px] md:h-[480px] lg:h-[500px] rounded-3xl overflow-hidden shadow-lg">
                   <Skeleton className="w-full h-full" />
                 </div>
               ))
             ) : (
-              categories
-                .filter((c) => !c.parentCategory)
-                .map((category) => (
-                  <Link key={category._id} to={`/shop?category=${category._id}`} className="group">
-                    <div className="relative h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
-                      <img
-                        key={`${category._id}-${category.updatedAt || ''}`}
-                        src={resolveImageUrl(category.image, 480, category.updatedAt)}
-                        srcSet={getResponsiveImageSrcSet(category.image, [320, 480, 640, 800], category.updatedAt)}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        alt={category.name}
-                        loading="lazy"
-                        width="600"
-                        height="800"
-                        onError={(e) => {
-                          e.currentTarget.src = PLACEHOLDER_IMAGE;
-                          e.currentTarget.srcset = '';
-                        }}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                      <div className="absolute bottom-6 left-6 rtl:left-auto rtl:right-6">
-                        <h3 className="text-white text-2xl font-bold capitalize mb-2">{category.name}</h3>
-                        <span className="text-blue-400 font-medium">{t('discover')}</span>
-                      </div>
+              activeCategories.map((category) => (
+                <Link key={category._id} to={`/shop?category=${category._id}`} className="group block">
+                  <div className="relative h-[420px] sm:h-[460px] md:h-[480px] lg:h-[500px] rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100">
+                    <img
+                      key={`${category._id}-${category.updatedAt || ''}`}
+                      src={resolveImageUrl(category.image, 640, category.updatedAt)}
+                      srcSet={getResponsiveImageSrcSet(category.image, [360, 480, 640, 800], category.updatedAt)}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      alt={category.name}
+                      loading="lazy"
+                      width="600"
+                      height="800"
+                      onError={(e) => {
+                        e.currentTarget.src = PLACEHOLDER_IMAGE;
+                        e.currentTarget.srcset = '';
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                    <div className="absolute bottom-8 left-8 right-8 rtl:left-auto rtl:right-8">
+                      <h3 className="text-white text-2xl md:text-3xl font-bold capitalize mb-2 drop-shadow-md">
+                        {category.name}
+                      </h3>
+                      <span className="inline-flex items-center gap-2 text-blue-400 font-semibold text-sm md:text-base group-hover:text-blue-300 transition-colors">
+                        {t('discover')}
+                        <ArrowRightIcon className="w-4 h-4 rtl:rotate-180 transition-transform group-hover:translate-x-1" />
+                      </span>
                     </div>
-                  </Link>
-                ))
+                  </div>
+                </Link>
+              ))
             )}
           </div>
         </div>
