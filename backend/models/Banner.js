@@ -36,9 +36,21 @@ const bannerSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  collectionBadgeText: {
+    type: String,
+    trim: true,
+    maxlength: 100,
+    default: '✨ NOUVELLE COLLECTION ✨'
+  },
   showBrandTitle: {
     type: Boolean,
     default: true
+  },
+  brandTitle: {
+    type: String,
+    trim: true,
+    maxlength: 100,
+    default: 'DELTA FASHION'
   },
   showButton: {
     type: Boolean,

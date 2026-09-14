@@ -41,6 +41,14 @@ const bannerValidation = [
     .optional()
     .isLength({ max: 50 })
     .withMessage('Le texte du bouton ne peut pas dépasser 50 caractères'),
+  body('collectionBadgeText')
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage('Le texte du cadre ne peut pas dépasser 100 caractères'),
+  body('brandTitle')
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage('Le titre ne peut pas dépasser 100 caractères'),
   body(['showCollectionBadge', 'showBrandTitle', 'showButton'])
     .optional()
     .isBoolean()
@@ -134,7 +142,9 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffe
       buttonText,
       buttonLink,
       showCollectionBadge,
+      collectionBadgeText,
       showBrandTitle,
+      brandTitle,
       showButton,
       order,
       isActive,
@@ -167,7 +177,9 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffe
       buttonText: buttonText || 'Voir les offres',
       buttonLink: buttonLink || '/boutique',
       showCollectionBadge: parseBoolean(showCollectionBadge),
+      collectionBadgeText: collectionBadgeText || '✨ NOUVELLE COLLECTION ✨',
       showBrandTitle: parseBoolean(showBrandTitle),
+      brandTitle: brandTitle || 'DELTA FASHION',
       showButton: parseBoolean(showButton),
       order: order ? parseInt(order) : 0,
       isActive: isActive !== 'false',
@@ -223,7 +235,9 @@ router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, uploadBuf
       buttonText,
       buttonLink,
       showCollectionBadge,
+      collectionBadgeText,
       showBrandTitle,
+      brandTitle,
       showButton,
       order,
       isActive,
@@ -258,7 +272,9 @@ router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, uploadBuf
     if (buttonText !== undefined) banner.buttonText = buttonText;
     if (buttonLink !== undefined) banner.buttonLink = buttonLink;
     if (showCollectionBadge !== undefined) banner.showCollectionBadge = parseBoolean(showCollectionBadge);
+    if (collectionBadgeText !== undefined) banner.collectionBadgeText = collectionBadgeText;
     if (showBrandTitle !== undefined) banner.showBrandTitle = parseBoolean(showBrandTitle);
+    if (brandTitle !== undefined) banner.brandTitle = brandTitle;
     if (showButton !== undefined) banner.showButton = parseBoolean(showButton);
     if (order !== undefined) banner.order = parseInt(order);
     if (isActive !== undefined) banner.isActive = isActive === 'true';

@@ -3,6 +3,22 @@ import { Link } from 'react-router-dom';
 import { ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
 
+const renderBrandTitle = (title) => {
+  const text = (title || 'DELTA FASHION').trim();
+  const spaceIndex = text.indexOf(' ');
+  if (spaceIndex === -1) {
+    return <span className="block text-blue-400">{text}</span>;
+  }
+  const first = text.substring(0, spaceIndex);
+  const rest = text.substring(spaceIndex + 1);
+  return (
+    <>
+      <span className="block">{first}</span>
+      <span className="block text-blue-400">{rest}</span>
+    </>
+  );
+};
+
 const HeroSlider = ({ slides = [] }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -74,7 +90,7 @@ const HeroSlider = ({ slides = [] }) => {
                   {slide.showCollectionBadge !== false && (
                     <div className="mb-6">
                       <span className="inline-block px-6 py-2 bg-black/40 border border-white/40 text-white text-xs md:text-sm font-bold rounded-full uppercase tracking-wider shadow-lg">
-                        ✨ NOUVELLE COLLECTION ✨
+                        {slide.collectionBadgeText || '✨ NOUVELLE COLLECTION ✨'}
                       </span>
                     </div>
                   )}
@@ -92,8 +108,7 @@ const HeroSlider = ({ slides = [] }) => {
                         transform: 'translateZ(0)'
                       }}
                     >
-                      <span className="block">DELTA</span>
-                      <span className="block text-blue-400">FASHION</span>
+                      {renderBrandTitle(slide.brandTitle)}
                     </h1>
                   )}
 

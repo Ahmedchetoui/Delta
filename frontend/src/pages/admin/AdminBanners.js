@@ -14,7 +14,9 @@ const AdminBanners = () => {
     buttonText: 'Voir les offres',
     buttonLink: '/shop',
     showCollectionBadge: true,
+    collectionBadgeText: '✨ NOUVELLE COLLECTION ✨',
     showBrandTitle: true,
+    brandTitle: 'DELTA FASHION',
     showButton: true,
     order: 0,
     isActive: true,
@@ -88,12 +90,14 @@ const AdminBanners = () => {
       title: banner.title,
       subtitle: banner.subtitle || '',
       description: banner.description || '',
-      buttonText: banner.buttonText,
-      buttonLink: banner.buttonLink,
+      buttonText: banner.buttonText || 'Voir les offres',
+      buttonLink: banner.buttonLink || '/shop',
       showCollectionBadge: banner.showCollectionBadge !== false,
+      collectionBadgeText: banner.collectionBadgeText || '✨ NOUVELLE COLLECTION ✨',
       showBrandTitle: banner.showBrandTitle !== false,
+      brandTitle: banner.brandTitle || 'DELTA FASHION',
       showButton: banner.showButton !== false,
-      order: banner.order,
+      order: banner.order || 0,
       isActive: banner.isActive,
       backgroundColor: banner.backgroundColor,
       textColor: banner.textColor,
@@ -134,7 +138,9 @@ const AdminBanners = () => {
       buttonText: 'Voir les offres',
       buttonLink: '/shop',
       showCollectionBadge: true,
+      collectionBadgeText: '✨ NOUVELLE COLLECTION ✨',
       showBrandTitle: true,
+      brandTitle: 'DELTA FASHION',
       showButton: true,
       order: 0,
       isActive: true,
@@ -212,67 +218,99 @@ const AdminBanners = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <fieldset className="rounded-xl border border-blue-200 bg-gradient-to-b from-blue-50/80 to-blue-50/30 p-5 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Texte du bouton
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.buttonText}
-                    onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2"
-                  />
+                  <legend className="px-1 text-base font-bold text-blue-950">
+                    Éléments affichés sur cette bannière &amp; personnalisation des textes
+                  </legend>
+                  <p className="text-xs text-blue-700">
+                    Cochez les éléments visibles et personnalisez leurs textes pour cette bannière uniquement.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lien du bouton
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.buttonLink}
-                    onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2"
-                  />
-                </div>
-              </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {/* Élément 1: Cadre Badge */}
+                  <div className={`rounded-xl border p-3.5 transition-all ${formData.showCollectionBadge ? 'border-blue-300 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/70 opacity-75'}`}>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-gray-800 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.showCollectionBadge}
+                        onChange={(e) => setFormData({ ...formData, showCollectionBadge: e.target.checked })}
+                        className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
+                      />
+                      Cadre badge
+                    </label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Texte du cadre :
+                    </label>
+                    <input
+                      type="text"
+                      disabled={!formData.showCollectionBadge}
+                      value={formData.collectionBadgeText}
+                      onChange={(e) => setFormData({ ...formData, collectionBadgeText: e.target.value })}
+                      placeholder="✨ NOUVELLE COLLECTION ✨"
+                      className="w-full border rounded-lg px-2.5 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-              <fieldset className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <legend className="px-1 text-sm font-semibold text-blue-950">
-                  Éléments affichés sur cette bannière
-                </legend>
-                <p className="mb-3 text-xs text-blue-800">
-                  Choisissez les éléments visibles pour cette bannière uniquement.
-                </p>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-blue-100 bg-white px-3 py-2 text-sm font-medium text-gray-700">
+                  {/* Élément 2: Grand Titre */}
+                  <div className={`rounded-xl border p-3.5 transition-all ${formData.showBrandTitle ? 'border-blue-300 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/70 opacity-75'}`}>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-gray-800 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.showBrandTitle}
+                        onChange={(e) => setFormData({ ...formData, showBrandTitle: e.target.checked })}
+                        className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
+                      />
+                      Titre principal
+                    </label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Texte du titre :
+                    </label>
                     <input
-                      type="checkbox"
-                      checked={formData.showCollectionBadge}
-                      onChange={(e) => setFormData({ ...formData, showCollectionBadge: e.target.checked })}
-                      className="rounded text-blue-600 focus:ring-blue-500"
+                      type="text"
+                      disabled={!formData.showBrandTitle}
+                      value={formData.brandTitle}
+                      onChange={(e) => setFormData({ ...formData, brandTitle: e.target.value })}
+                      placeholder="DELTA FASHION"
+                      className="w-full border rounded-lg px-2.5 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:ring-2 focus:ring-blue-500"
                     />
-                    Cadre « Nouvelle collection »
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-blue-100 bg-white px-3 py-2 text-sm font-medium text-gray-700">
+                  </div>
+
+                  {/* Élément 3: Bouton */}
+                  <div className={`rounded-xl border p-3.5 transition-all ${formData.showButton ? 'border-blue-300 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/70 opacity-75'}`}>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-gray-800 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.showButton}
+                        onChange={(e) => setFormData({ ...formData, showButton: e.target.checked })}
+                        className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
+                      />
+                      Bouton d'action
+                    </label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Texte du bouton :
+                    </label>
                     <input
-                      type="checkbox"
-                      checked={formData.showBrandTitle}
-                      onChange={(e) => setFormData({ ...formData, showBrandTitle: e.target.checked })}
-                      className="rounded text-blue-600 focus:ring-blue-500"
+                      type="text"
+                      disabled={!formData.showButton}
+                      value={formData.buttonText}
+                      onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
+                      placeholder="Voir les offres"
+                      className="w-full border rounded-lg px-2.5 py-1.5 text-sm mb-2 disabled:bg-gray-100 disabled:text-gray-400 focus:ring-2 focus:ring-blue-500"
                     />
-                    Titre « DELTA FASHION »
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-blue-100 bg-white px-3 py-2 text-sm font-medium text-gray-700">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Lien du bouton :
+                    </label>
                     <input
-                      type="checkbox"
-                      checked={formData.showButton}
-                      onChange={(e) => setFormData({ ...formData, showButton: e.target.checked })}
-                      className="rounded text-blue-600 focus:ring-blue-500"
+                      type="text"
+                      disabled={!formData.showButton}
+                      value={formData.buttonLink}
+                      onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
+                      placeholder="/shop"
+                      className="w-full border rounded-lg px-2.5 py-1.5 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus:ring-2 focus:ring-blue-500"
                     />
-                    Bouton « Voir les offres »
-                  </label>
+                  </div>
                 </div>
               </fieldset>
 
