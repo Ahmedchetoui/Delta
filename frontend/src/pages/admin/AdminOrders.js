@@ -3,6 +3,7 @@ import {
     EyeIcon,
     PencilIcon,
     XCircleIcon,
+    TrashIcon,
     FunnelIcon,
     MagnifyingGlassIcon,
     ChevronLeftIcon,
@@ -12,6 +13,7 @@ import api from '../../services/api';
 import OrderDetailsModal from '../../components/admin/OrderDetailsModal';
 import OrderStatusModal from '../../components/admin/OrderStatusModal';
 import CancelOrderModal from '../../components/admin/CancelOrderModal';
+import DeleteOrderModal from '../../components/admin/DeleteOrderModal';
 import { toast } from 'react-toastify';
 
 const AdminOrders = () => {
@@ -35,6 +37,7 @@ const AdminOrders = () => {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const statusLabels = {
         pending: { label: 'En attente', color: 'bg-yellow-100 text-yellow-800' },
@@ -137,6 +140,11 @@ const AdminOrders = () => {
     const handleCancelOrder = (order) => {
         setSelectedOrder(order);
         setShowCancelModal(true);
+    };
+
+    const handleDeleteClick = (order) => {
+        setSelectedOrder(order);
+        setShowDeleteModal(true);
     };
 
     const handleOrderUpdated = () => {
@@ -338,12 +346,19 @@ const AdminOrders = () => {
                                                 {!['delivered', 'cancelled', 'refunded'].includes(order.orderStatus) && (
                                                     <button
                                                         onClick={() => handleCancelOrder(order)}
-                                                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                                                        className="text-orange-600 hover:text-orange-900 p-1 rounded hover:bg-orange-50"
                                                         title="Annuler la commande"
                                                     >
                                                         <XCircleIcon className="h-5 w-5" />
                                                     </button>
                                                 )}
+                                                <button
+                                                    onClick={() => handleDeleteClick(order)}
+                                                    className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                                                    title="Supprimer définitivement la commande"
+                                                >
+                                                    <TrashIcon className="h-5 w-5" />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -430,6 +445,16 @@ const AdminOrders = () => {
                     setSelectedOrder(null);
                 }}
                 onCancel={handleOrderUpdated}
+            />
+
+            <DeleteOrderModal
+                order={selectedOrder}
+                isOpen={showDeleteModal}
+                onClose={() => {
+                    setShowDeleteModal(false);
+                    setSelectedOrder(null);
+                }}
+                onDelete={handleOrderUpdated}
             />
         </div>
     );
