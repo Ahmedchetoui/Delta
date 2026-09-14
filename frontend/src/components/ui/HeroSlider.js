@@ -37,8 +37,8 @@ const HeroSlider = ({ slides = [] }) => {
       {slides.map((slide, index) => (
         <div
           key={slide.id}
-          className={`absolute inset-0 transition-all duration-1000 ${
-            index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'
+          className={`absolute inset-0 transition-opacity duration-1000 ${
+            index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         >
           <div className="h-full relative">
@@ -57,7 +57,8 @@ const HeroSlider = ({ slides = [] }) => {
                 e.currentTarget.src = PLACEHOLDER_IMAGE;
                 e.currentTarget.srcset = '';
               }}
-              className="absolute inset-0 w-full h-full object-cover object-center"
+              className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-[8000ms] ease-out"
+              style={{ transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)' }}
             />
 
             {/* Gradient subtil et clair (plus clair pour laisser briller les visuels et détails du visuel) */}
