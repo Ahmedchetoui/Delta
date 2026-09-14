@@ -25,6 +25,8 @@ const AdminBanners = () => {
     position: 'center'
   });
   const [imageFile, setImageFile] = useState(null);
+  const [mobileImageFile, setMobileImageFile] = useState(null);
+  const [removeMobileImage, setRemoveMobileImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -65,6 +67,12 @@ const AdminBanners = () => {
 
       if (imageFile) {
         form.append('image', imageFile);
+      }
+      if (mobileImageFile) {
+        form.append('mobileImage', mobileImageFile);
+      }
+      if (removeMobileImage) {
+        form.append('removeMobileImage', 'true');
       }
 
       if (editingBanner) {
@@ -149,6 +157,8 @@ const AdminBanners = () => {
       position: 'center'
     });
     setImageFile(null);
+    setMobileImageFile(null);
+    setRemoveMobileImage(false);
     setEditingBanner(null);
     setShowForm(false);
   };
@@ -382,26 +392,88 @@ const AdminBanners = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image {!editingBanner && '*'}
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files[0])}
-                  className="w-full border rounded-lg px-3 py-2"
-                  required={!editingBanner}
-                />
-                {editingBanner && editingBanner.image && (
-                  <div className="mt-2">
-                    <img
-                      src={editingBanner.image}
-                      alt="Aperçu"
-                      className="h-20 w-32 object-cover rounded"
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                {/* Image PC / Bureau */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-semibold text-gray-800">
+                      💻 Image PC / Bureau {!editingBanner && '*'}
+                    </label>
+                    <span className="text-xs text-gray-500">Panoramique (~1920x800)</span>
                   </div>
-                )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files[0])}
+                    className="w-full text-sm border rounded-lg px-3 py-2 bg-white"
+                    required={!editingBanner}
+                  />
+                  {(imageFile || (editingBanner && editingBanner.image)) && (
+                    <div className="mt-2 relative">
+                      <img
+                        src={imageFile ? URL.createObjectURL(imageFile) : editingBanner.image}
+                        alt="Aperçu PC"
+                        className="h-20 w-full object-cover rounded border"
+                      />
+                      <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
+                        {imageFile ? 'Nouveau fichier' : 'Image actuelle'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Image Mobile / Smartphone */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-semibold text-gray-800">
+                      📱 Image Mobile (Optionnel)
+                    </label>
+                    <span className="text-xs text-gray-500">Portrait (~800x1000)</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      setMobileImageFile(e.target.files[0]);
+                      setRemoveMobileImage(false);
+                    }}
+                    className="w-full text-sm border rounded-lg px-3 py-2 bg-white"
+                  />
+                  {(mobileImageFile || (editingBanner && editingBanner.mobileImage && !removeMobileImage)) && (
+                    <div className="mt-2 relative flex items-center justify-between bg-white p-1 rounded border">
+                      <img
+                        src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : editingBanner.mobileImage}
+                        alt="Aperçu Mobile"
+                        className="h-20 w-16 object-cover rounded border"
+                      />
+                      <div className="flex-1 ml-2 text-xs text-gray-600">
+                        <p className="font-medium text-gray-700">Image Mobile</p>
+                        <p className="text-[11px] text-gray-500">Affichée sur smartphones</p>
+                      </div>
+                      {editingBanner && editingBanner.mobileImage && !mobileImageFile && (
+                        <button
+                          type="button"
+                          onClick={() => setRemoveMobileImage(true)}
+                          className="text-xs text-red-600 hover:text-red-800 p-1 border border-red-200 rounded hover:bg-red-50"
+                        >
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {removeMobileImage && (
+                    <div className="mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200 flex justify-between items-center">
+                      <span>L'image mobile sera supprimée à l'enregistrement</span>
+                      <button
+                        type="button"
+                        onClick={() => setRemoveMobileImage(false)}
+                        className="underline text-blue-600"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">
@@ -450,11 +522,33 @@ const AdminBanners = () => {
             {banners.map((banner) => (
               <tr key={banner._id}>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <img
-                    src={banner.image}
-                    alt={banner.title}
-                    className="h-16 w-24 object-cover rounded"
-                  />
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={banner.image}
+                      alt={banner.title}
+                      className="h-14 w-20 object-cover rounded border shadow-sm"
+                      title="Image PC (Bureau)"
+                    />
+                    {banner.mobileImage && (
+                      <img
+                        src={banner.mobileImage}
+                        alt="Mobile"
+                        className="h-14 w-10 object-cover rounded border border-blue-400 shadow-sm"
+                        title="Image Mobile (Smartphone)"
+                      />
+                    )}
+                  </div>
+                  <div className="mt-1">
+                    {banner.mobileImage ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-medium">
+                        📱 PC + Mobile
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">
+                        💻 PC seul
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">{banner.title}</div>

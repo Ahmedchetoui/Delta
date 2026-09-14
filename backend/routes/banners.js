@@ -2,7 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Banner = require('../models/Banner');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
-const { uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
+const { uploadBannerImages, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
 const publicCache = require('../middleware/publicCache');
 const { publishCatalogUpdate } = require('../services/catalogRealtime');
 
@@ -12,6 +12,33 @@ const parseBoolean = (value, defaultValue = true) => {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') return value.toLowerCase() !== 'false';
   return defaultValue;
+};
+
+const extractBannerImages = (req) => {
+  let image = '';
+  let mobileImage = '';
+
+  if (req.uploadedImages && req.uploadedImages.length > 0) {
+    const imgObj = req.uploadedImages.find(u => u.fieldname === 'image');
+    const mobObj = req.uploadedImages.find(u => u.fieldname === 'mobileImage');
+    if (imgObj) image = imgObj.url;
+    if (mobObj) mobileImage = mobObj.url;
+  }
+
+  if (req.files) {
+    if (!image && req.files.image && req.files.image[0]) {
+      image = req.files.image[0].filename;
+    }
+    if (!mobileImage && req.files.mobileImage && req.files.mobileImage[0]) {
+      mobileImage = req.files.mobileImage[0].filename;
+    }
+  }
+
+  if (!image && req.file) {
+    image = req.file.filename;
+  }
+
+  return { image, mobileImage };
 };
 
 router.use((req, res, next) => {
@@ -81,7 +108,8 @@ router.get('/', publicCache(300), optionalAuth, async (req, res) => {
     // Ajouter les URLs d'images
     const bannersWithUrls = banners.map(banner => ({
       ...banner.toObject(),
-      image: getImageUrl(banner.image)
+      image: getImageUrl(banner.image),
+      mobileImage: banner.mobileImage ? getImageUrl(banner.mobileImage) : null
     }));
 
     res.json({ banners: bannersWithUrls });
@@ -110,7 +138,8 @@ router.get('/:id', async (req, res) => {
     res.json({
       banner: {
         ...banner.toObject(),
-        image: getImageUrl(banner.image)
+        image: getImageUrl(banner.image),
+        mobileImage: banner.mobileImage ? getImageUrl(banner.mobileImage) : null
       }
     });
 
@@ -125,7 +154,7 @@ router.get('/:id', async (req, res) => {
 // @route   POST /api/banners
 // @desc    Créer une nouvelle bannière
 // @access  Private (Admin)
-router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, bannerValidation, async (req, res) => {
+router.post('/', authenticateToken, requireAdmin, uploadBannerImages, uploadBuffersToCloudinary, handleUploadError, bannerValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -155,15 +184,9 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffe
       position
     } = req.body;
 
-    // Traiter l'image uploadée (Cloudinary ou local)
-    let image = '';
-    if (req.uploadedImages && req.uploadedImages.length > 0) {
-      // Image uploadée sur Cloudinary
-      image = req.uploadedImages[0].url;
-    } else if (req.file) {
-      // Image uploadée localement (fallback)
-      image = req.file.filename;
-    } else {
+    const { image, mobileImage } = extractBannerImages(req);
+
+    if (!image) {
       return res.status(400).json({
         message: 'Une image est requise'
       });
@@ -174,6 +197,7 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffe
       subtitle,
       description,
       image,
+      mobileImage: mobileImage || null,
       buttonText: buttonText || 'Voir les offres',
       buttonLink: buttonLink || '/boutique',
       showCollectionBadge: parseBoolean(showCollectionBadge),
@@ -196,7 +220,8 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffe
       message: 'Bannière créée avec succès',
       banner: {
         ...banner.toObject(),
-        image: getImageUrl(banner.image)
+        image: getImageUrl(banner.image),
+        mobileImage: banner.mobileImage ? getImageUrl(banner.mobileImage) : null
       }
     });
 
@@ -211,7 +236,7 @@ router.post('/', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffe
 // @route   PUT /api/banners/:id
 // @desc    Mettre à jour une bannière
 // @access  Private (Admin)
-router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, uploadBuffersToCloudinary, handleUploadError, bannerValidation, async (req, res) => {
+router.put('/:id', authenticateToken, requireAdmin, uploadBannerImages, uploadBuffersToCloudinary, handleUploadError, bannerValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -245,24 +270,31 @@ router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, uploadBuf
       endDate,
       backgroundColor,
       textColor,
-      position
+      position,
+      removeMobileImage
     } = req.body;
 
-    // Traiter la nouvelle image si fournie (Cloudinary ou local)
-    if (req.uploadedImages && req.uploadedImages.length > 0) {
-      // Supprimer l'ancienne image
+    const { image: newImage, mobileImage: newMobileImage } = extractBannerImages(req);
+
+    // Traiter la nouvelle image bureau si fournie
+    if (newImage) {
       if (banner.image) {
         deleteFile(banner.image);
       }
-      // Image uploadée sur Cloudinary
-      banner.image = req.uploadedImages[0].url;
-    } else if (req.file) {
-      // Supprimer l'ancienne image
-      if (banner.image) {
-        deleteFile(banner.image);
+      banner.image = newImage;
+    }
+
+    // Traiter la nouvelle image mobile si fournie
+    if (newMobileImage) {
+      if (banner.mobileImage) {
+        deleteFile(banner.mobileImage);
       }
-      // Image uploadée localement (fallback)
-      banner.image = req.file.filename;
+      banner.mobileImage = newMobileImage;
+    } else if (removeMobileImage === 'true') {
+      if (banner.mobileImage) {
+        deleteFile(banner.mobileImage);
+      }
+      banner.mobileImage = null;
     }
 
     // Mettre à jour les champs
@@ -290,7 +322,8 @@ router.put('/:id', authenticateToken, requireAdmin, uploadSingleImage, uploadBuf
       message: 'Bannière mise à jour avec succès',
       banner: {
         ...banner.toObject(),
-        image: getImageUrl(banner.image)
+        image: getImageUrl(banner.image),
+        mobileImage: banner.mobileImage ? getImageUrl(banner.mobileImage) : null
       }
     });
 
@@ -314,9 +347,12 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
       });
     }
 
-    // Supprimer l'image
+    // Supprimer les images
     if (banner.image) {
       deleteFile(banner.image);
+    }
+    if (banner.mobileImage) {
+      deleteFile(banner.mobileImage);
     }
 
     await Banner.findByIdAndDelete(req.params.id);

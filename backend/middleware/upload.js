@@ -47,12 +47,23 @@ const upload = multer({
 const uploadProductImages = upload.array('images', 10);
 const uploadSingleImage = upload.single('image');
 const uploadAvatar = upload.single('avatar');
+const uploadBannerImages = upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'mobileImage', maxCount: 1 }
+]);
 
 // Si Cloudinary est actif, middleware pour envoyer les buffers vers Cloudinary
 const uploadBuffersToCloudinary = async (req, res, next) => {
   try {
     if (!(useCloudinary && cloudinary)) return next();
-    const files = req.files || (req.file ? [req.file] : []);
+    let files = [];
+    if (Array.isArray(req.files)) {
+      files = req.files;
+    } else if (req.files && typeof req.files === 'object') {
+      files = Object.values(req.files).flat();
+    } else if (req.file) {
+      files = [req.file];
+    }
     if (!files.length) return next();
     const folder = getCloudinaryFolder();
 
@@ -77,7 +88,7 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
           { folder, resource_type: 'image' },
           (err, result) => {
             if (err) return reject(err);
-            resolve({ url: result.secure_url, public_id: result.public_id });
+            resolve({ url: result.secure_url, public_id: result.public_id, fieldname: file.fieldname });
           }
         );
         stream.end(processedBuffer);
@@ -85,7 +96,7 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
     }));
 
     // Sauvegarder les URLs Cloudinary pour usage dans les routes
-    req.uploadedImages = uploads; // [{ url, public_id }]
+    req.uploadedImages = uploads; // [{ url, public_id, fieldname }]
     next();
   } catch (err) {
     // Fallback: en cas d'échec Cloudinary, enregistrer localement et continuer
@@ -97,11 +108,18 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
         fs.mkdirSync(produitDir, { recursive: true });
       }
 
-      const files = req.files || (req.file ? [req.file] : []);
+      let files = [];
+      if (Array.isArray(req.files)) {
+        files = req.files;
+      } else if (req.files && typeof req.files === 'object') {
+        files = Object.values(req.files).flat();
+      } else if (req.file) {
+        files = [req.file];
+      }
       const localUploads = [];
       for (const f of files) {
         const ext = path.extname(f.originalname || '.jpg') || '.jpg';
-        const filename = `images-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+        const filename = `${f.fieldname || 'images'}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
         const full = path.join(produitDir, filename);
 
         // Optimisation locale si possible
@@ -115,18 +133,15 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
           }
         } catch (e) { /* ignore */ }
 
-        // f.buffer peut ne pas exister si storage n'est pas memoryStorage. Ici, c'est memoryStorage.
         const buffer = bufferToSave || f.buffer || (f.path ? fs.readFileSync(f.path) : null);
         if (!buffer) continue;
         fs.writeFileSync(full, buffer);
-        // Renseigner comme si c'était des URLs (sera préfixé par getImageUrl)
-        localUploads.push({ url: `produit/${filename}` });
+        localUploads.push({ url: `produit/${filename}`, fieldname: f.fieldname });
       }
       if (localUploads.length > 0) {
         req.uploadedImages = localUploads;
         return next();
       }
-      // Si aucun fichier n'a pu être sauvegardé, remonter l'erreur
       return next(err);
     } catch (fallbackErr) {
       console.error('Echec du fallback local après erreur Cloudinary:', fallbackErr);
@@ -212,6 +227,7 @@ module.exports = {
   uploadProductImages,
   uploadSingleImage,
   uploadAvatar,
+  uploadBannerImages,
   uploadBuffersToCloudinary,
   handleUploadError,
   deleteFile,
