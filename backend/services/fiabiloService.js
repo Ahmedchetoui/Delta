@@ -36,16 +36,29 @@ function buildShipmentPayload(order) {
 
   const addr = order.shippingAddress || {};
   const nom = `${addr.firstName || ''} ${addr.lastName || ''}`.trim();
-  const nbArticle = order.items.reduce((sum, item) => sum + item.quantity, 0);
-  const itemsText = order.items
-    .map((item) => {
-      const parts = [item.name];
-      if (item.size) parts.push(item.size);
-      if (item.color) parts.push(item.color);
-      return parts.join(' - ');
+  // Group items by product name
+  const grouped = {};
+  for (const item of order.items) {
+    const name = item.name || 'Article';
+    if (!grouped[name]) {
+      grouped[name] = { qty: 0, variants: [] };
+    }
+    grouped[name].qty += item.quantity;
+    const variant = [item.color, item.size].filter(Boolean).join(' ');
+    if (variant) {
+      for (let i = 0; i < item.quantity; i++) {
+        grouped[name].variants.push(variant);
+      }
+    }
+  }
+  const designation = Object.entries(grouped)
+    .map(([name, { qty, variants }]) => {
+      if (variants.length > 0) {
+        return `${qty} ${name} : ${variants.join(' / ')}`;
+      }
+      return `${qty} ${name}`;
     })
-    .join(', ');
-  const designation = `totale ${nbArticle || 1} : ${itemsText}`;
+    .join(' , ');
 
   return {
     prix: String(order.total),
@@ -57,7 +70,7 @@ function buildShipmentPayload(order) {
     tel: normalizePhone(addr.phone),
     tel2: '',
     designation: designation.slice(0, 250),
-    nb_article: String(nbArticle || 1),
+    nb_article: String(Object.values(grouped).reduce((s, g) => s + g.qty, 0) || 1),
     msg: order.notes?.customer || `Commande ${order.orderNumber}`,
     echange: '0',
     article: '',
