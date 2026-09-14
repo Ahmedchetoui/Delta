@@ -49,7 +49,7 @@ const HeroSlider = ({ slides = [] }) => {
   };
 
   return (
-    <div className="relative w-full h-[560px] sm:h-[640px] md:h-[720px] lg:h-[800px] overflow-hidden bg-slate-900">
+    <div className="relative w-full h-[640px] sm:h-[720px] md:h-[800px] lg:h-[880px] overflow-hidden bg-slate-900">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
