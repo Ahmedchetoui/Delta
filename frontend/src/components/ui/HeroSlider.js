@@ -33,7 +33,7 @@ const HeroSlider = ({ slides = [] }) => {
   };
 
   return (
-    <div className="relative h-[560px] sm:h-[640px] md:h-[720px] lg:h-[780px] rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl bg-slate-900">
+    <div className="relative w-full h-[560px] sm:h-[640px] md:h-[720px] lg:h-[800px] overflow-hidden bg-slate-900">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
@@ -64,7 +64,7 @@ const HeroSlider = ({ slides = [] }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent pointer-events-none"></div>
 
             {/* Content */}
-            <div className="relative h-full flex items-center">
+            <div className="relative h-full flex items-center pt-14 md:pt-16">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div className="max-w-3xl mx-auto text-center">
 

@@ -76,43 +76,41 @@ const Home = () => {
   const activeCategories = categories.filter((c) => !c.parentCategory);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Banner styled like Alfarouk with rounded corners, side margins, and grand height */}
-      <div className="pt-2 sm:pt-3 md:pt-4 pb-4 md:pb-6 px-3 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
-        {showHeroSkeleton ? (
-          <section className="relative h-[560px] sm:h-[640px] md:h-[720px] lg:h-[780px] rounded-3xl md:rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white shadow-2xl">
-            <div className="relative flex h-full items-center justify-center px-4 text-center">
-              <div>
-                <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>
-                <h1 className="mb-6 text-5xl font-bold md:text-6xl">{t('heroTitle')}</h1>
-                <Link
-                  to="/shop"
-                  className="inline-block rounded-xl bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
-                >
-                  {t('discoverShop')}
-                </Link>
-              </div>
+    <div className="min-h-screen bg-white -mt-14 md:-mt-16">
+      {/* Hero Banner plein écran bord à bord (edge-to-edge sans espace vide) */}
+      {showHeroSkeleton ? (
+        <section className="relative w-full h-[560px] sm:h-[640px] md:h-[720px] lg:h-[800px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
+          <div className="relative flex h-full items-center justify-center px-4 text-center pt-14 md:pt-16">
+            <div>
+              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>
+              <h1 className="mb-6 text-5xl font-bold md:text-6xl">{t('heroTitle')}</h1>
+              <Link
+                to="/shop"
+                className="inline-block rounded-xl bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
+              >
+                {t('discoverShop')}
+              </Link>
             </div>
-          </section>
-        ) : heroSlides.length > 0 ? (
-          <HeroSlider slides={heroSlides} />
-        ) : (
-          <section className="relative h-[560px] sm:h-[640px] md:h-[720px] lg:h-[780px] rounded-3xl md:rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white shadow-2xl">
-            <div className="relative flex h-full items-center justify-center px-4 text-center">
-              <div>
-                <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>
-                <h1 className="mb-6 text-5xl font-bold md:text-6xl">{t('heroTitle')}</h1>
-                <Link
-                  to="/shop"
-                  className="inline-block rounded-xl bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
-                >
-                  {t('discoverShop')}
-                </Link>
-              </div>
+          </div>
+        </section>
+      ) : heroSlides.length > 0 ? (
+        <HeroSlider slides={heroSlides} />
+      ) : (
+        <section className="relative w-full h-[560px] sm:h-[640px] md:h-[720px] lg:h-[800px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
+          <div className="relative flex h-full items-center justify-center px-4 text-center pt-14 md:pt-16">
+            <div>
+              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>
+              <h1 className="mb-6 text-5xl font-bold md:text-6xl">{t('heroTitle')}</h1>
+              <Link
+                to="/shop"
+                className="inline-block rounded-xl bg-white px-8 py-4 font-semibold text-blue-900 shadow-lg transition-colors hover:bg-blue-50"
+              >
+                {t('discoverShop')}
+              </Link>
             </div>
-          </section>
-        )}
-      </div>
+          </div>
+        </section>
+      )}
 
       {showLoadError && (
         <div className="max-w-lg mx-auto my-8 p-6 bg-amber-50 border border-amber-200 rounded-xl text-center">
