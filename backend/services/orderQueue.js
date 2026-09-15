@@ -60,6 +60,19 @@ function initOrderQueue() {
       enableReadyCheck: false,
     });
 
+    redisConnection.on('error', (err) => {
+      console.warn('⚠️ Redis file d\'attente erreur:', err.message);
+      if (
+        err.message &&
+        (err.message.includes('limit exceeded') ||
+          err.message.includes('quota') ||
+          err.message.includes('free tier limit'))
+      ) {
+        console.warn('⚠️ Quota Upstash Redis atteint — bascule automatique en file d\'attente mémoire.');
+        mode = 'memory';
+      }
+    });
+
     queue = new Queue(QUEUE_NAME, { connection: redisConnection });
     queueEvents = new QueueEvents(QUEUE_NAME, {
       connection: redisConnection.duplicate(),
@@ -77,6 +90,18 @@ function initOrderQueue() {
       }
     );
 
+    queue.on('error', (err) => {
+      console.warn('⚠️ BullMQ Queue erreur:', err.message);
+    });
+
+    queueEvents.on('error', (err) => {
+      console.warn('⚠️ BullMQ QueueEvents erreur:', err.message);
+    });
+
+    worker.on('error', (err) => {
+      console.warn('⚠️ BullMQ Worker erreur:', err.message);
+    });
+
     worker.on('failed', (job, error) => {
       console.error(`❌ Job commande ${job?.id} échoué:`, error.message);
     });
@@ -91,20 +116,34 @@ function initOrderQueue() {
 
 async function processOrder(orderData, userId = null, idempotencyKey = null) {
   if (mode === 'redis' && queue && queueEvents) {
-    const job = await queue.add(
-      'create-order',
-      { orderData, userId, idempotencyKey },
-      {
-        removeOnComplete: 100,
-        removeOnFail: 200,
-        attempts: 1,
-      }
-    );
-
     try {
+      const job = await queue.add(
+        'create-order',
+        { orderData, userId, idempotencyKey },
+        {
+          removeOnComplete: 100,
+          removeOnFail: 200,
+          attempts: 1,
+        }
+      );
+
       return await job.waitUntilFinished(queueEvents, WAIT_TIMEOUT_MS);
     } catch (error) {
       const message = error.message || 'Erreur lors de la création de la commande';
+
+      // Si Redis ou BullMQ échoue (quota Upstash dépassé, connexion perdue), basculer en file mémoire
+      if (
+        message.includes('limit exceeded') ||
+        message.includes('quota') ||
+        message.includes('free tier') ||
+        message.includes('Connection is closed') ||
+        message.includes('ECONNREFUSED') ||
+        message.includes('ETIMEDOUT')
+      ) {
+        console.warn('⚠️ Échec Redis/BullMQ, bascule immédiate en mémoire pour la commande:', message);
+        mode = 'memory';
+        return memoryQueue.enqueue(() => createOrder(orderData, userId, idempotencyKey));
+      }
 
       if (message.includes('timed out') || message.includes('timeout')) {
         throw new OrderServiceError(
