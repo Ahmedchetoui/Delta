@@ -85,7 +85,23 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
 
       return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder, resource_type: 'image' },
+          {
+            folder,
+            resource_type: 'image',
+            // CDN — livraison automatique au format optimal (WebP ou AVIF selon le navigateur)
+            // Réduit la taille des images de 25 à 50 % supplémentaires sans perte visible
+            quality: 'auto:good',
+            fetch_format: 'auto',
+            // Pré-génère les variantes courantes dès l'upload (300px et 800px)
+            // pour éviter la transformation à la première requête client
+            eager: [
+              { width: 300, height: 300, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' },
+              { width: 800, height: 800, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' },
+            ],
+            eager_async: true,
+            // Cache CDN d'un an (les images ne changent jamais une fois uploadées)
+            invalidate: false,
+          },
           (err, result) => {
             if (err) return reject(err);
             resolve({ url: result.secure_url, public_id: result.public_id, fieldname: file.fieldname });

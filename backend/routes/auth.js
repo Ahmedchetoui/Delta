@@ -21,8 +21,8 @@ const registerValidation = [
     .normalizeEmail()
     .withMessage('Email invalide'),
   body('password')
-    .isLength({ min: 6 })
-    .withMessage('Le mot de passe doit contenir au moins 6 caractères'),
+    .isLength({ min: 8 })
+    .withMessage('Le mot de passe doit contenir au moins 8 caractères'),
   body('phone')
     .matches(/^[0-9+\-\s()]+$/)
     .withMessage('Numéro de téléphone invalide')
@@ -242,8 +242,8 @@ router.put('/password', authenticateToken, [
     .notEmpty()
     .withMessage('Le mot de passe actuel est requis'),
   body('newPassword')
-    .isLength({ min: 6 })
-    .withMessage('Le nouveau mot de passe doit contenir au moins 6 caractères')
+    .isLength({ min: 8 })
+    .withMessage('Le nouveau mot de passe doit contenir au moins 8 caractères')
 ], async (req, res) => {
   try {
     // Vérifier les erreurs de validation

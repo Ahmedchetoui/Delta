@@ -12,15 +12,18 @@ import {
     ClipboardDocumentCheckIcon,
     ChartPieIcon,
     TruckIcon,
+    KeyIcon,
 } from '@heroicons/react/24/outline';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { toast } from 'react-toastify';
 import { adminService } from '../../services/api';
+import ChangePasswordModal from '../../components/admin/ChangePasswordModal';
 
 const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState('30d');
     const [dashboardData, setDashboardData] = useState(null);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const navigate = useNavigate();
 
     const loadDashboard = useCallback(async () => {
@@ -152,6 +155,15 @@ const AdminDashboard = () => {
                     >
                         <ChartBarIcon className="w-5 h-5" />
                         Analytics & Rapports
+                    </button>
+
+                    <button
+                        onClick={() => setIsPasswordModalOpen(true)}
+                        className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition shadow-sm transform hover:-translate-y-0.5"
+                        title="Modifier le mot de passe administrateur"
+                    >
+                        <KeyIcon className="w-5 h-5 text-amber-500" />
+                        <span className="hidden sm:inline">Mot de passe</span>
                     </button>
                 </div>
             </div>
@@ -410,7 +422,23 @@ const AdminDashboard = () => {
                         <span className="font-medium text-sm">{action.label}</span>
                     </Link>
                 ))}
+
+                <button
+                    type="button"
+                    onClick={() => setIsPasswordModalOpen(true)}
+                    className="bg-slate-800 text-white p-4 rounded-xl shadow-md hover:bg-slate-900 transition transform hover:-translate-y-1 flex flex-col items-center justify-center text-center gap-2"
+                    title="Changer de mot de passe administrateur"
+                >
+                    <KeyIcon className="w-8 h-8 text-amber-400" />
+                    <span className="font-medium text-sm">Mot de passe</span>
+                </button>
             </div>
+
+            {/* Modal de changement de mot de passe */}
+            <ChangePasswordModal 
+                isOpen={isPasswordModalOpen} 
+                onClose={() => setIsPasswordModalOpen(false)} 
+            />
         </div>
     );
 };

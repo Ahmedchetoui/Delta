@@ -378,6 +378,19 @@ orderSchema.statics.getStats = async function() {
   return stats[0] || { totalOrders: 0, totalRevenue: 0, averageOrderValue: 0 };
 };
 
+// ─── Index de performance ────────────────────────────────────────────────────
+// Accélère les requêtes admin filtrées par statut + date (tableau de bord)
+orderSchema.index({ orderStatus: 1, createdAt: -1 });
+// Accélère les recherches de commandes invités par téléphone
+orderSchema.index({ 'shippingAddress.phone': 1 });
+// Accélère la liste des commandes d'un utilisateur connecté (espace client)
+orderSchema.index({ user: 1, createdAt: -1 });
+// Accélère les recherches par statut de paiement
+orderSchema.index({ paymentStatus: 1, createdAt: -1 });
+// Accélère la recherche de commande par numéro de suivi livraison (Fiabilo)
+orderSchema.index({ trackingNumber: 1 });
+// ─────────────────────────────────────────────────────────────────────────────
+
 const Order = mongoose.model('Order', orderSchema);
 
 module.exports = Order;
