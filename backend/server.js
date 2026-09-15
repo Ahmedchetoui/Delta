@@ -14,6 +14,10 @@ const {
   getQueueMode,
 } = require('./services/orderQueue');
 const {
+  startFiabiloSyncCron,
+  stopFiabiloSyncCron,
+} = require('./services/fiabiloService');
+const {
   addCatalogClient,
   closeCatalogRealtime,
   startCatalogRealtime,
@@ -341,6 +345,7 @@ const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
 
 initOrderQueue();
+startFiabiloSyncCron();
 
 app.listen(PORT, HOST, () => {
   console.log(`🚀 Serveur Delta Fashion démarré sur ${HOST}:${PORT}`);
@@ -354,6 +359,7 @@ app.listen(PORT, HOST, () => {
 
 async function shutdown(signal) {
   console.log(`\n${signal} reçu — arrêt gracieux...`);
+  stopFiabiloSyncCron();
   await closeOrderQueue();
   await closeCatalogRealtime();
   await mongoose.connection.close();

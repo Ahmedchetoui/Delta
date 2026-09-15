@@ -192,6 +192,22 @@ async function deductOrderStock(order) {
     await session.commitTransaction();
   } catch (error) {
     await session.abortTransaction();
+    const msg = error?.message || '';
+    if (error?.code === 20 || msg.includes('Transaction numbers are only allowed') || msg.includes('replica set')) {
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (!product) {
+          throw new Error('Produit introuvable lors de la déduction de stock');
+        }
+        const available = getAvailableStock(product, item.size, item.color);
+        if (available < item.quantity) {
+          throw new Error(`Stock insuffisant pour ${product.name}`);
+        }
+        applyStockDeduction(product, item);
+        await product.save();
+      }
+      return;
+    }
     throw error;
   } finally {
     session.endSession();
@@ -199,10 +215,11 @@ async function deductOrderStock(order) {
 }
 
 async function restoreOrderStock(order) {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
+  let session = null;
   try {
+    session = await mongoose.startSession();
+    session.startTransaction();
+
     for (const item of order.items) {
       const product = await Product.findById(item.product).session(session);
       if (!product) continue;
@@ -213,10 +230,25 @@ async function restoreOrderStock(order) {
 
     await session.commitTransaction();
   } catch (error) {
-    await session.abortTransaction();
+    if (session) {
+      try { await session.abortTransaction(); } catch (_) {}
+    }
+    const msg = error?.message || '';
+    if (error?.code === 20 || msg.includes('Transaction numbers are only allowed') || msg.includes('replica set')) {
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (!product) continue;
+
+        applyStockRestore(product, item);
+        await product.save();
+      }
+      return;
+    }
     throw error;
   } finally {
-    session.endSession();
+    if (session) {
+      session.endSession();
+    }
   }
 }
 

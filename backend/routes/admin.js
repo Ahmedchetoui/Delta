@@ -8,7 +8,7 @@ const Order = require('../models/Order');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { escapeRegex } = require('../utils/escapeRegex');
 const { syncOrderWithFiabilo } = require('../services/orderService');
-const { attachFiabiloTrackingToOrder } = require('../services/fiabiloService');
+const { attachFiabiloTrackingToOrder, syncActiveFiabiloOrders } = require('../services/fiabiloService');
 const { getImageUrl } = require('../middleware/upload');
 const { publishCatalogUpdate } = require('../services/catalogRealtime');
 
@@ -947,6 +947,7 @@ router.get('/orders', [
         { guestEmail: { $regex: safeSearch, $options: 'i' } },
         { 'shippingAddress.firstName': { $regex: safeSearch, $options: 'i' } },
         { 'shippingAddress.lastName': { $regex: safeSearch, $options: 'i' } },
+        { 'shippingAddress.phone': { $regex: safeSearch, $options: 'i' } },
         { 'shippingAddress.email': { $regex: safeSearch, $options: 'i' } }
       ];
     }
@@ -1593,6 +1594,26 @@ router.delete('/fiabilo/orders/:id', async (req, res) => {
   } catch (error) {
     console.error('Erreur suppression Fiabilo:', error);
     res.status(500).json({ message: 'Erreur lors de la suppression de la commande' });
+  }
+});
+
+// @route   POST /api/admin/fiabilo/sync-statuses
+// @desc    Synchroniser manuellement les statuts des commandes actives auprès de Fiabilo
+// @access  Private (Admin)
+router.post('/fiabilo/sync-statuses', async (req, res) => {
+  try {
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit || req.body?.limit || '50', 10)));
+    const result = await syncActiveFiabiloOrders({ limit });
+
+    res.json({
+      message: 'Synchronisation Fiabilo terminée',
+      ...result,
+    });
+  } catch (error) {
+    console.error('Erreur synchronisation manuelle Fiabilo:', error);
+    res.status(500).json({
+      message: error.message || 'Erreur lors de la synchronisation des statuts Fiabilo',
+    });
   }
 });
 

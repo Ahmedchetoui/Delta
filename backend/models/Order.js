@@ -184,10 +184,7 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-orderSchema.index({ user: 1, createdAt: -1 });
-orderSchema.index({ orderStatus: 1, createdAt: -1 });
 orderSchema.index({ guestEmail: 1, orderNumber: 1 });
-orderSchema.index({ idempotencyKey: 1 }, { unique: true, sparse: true });
 orderSchema.index({ createdAt: -1 });
 
 // Nettoyer idempotencyKey si vide ou falsy pour éviter tout conflit d'index unique sur null
@@ -383,12 +380,34 @@ orderSchema.statics.getStats = async function() {
 orderSchema.index({ orderStatus: 1, createdAt: -1 });
 // Accélère les recherches de commandes invités par téléphone
 orderSchema.index({ 'shippingAddress.phone': 1 });
+orderSchema.index({ guestEmail: 1 });
 // Accélère la liste des commandes d'un utilisateur connecté (espace client)
 orderSchema.index({ user: 1, createdAt: -1 });
 // Accélère les recherches par statut de paiement
 orderSchema.index({ paymentStatus: 1, createdAt: -1 });
-// Accélère la recherche de commande par numéro de suivi livraison (Fiabilo)
+// Accélère la recherche de commande par code colis Fiabilo ou numéro de suivi
 orderSchema.index({ trackingNumber: 1 });
+orderSchema.index({ 'fiabilo.trackingCode': 1 });
+orderSchema.index({ 'fiabilo.syncStatus': 1, createdAt: -1 });
+
+// Index textuel pour la recherche admin rapide (numéro commande, nom, prénom, téléphone, ville)
+orderSchema.index({
+  orderNumber: 'text',
+  'shippingAddress.firstName': 'text',
+  'shippingAddress.lastName': 'text',
+  'shippingAddress.phone': 'text',
+  'shippingAddress.city': 'text',
+}, {
+  weights: {
+    orderNumber: 10,
+    'shippingAddress.phone': 8,
+    'shippingAddress.lastName': 5,
+    'shippingAddress.firstName': 5,
+    'shippingAddress.city': 2,
+  },
+  name: 'OrderTextSearchIndex',
+  default_language: 'french'
+});
 // ─────────────────────────────────────────────────────────────────────────────
 
 const Order = mongoose.model('Order', orderSchema);

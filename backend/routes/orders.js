@@ -17,7 +17,12 @@ const { normalizeGuestPhone } = require('../utils/phoneUtils');
 const { MAX_ITEM_QUANTITY, MAX_ORDER_ITEMS, PAYMENT_METHOD_COD } = require('../utils/orderConstants');
 const { processOrder } = require('../services/orderQueue');
 const { OrderServiceError } = require('../services/orderService');
-const { attachFiabiloTrackingToOrder } = require('../services/fiabiloService');
+const {
+  attachFiabiloTrackingToOrder,
+  applyFiabiloTrackingToOrder,
+  trackFiabiloShipment,
+} = require('../services/fiabiloService');
+const { getFiabiloStateCategory } = require('../utils/fiabiloTracking');
 const { getImageUrl } = require('../middleware/upload');
 const { publishCatalogUpdate } = require('../services/catalogRealtime');
 
@@ -377,6 +382,70 @@ router.get('/track/:reference', guestOrderLimiter, async (req, res) => {
     res.status(500).json({
       message: 'Erreur lors du suivi de la commande',
     });
+  }
+});
+
+// @route   POST /api/orders/fiabilo-webhook
+// @desc    Webhook pour recevoir les changements d'état colis depuis Fiabilo
+// @access  Public (sécurisé par secret si FIABILO_WEBHOOK_SECRET est défini)
+router.post('/fiabilo-webhook', async (req, res) => {
+  try {
+    const expectedSecret = process.env.FIABILO_WEBHOOK_SECRET;
+    if (expectedSecret) {
+      const providedSecret = req.headers['x-fiabilo-secret'] || req.query.secret;
+      if (providedSecret !== expectedSecret) {
+        return res.status(403).json({ message: 'Non autorisé' });
+      }
+    }
+
+    const trackingCode = String(
+      req.body.code || req.body.trackingCode || req.body.tracking_code || ''
+    ).trim();
+
+    if (!trackingCode) {
+      return res.status(400).json({ message: 'Code de suivi manquant' });
+    }
+
+    const order = await Order.findOne({
+      $or: [
+        { 'fiabilo.trackingCode': trackingCode },
+        { trackingNumber: trackingCode },
+      ],
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Commande non trouvée pour ce code de suivi' });
+    }
+
+    const state = req.body.etat || req.body.status;
+    let tracking;
+    if (state) {
+      tracking = {
+        status: state,
+        reason: req.body.motif || null,
+        trackingCode,
+        category: getFiabiloStateCategory(state),
+      };
+    } else {
+      tracking = await trackFiabiloShipment(trackingCode);
+    }
+
+    const { orderModified, stockRestored } = await applyFiabiloTrackingToOrder(order, tracking);
+    if (stockRestored) {
+      publishCatalogUpdate('stock');
+    }
+
+    res.json({
+      message: 'Statut mis à jour avec succès',
+      orderNumber: order.orderNumber,
+      orderStatus: order.orderStatus,
+      fiabiloStatus: order.fiabilo?.status,
+      orderModified,
+      stockRestored,
+    });
+  } catch (error) {
+    console.error('Erreur webhook Fiabilo:', error);
+    res.status(500).json({ message: 'Erreur lors du traitement du webhook' });
   }
 });
 
