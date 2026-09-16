@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import { resolveImageUrl, PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
 
 const AdminBanners = () => {
   const [banners, setBanners] = useState([]);
@@ -411,9 +412,12 @@ const AdminBanners = () => {
                   {(imageFile || (editingBanner && editingBanner.image)) && (
                     <div className="mt-2 relative">
                       <img
-                        src={imageFile ? URL.createObjectURL(imageFile) : editingBanner.image}
+                        src={imageFile ? URL.createObjectURL(imageFile) : resolveImageUrl(editingBanner.image, 600)}
                         alt="Aperçu PC"
                         className="h-20 w-full object-cover rounded border"
+                        onError={(e) => {
+                          e.currentTarget.src = PLACEHOLDER_IMAGE;
+                        }}
                       />
                       <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
                         {imageFile ? 'Nouveau fichier' : 'Image actuelle'}
@@ -442,9 +446,12 @@ const AdminBanners = () => {
                   {(mobileImageFile || (editingBanner && editingBanner.mobileImage && !removeMobileImage)) && (
                     <div className="mt-2 relative flex items-center justify-between bg-white p-1 rounded border">
                       <img
-                        src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : editingBanner.mobileImage}
+                        src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : resolveImageUrl(editingBanner.mobileImage, 400)}
                         alt="Aperçu Mobile"
                         className="h-20 w-16 object-cover rounded border"
+                        onError={(e) => {
+                          e.currentTarget.src = PLACEHOLDER_IMAGE;
+                        }}
                       />
                       <div className="flex-1 ml-2 text-xs text-gray-600">
                         <p className="font-medium text-gray-700">Image Mobile</p>
@@ -524,17 +531,23 @@ const AdminBanners = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <img
-                      src={banner.image}
+                      src={resolveImageUrl(banner.image, 300)}
                       alt={banner.title}
                       className="h-14 w-20 object-cover rounded border shadow-sm"
                       title="Image PC (Bureau)"
+                      onError={(e) => {
+                        e.currentTarget.src = PLACEHOLDER_IMAGE;
+                      }}
                     />
                     {banner.mobileImage && (
                       <img
-                        src={banner.mobileImage}
+                        src={resolveImageUrl(banner.mobileImage, 200)}
                         alt="Mobile"
                         className="h-14 w-10 object-cover rounded border border-blue-400 shadow-sm"
                         title="Image Mobile (Smartphone)"
+                        onError={(e) => {
+                          e.currentTarget.src = PLACEHOLDER_IMAGE;
+                        }}
                       />
                     )}
                   </div>

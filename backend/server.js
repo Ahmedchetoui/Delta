@@ -101,7 +101,9 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // Middleware de sécurité
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(compression());
 
 // Rate limiting global (catalogue + navigation)

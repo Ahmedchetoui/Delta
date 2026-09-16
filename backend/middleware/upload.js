@@ -67,49 +67,67 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
     if (!files.length) return next();
     const folder = getCloudinaryFolder();
 
-    const uploads = await Promise.all(files.map(async file => {
+    // Traitement séquentiel pour limiter l'empreinte mémoire sur serveurs à ressources limitées (Render 512MB)
+    const uploads = [];
+    for (const file of files) {
       let processedBuffer = file.buffer;
+      const isBanner = file.fieldname === 'image' || file.fieldname === 'mobileImage';
+      const isPng = file.mimetype === 'image/png' || /\.png$/i.test(file.originalname || '');
+
       try {
-        const isPng = file.mimetype === 'image/png' || /\.png$/i.test(file.originalname || '');
-        const pipeline = sharp(file.buffer).resize(1200, 1200, {
-          fit: 'inside',
-          withoutEnlargement: true,
-        });
-        processedBuffer = isPng
-          ? await pipeline.png({ quality: 80, compressionLevel: 8 }).toBuffer()
-          : await pipeline.jpeg({ quality: 80, mozjpeg: true }).toBuffer();
-        console.log(`Image optimisée: ${file.originalname} (${(file.buffer.length / 1024).toFixed(2)}KB -> ${(processedBuffer.length / 1024).toFixed(2)}KB)`);
+        if (isBanner) {
+          // Bannières : conserver une haute résolution panoramique / portrait
+          const pipeline = sharp(file.buffer).resize(2560, 2560, {
+            fit: 'inside',
+            withoutEnlargement: true,
+          });
+          processedBuffer = isPng
+            ? await pipeline.png({ quality: 90, compressionLevel: 6 }).toBuffer()
+            : await pipeline.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+        } else {
+          // Produits : 1200x1200 max
+          const pipeline = sharp(file.buffer).resize(1200, 1200, {
+            fit: 'inside',
+            withoutEnlargement: true,
+          });
+          processedBuffer = isPng
+            ? await pipeline.png({ quality: 80, compressionLevel: 6 }).toBuffer()
+            : await pipeline.jpeg({ quality: 80, mozjpeg: true }).toBuffer();
+        }
       } catch (sharpError) {
         console.warn('Erreur lors de l\'optimisation Sharp, utilisation de l\'original:', sharpError.message);
       }
 
-      return new Promise((resolve, reject) => {
+      const streamOptions = {
+        folder,
+        resource_type: 'image',
+        quality: 'auto:good',
+        fetch_format: 'auto',
+        invalidate: false,
+      };
+
+      // Ne générer des variantes eager 300px/800px que pour les fiches produits
+      if (!isBanner) {
+        streamOptions.eager = [
+          { width: 300, height: 300, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' },
+          { width: 800, height: 800, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' },
+        ];
+        streamOptions.eager_async = true;
+      }
+
+      const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          {
-            folder,
-            resource_type: 'image',
-            // CDN — livraison automatique au format optimal (WebP ou AVIF selon le navigateur)
-            // Réduit la taille des images de 25 à 50 % supplémentaires sans perte visible
-            quality: 'auto:good',
-            fetch_format: 'auto',
-            // Pré-génère les variantes courantes dès l'upload (300px et 800px)
-            // pour éviter la transformation à la première requête client
-            eager: [
-              { width: 300, height: 300, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' },
-              { width: 800, height: 800, crop: 'limit', quality: 'auto:good', fetch_format: 'auto' },
-            ],
-            eager_async: true,
-            // Cache CDN d'un an (les images ne changent jamais une fois uploadées)
-            invalidate: false,
-          },
-          (err, result) => {
+          streamOptions,
+          (err, resCloud) => {
             if (err) return reject(err);
-            resolve({ url: result.secure_url, public_id: result.public_id, fieldname: file.fieldname });
+            resolve({ url: resCloud.secure_url, public_id: resCloud.public_id, fieldname: file.fieldname });
           }
         );
         stream.end(processedBuffer);
       });
-    }));
+
+      uploads.push(result);
+    }
 
     // Sauvegarder les URLs Cloudinary pour usage dans les routes
     req.uploadedImages = uploads; // [{ url, public_id, fieldname }]
@@ -117,12 +135,8 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
   } catch (err) {
     // Fallback: en cas d'échec Cloudinary, enregistrer localement et continuer
     try {
-      console.warn('Cloudinary a échoué, fallback vers stockage local:', err?.message);
+      console.error('Cloudinary a échoué, fallback vers stockage local:', err?.message || err);
       const baseUploadPath = path.join(__dirname, process.env.UPLOAD_PATH || '../uploads');
-      const produitDir = path.join(baseUploadPath, 'produit');
-      if (!fs.existsSync(produitDir)) {
-        fs.mkdirSync(produitDir, { recursive: true });
-      }
 
       let files = [];
       if (Array.isArray(req.files)) {
@@ -134,25 +148,34 @@ const uploadBuffersToCloudinary = async (req, res, next) => {
       }
       const localUploads = [];
       for (const f of files) {
-        const ext = path.extname(f.originalname || '.jpg') || '.jpg';
-        const filename = `${f.fieldname || 'images'}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-        const full = path.join(produitDir, filename);
+        const isBanner = f.fieldname === 'image' || f.fieldname === 'mobileImage';
+        const targetSubdir = isBanner ? 'banniere' : 'produit';
+        const targetDir = path.join(baseUploadPath, targetSubdir);
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
 
-        // Optimisation locale si possible
+        const isPng = f.mimetype === 'image/png' || /\.png$/i.test(f.originalname || '');
+        const ext = isPng ? '.png' : (path.extname(f.originalname || '.jpg') || '.jpg');
+        const filename = `${f.fieldname || 'images'}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+        const full = path.join(targetDir, filename);
+
+        // Optimisation locale si possible en respectant le bon format
         let bufferToSave = f.buffer;
         try {
           if (f.buffer) {
-            bufferToSave = await sharp(f.buffer)
-              .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-              .jpeg({ quality: 80 })
-              .toBuffer();
+            const maxDim = isBanner ? 2560 : 1200;
+            const pipeline = sharp(f.buffer).resize(maxDim, maxDim, { fit: 'inside', withoutEnlargement: true });
+            bufferToSave = isPng
+              ? await pipeline.png({ quality: 85, compressionLevel: 6 }).toBuffer()
+              : await pipeline.jpeg({ quality: 80 }).toBuffer();
           }
         } catch (e) { /* ignore */ }
 
         const buffer = bufferToSave || f.buffer || (f.path ? fs.readFileSync(f.path) : null);
         if (!buffer) continue;
         fs.writeFileSync(full, buffer);
-        localUploads.push({ url: `produit/${filename}`, fieldname: f.fieldname });
+        localUploads.push({ url: `${targetSubdir}/${filename}`, fieldname: f.fieldname });
       }
       if (localUploads.length > 0) {
         req.uploadedImages = localUploads;

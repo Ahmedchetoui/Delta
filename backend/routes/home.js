@@ -48,6 +48,7 @@ async function loadHomeData() {
     banners: banners.map((banner) => ({
       ...banner.toObject(),
       image: getImageUrl(banner.image),
+      mobileImage: banner.mobileImage ? getImageUrl(banner.mobileImage) : null,
     })),
   };
 }

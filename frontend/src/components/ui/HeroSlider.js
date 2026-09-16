@@ -78,8 +78,18 @@ const HeroSlider = ({ slides = [] }) => {
                 width="1920"
                 height="800"
                 onError={(e) => {
-                  e.currentTarget.src = PLACEHOLDER_IMAGE;
-                  e.currentTarget.srcset = '';
+                  const picture = e.currentTarget.parentElement;
+                  if (picture) {
+                    const source = picture.querySelector('source');
+                    if (source) source.remove();
+                  }
+                  if (slide.image && e.currentTarget.src !== slide.image) {
+                    e.currentTarget.src = slide.image;
+                    e.currentTarget.srcset = slide.imageSrcSet || '';
+                  } else {
+                    e.currentTarget.src = PLACEHOLDER_IMAGE;
+                    e.currentTarget.srcset = '';
+                  }
                 }}
                 className="w-full h-full object-cover object-center transition-transform duration-[8000ms] ease-out"
                 style={{ transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)' }}
