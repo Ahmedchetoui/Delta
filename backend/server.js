@@ -125,10 +125,21 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Servir les fichiers statiques (images)
 // Les fichiers sont enregistrés dans backend/uploads (voir middleware/upload.js)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  maxAge: '1d', // Cache pour 1 jour
-  immutable: true
-}));
+app.use(
+  '/uploads',
+  // Le site est servi par Vercel alors que les uploads historiques sont sur
+  // Render. Helmet leur appliquait `same-origin`, ce qui entraînait un 200
+  // suivi de `ERR_BLOCKED_BY_RESPONSE.NotSameOrigin` dans Chrome. On relâche
+  // cette règle uniquement pour les fichiers image publics, pas pour l'API.
+  (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(path.join(__dirname, 'uploads'), {
+    maxAge: '1d', // Cache pour 1 jour
+    immutable: true
+  })
+);
 
 // Route pour servir manifest.json (si nécessaire depuis le backend)
 app.get('/manifest.json', (req, res) => {

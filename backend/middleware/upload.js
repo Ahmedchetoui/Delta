@@ -248,18 +248,32 @@ const deleteFile = async (ref) => {
   return false;
 };
 
-// Fonction pour obtenir une URL d'image (relative pour éviter les soucis d'hôte)
+// Fonction pour obtenir une URL d'image. Les uploads locaux restent relatifs :
+// ainsi Vercel les transmet par son rewrite /uploads et le navigateur ne les
+// traite jamais comme une image cross-origin Render.
 const getImageUrl = (filename) => {
   if (!filename) return null;
-  // Si c'est déjà une URL complète (Cloudinary par ex.), la renvoyer telle quelle
-  if (/^https?:\/\//i.test(filename)) return filename;
-  // Si une base publique est définie (ex: https://delta-n5d8.onrender.com), renvoyer une URL absolue
-  const base = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
-  if (base) {
-    return `${base}/uploads/${filename}`;
+  const value = String(filename).trim();
+
+  // Les anciennes données peuvent contenir une URL Render absolue. La ramener
+  // à un chemin local évite le CORP `same-origin` des anciens déploiements et
+  // conserve le fonctionnement en accès direct à l'API.
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const url = new URL(value);
+      if (url.hostname.endsWith('.onrender.com') && url.pathname.startsWith('/uploads/')) {
+        return `${url.pathname}${url.search}`;
+      }
+    } catch (error) {
+      // Une URL externe invalide sera renvoyée telle quelle ; le client pourra
+      // utiliser son image de secours.
+    }
+
+    // Cloudinary et les autres stockages externes conservent leur URL complète.
+    return value;
   }
-  // Sinon, URL relative (utile en mono-origine)
-  return `/uploads/${filename}`;
+
+  return `/uploads/${value.replace(/^\/?uploads\//, '')}`;
 };
 
 module.exports = {
