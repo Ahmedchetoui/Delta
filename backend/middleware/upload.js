@@ -262,14 +262,6 @@ const getImageUrl = (filename) => {
   return `/uploads/${filename}`;
 };
 
-// Vérifier si une référence d'image est une URL distante valide (Cloudinary) ou existe sur le disque
-const isExistingOrCloudinary = (ref) => {
-  if (!ref) return false;
-  if (/^https?:\/\//i.test(ref)) return true;
-  const filePath = path.join(__dirname, process.env.UPLOAD_PATH || '../uploads', ref);
-  return fs.existsSync(filePath);
-};
-
 module.exports = {
   uploadProductImages,
   uploadSingleImage,
@@ -278,6 +270,5 @@ module.exports = {
   uploadBuffersToCloudinary,
   handleUploadError,
   deleteFile,
-  getImageUrl,
-  isExistingOrCloudinary
+  getImageUrl
 };

@@ -19,56 +19,6 @@ const renderBrandTitle = (title) => {
   );
 };
 
-const SlideImage = ({ slide, index, isCurrent }) => {
-  const [mobileFailed, setMobileFailed] = useState(false);
-  const [desktopFailed, setDesktopFailed] = useState(false);
-
-  useEffect(() => {
-    setMobileFailed(false);
-    setDesktopFailed(false);
-  }, [slide.image, slide.mobileImage]);
-
-  const canUseMobile = Boolean(slide.mobileImage) && !mobileFailed;
-
-  const handleImageError = () => {
-    if (canUseMobile) {
-      // Si l'image mobile spécifique est introuvable (404), on bascule sur l'image PC
-      setMobileFailed(true);
-    } else {
-      // Si l'image PC est également introuvable, on affiche le placeholder
-      setDesktopFailed(true);
-    }
-  };
-
-  const finalSrc = desktopFailed ? PLACEHOLDER_IMAGE : (slide.image || PLACEHOLDER_IMAGE);
-  const finalSrcSet = desktopFailed ? '' : (slide.imageSrcSet || '');
-
-  return (
-    <picture className="absolute inset-0 w-full h-full block">
-      {canUseMobile && (
-        <source
-          media="(max-width: 768px)"
-          srcSet={slide.mobileImageSrcSet || slide.mobileImage}
-        />
-      )}
-      <img
-        src={finalSrc}
-        srcSet={canUseMobile ? '' : finalSrcSet}
-        sizes="100vw"
-        alt={slide.title || 'Banner'}
-        loading={index === 0 ? 'eager' : 'lazy'}
-        fetchPriority={index === 0 ? 'high' : 'low'}
-        decoding={index === 0 ? 'sync' : 'async'}
-        width="1920"
-        height="800"
-        onError={handleImageError}
-        className="w-full h-full object-cover object-center transition-transform duration-[8000ms] ease-out"
-        style={{ transform: isCurrent ? 'scale(1.05)' : 'scale(1)' }}
-      />
-    </picture>
-  );
-};
-
 const HeroSlider = ({ slides = [] }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -109,7 +59,42 @@ const HeroSlider = ({ slides = [] }) => {
           style={{ willChange: 'opacity' }}
         >
           <div className="h-full relative">
-            <SlideImage slide={slide} index={index} isCurrent={index === currentSlide} />
+            {/* Image nette, haute résolution, claire et vibrante avec support image Mobile dédiée */}
+            <picture className="absolute inset-0 w-full h-full block">
+              {slide.mobileImage && (
+                <source
+                  media="(max-width: 768px)"
+                  srcSet={slide.mobileImageSrcSet || slide.mobileImage}
+                />
+              )}
+              <img
+                src={slide.image}
+                srcSet={slide.imageSrcSet}
+                sizes="100vw"
+                alt={slide.title || 'Banner'}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'low'}
+                decoding={index === 0 ? 'sync' : 'async'}
+                width="1920"
+                height="800"
+                onError={(e) => {
+                  const picture = e.currentTarget.parentElement;
+                  if (picture) {
+                    const source = picture.querySelector('source');
+                    if (source) source.remove();
+                  }
+                  if (slide.image && e.currentTarget.src !== slide.image) {
+                    e.currentTarget.src = slide.image;
+                    e.currentTarget.srcset = slide.imageSrcSet || '';
+                  } else {
+                    e.currentTarget.src = PLACEHOLDER_IMAGE;
+                    e.currentTarget.srcset = '';
+                  }
+                }}
+                className="w-full h-full object-cover object-center transition-transform duration-[8000ms] ease-out"
+                style={{ transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)' }}
+              />
+            </picture>
 
             {/* Gradient subtil et clair (plus clair pour laisser briller les visuels et détails du visuel) */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent pointer-events-none"></div>

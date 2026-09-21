@@ -5,7 +5,6 @@ import { toast } from 'react-toastify';
 import ProductColorPicker from '../../components/admin/ProductColorPicker';
 import VariantColorSelect from '../../components/admin/VariantColorSelect';
 import ProductImageManager from '../../components/admin/ProductImageManager';
-import ProductPackManager from '../../components/admin/ProductPackManager';
 import {
   getVariantColorNames,
   hasImageForColor,
@@ -30,8 +29,6 @@ const AdminProductNew = () => {
     isNew: false,
     isOnSale: false,
     discount: '',
-    pricingMethod: 'standard',
-    packs: [],
     colors: [],
     variants: [{ size: 'M', color: '', stock: 0 }],
     images: []
@@ -106,10 +103,6 @@ const AdminProductNew = () => {
       fd.append('isFeatured', String(form.isFeatured));
       fd.append('isNew', String(form.isNew));
       fd.append('isOnSale', String(form.isOnSale));
-      fd.append('pricingMethod', form.pricingMethod || 'standard');
-      if (form.packs && form.packs.length > 0) {
-        fd.append('packs', JSON.stringify(form.packs));
-      }
       fd.append('variants', JSON.stringify(form.variants.map(v => ({
         size: v.size,
         color: v.color,
@@ -193,15 +186,6 @@ const AdminProductNew = () => {
             <span>En promotion</span>
           </label>
         </div>
-
-        <ProductPackManager
-          pricingMethod={form.pricingMethod}
-          packs={form.packs}
-          productName={form.name}
-          productPrice={form.price}
-          onChangePricingMethod={(method) => setForm((f) => ({ ...f, pricingMethod: method }))}
-          onChangePacks={(packs) => setForm((f) => ({ ...f, packs }))}
-        />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Couleurs du produit</label>

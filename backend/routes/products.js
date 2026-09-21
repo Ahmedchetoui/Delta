@@ -38,7 +38,7 @@ const SORT_ALIASES = {
   'name-desc': 'name_desc',
 };
 
-const LIST_PRODUCT_FIELDS = 'name slug description price originalPrice discount images category brand totalStock isFeatured isNewProduct isOnSale pricingMethod packs rating soldCount variants sizes colors createdAt';
+const LIST_PRODUCT_FIELDS = 'name slug description price originalPrice discount images category brand totalStock isFeatured isNewProduct isOnSale rating soldCount variants sizes colors createdAt';
 
 function normalizeSort(sort) {
   return SORT_ALIASES[sort] || sort;
@@ -46,20 +46,6 @@ function normalizeSort(sort) {
 
 function escapeRegex(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function normalizePacks(packs = []) {
-  if (!Array.isArray(packs)) return [];
-  return packs.map((p, idx) => ({
-    quantity: Math.max(1, parseInt(p.quantity, 10) || 1),
-    title: String(p.title || `Pack ${p.quantity || idx + 1}`).trim(),
-    originalPrice: p.originalPrice != null && p.originalPrice !== '' ? Math.max(0, parseFloat(p.originalPrice) || 0) : undefined,
-    discount: p.discount != null && p.discount !== '' ? Math.min(100, Math.max(0, parseFloat(p.discount) || 0)) : 0,
-    price: Math.max(0, parseFloat(p.price) || 0),
-    badge: String(p.badge || '').trim(),
-    isPopular: p.isPopular === true || p.isPopular === 'true',
-    description: String(p.description || '').trim(),
-  })).filter(p => p.quantity > 0 && p.price >= 0);
 }
 
 function normalizeVariants(variants = []) {
@@ -474,8 +460,6 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
       isFeatured,
       isNew,
       isOnSale,
-      pricingMethod,
-      packs,
       tags,
       weight,
       dimensions,
@@ -513,19 +497,6 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
       } catch (error) {
         return res.status(400).json({
           message: 'Format de variantes invalide'
-        });
-      }
-    }
-
-    // Traiter les packs si fournis
-    let processedPacks = [];
-    if (packs) {
-      try {
-        const parsedPacks = typeof packs === 'string' ? JSON.parse(packs) : packs;
-        processedPacks = normalizePacks(parsedPacks);
-      } catch (error) {
-        return res.status(400).json({
-          message: 'Format de packs invalide'
         });
       }
     }
@@ -578,8 +549,6 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
       price: parseFloat(price),
       originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
       discount: discount ? parseFloat(discount) : 0,
-      pricingMethod: pricingMethod === 'pack' ? 'pack' : 'standard',
-      packs: processedPacks,
       images,
       category,
       subCategory,
@@ -705,8 +674,6 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
       isNew,
       isOnSale,
       isActive,
-      pricingMethod,
-      packs,
       tags,
       weight,
       dimensions,
@@ -790,20 +757,6 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     if (weight !== undefined) product.weight = parseFloat(weight);
     if (metaTitle !== undefined) product.metaTitle = metaTitle;
     if (metaDescription !== undefined) product.metaDescription = metaDescription;
-    if (pricingMethod !== undefined) {
-      product.pricingMethod = pricingMethod === 'pack' ? 'pack' : 'standard';
-    }
-
-    if (packs !== undefined) {
-      try {
-        const parsedPacks = typeof packs === 'string' ? JSON.parse(packs) : packs;
-        product.packs = normalizePacks(parsedPacks);
-      } catch (error) {
-        return res.status(400).json({
-          message: 'Format de packs invalide'
-        });
-      }
-    }
 
     // Traiter les variantes
     if (variants) {

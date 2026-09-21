@@ -3,7 +3,7 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Banner = require('../models/Banner');
 const { publicCacheRevalidate } = require('../middleware/publicCache');
-const { getImageUrl, isExistingOrCloudinary } = require('../middleware/upload');
+const { getImageUrl } = require('../middleware/upload');
 const {
   mapProductsForClient,
   getProductCountsByCategory,
@@ -45,13 +45,10 @@ async function loadHomeData() {
     featuredProducts,
     newProducts,
     displayProducts: featuredProducts.length > 0 ? featuredProducts : newProducts,
-    banners: banners
-      .filter((banner) => isExistingOrCloudinary(banner.image))
-      .map((banner) => ({
-        ...banner.toObject(),
-        image: getImageUrl(banner.image),
-        mobileImage: isExistingOrCloudinary(banner.mobileImage) ? getImageUrl(banner.mobileImage) : null,
-      })),
+    banners: banners.map((banner) => ({
+      ...banner.toObject(),
+      image: getImageUrl(banner.image),
+    })),
   };
 }
 

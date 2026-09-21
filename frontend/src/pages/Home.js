@@ -53,9 +53,7 @@ const Home = () => {
   };
 
   const heroSlides = useMemo(() => {
-    return banners
-      .filter((banner) => Boolean(banner.image))
-      .map((banner) => ({
+    return banners.map((banner) => ({
       id: banner._id,
       title: banner.title,
       subtitle: banner.subtitle,

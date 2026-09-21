@@ -533,27 +533,25 @@ const AdminBanners = () => {
                     <img
                       src={resolveImageUrl(banner.image, 300)}
                       alt={banner.title}
-                      className={`h-14 w-20 object-cover rounded border shadow-sm ${banner.imageMissing ? 'border-red-400 ring-1 ring-red-400 opacity-60' : ''}`}
-                      title={banner.imageMissing ? "Image PC introuvable sur le serveur (404) - Cliquez sur Modifier pour la réuploader" : "Image PC (Bureau)"}
+                      className="h-14 w-20 object-cover rounded border shadow-sm"
+                      title="Image PC (Bureau)"
                       onError={(e) => {
                         e.currentTarget.src = PLACEHOLDER_IMAGE;
-                        e.currentTarget.title = "Image introuvable (404)";
                       }}
                     />
                     {banner.mobileImage && (
                       <img
                         src={resolveImageUrl(banner.mobileImage, 200)}
                         alt="Mobile"
-                        className={`h-14 w-10 object-cover rounded border shadow-sm ${banner.mobileImageMissing ? 'border-red-400 ring-1 ring-red-400 opacity-60' : 'border-blue-400'}`}
-                        title={banner.mobileImageMissing ? "Image Mobile introuvable sur le serveur (404) - Cliquez sur Modifier pour la réuploader ou la supprimer" : "Image Mobile (Smartphone)"}
+                        className="h-14 w-10 object-cover rounded border border-blue-400 shadow-sm"
+                        title="Image Mobile (Smartphone)"
                         onError={(e) => {
                           e.currentTarget.src = PLACEHOLDER_IMAGE;
-                          e.currentTarget.title = "Image Mobile introuvable (404)";
                         }}
                       />
                     )}
                   </div>
-                  <div className="mt-1 flex flex-wrap gap-1">
+                  <div className="mt-1">
                     {banner.mobileImage ? (
                       <span className="inline-flex items-center gap-1 text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-medium">
                         📱 PC + Mobile
@@ -561,14 +559,6 @@ const AdminBanners = () => {
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">
                         💻 PC seul
-                      </span>
-                    )}
-                    {(banner.imageMissing || banner.mobileImageMissing) && (
-                      <span
-                        className="inline-flex items-center gap-1 text-[10px] bg-red-50 text-red-700 border border-red-200 px-1.5 py-0.5 rounded font-semibold"
-                        title="Le fichier local a disparu du serveur (404). Cliquez sur Modifier pour réuploader une image permanente sur Cloudinary."
-                      >
-                        ⚠️ Image manquante
                       </span>
                     )}
                   </div>

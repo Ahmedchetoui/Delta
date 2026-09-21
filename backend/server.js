@@ -318,19 +318,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/delta-fas
   serverSelectionTimeoutMS: 10000,
   maxPoolSize: parseInt(process.env.MONGODB_MAX_POOL_SIZE || '50', 10),
 })
-  .then(async () => {
+  .then(() => {
     console.log('✅ Connecté à MongoDB');
     startCatalogRealtime();
-
-    // Auto-migrate local banner images to Cloudinary (non-blocking)
-    try {
-      const { autoMigrateLocalBanners } = require('./routes/banners');
-      if (autoMigrateLocalBanners) {
-        await autoMigrateLocalBanners();
-      }
-    } catch (migErr) {
-      console.warn('⚠️  Auto-migration bannières ignorée:', migErr.message);
-    }
   })
   .catch((err) => {
     console.error('❌ Erreur de connexion MongoDB:', err);
