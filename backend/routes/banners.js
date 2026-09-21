@@ -2,7 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Banner = require('../models/Banner');
 const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
-const { uploadBannerImages, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl } = require('../middleware/upload');
+const { uploadBannerImages, uploadBuffersToCloudinary, handleUploadError, deleteFile, getImageUrl, isExistingOrCloudinary } = require('../middleware/upload');
 const publicCache = require('../middleware/publicCache');
 const { publishCatalogUpdate } = require('../services/catalogRealtime');
 
@@ -105,12 +105,24 @@ router.get('/', publicCache(300), optionalAuth, async (req, res) => {
       banners = await Banner.getActiveBanners();
     }
 
-    // Ajouter les URLs d'images
-    const bannersWithUrls = banners.map(banner => ({
-      ...banner.toObject(),
-      image: getImageUrl(banner.image),
-      mobileImage: banner.mobileImage ? getImageUrl(banner.mobileImage) : null
-    }));
+    const isAdmin = includeInactive === 'true';
+    if (!isAdmin) {
+      banners = banners.filter(b => isExistingOrCloudinary(b.image));
+    }
+
+    // Ajouter les URLs d'images et nettoyer les références locales orphelines pour le public
+    const bannersWithUrls = banners.map(banner => {
+      const mobileValid = isExistingOrCloudinary(banner.mobileImage);
+      return {
+        ...banner.toObject(),
+        image: getImageUrl(banner.image),
+        mobileImage: isAdmin
+          ? (banner.mobileImage ? getImageUrl(banner.mobileImage) : null)
+          : (mobileValid ? getImageUrl(banner.mobileImage) : null),
+        imageMissing: !isExistingOrCloudinary(banner.image),
+        mobileImageMissing: banner.mobileImage ? !mobileValid : false
+      };
+    });
 
     res.json({ banners: bannersWithUrls });
 
@@ -388,7 +400,8 @@ router.put('/:id/toggle', authenticateToken, requireAdmin, async (req, res) => {
       message: `Bannière ${banner.isActive ? 'activée' : 'désactivée'} avec succès`,
       banner: {
         ...banner.toObject(),
-        image: getImageUrl(banner.image)
+        image: getImageUrl(banner.image),
+        mobileImage: banner.mobileImage ? getImageUrl(banner.mobileImage) : null
       }
     });
 
