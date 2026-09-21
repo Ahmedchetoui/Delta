@@ -217,7 +217,14 @@ const OrderDetailsModal = ({ order, isOpen, onClose }) => {
 
           {/* Articles commandés */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Articles commandés</h3>
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Articles commandés</h3>
+              {order.packInfo && (
+                <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-blue-200 bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">
+                  🎁 Offre pack : {order.packInfo.title} ({order.packInfo.price} DT)
+                </span>
+              )}
+            </div>
             <div className="space-y-4">
               {order.items.map((item, index) => (
                 <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
@@ -230,6 +237,11 @@ const OrderDetailsModal = ({ order, isOpen, onClose }) => {
                   )}
                   <div className="flex-1">
                     <h4 className="text-sm font-medium text-gray-900">{item.name}</h4>
+                    {item.packName && (
+                      <span className="mr-2 inline-block rounded bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                        {item.packName}
+                      </span>
+                    )}
                     {item.size && (
                       <p className="text-sm text-gray-600">Taille: {item.size}</p>
                     )}

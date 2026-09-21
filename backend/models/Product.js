@@ -110,6 +110,57 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // `standard` garde l'achat existant par quantité (+/-). Avec `pack`,
+  // l'acheteur choisit uniquement l'une des offres configurées ci-dessous.
+  pricingMethod: {
+    type: String,
+    enum: ['standard', 'pack'],
+    default: 'standard'
+  },
+  packs: [{
+    quantity: {
+      type: Number,
+      required: true,
+      min: [1, 'La quantité du pack doit être au moins 1']
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: [100, 'Le titre du pack ne peut pas dépasser 100 caractères']
+    },
+    originalPrice: {
+      type: Number,
+      min: [0, 'Le prix avant remise ne peut pas être négatif']
+    },
+    discount: {
+      type: Number,
+      min: [0, 'La remise ne peut pas être négative'],
+      max: [100, 'La remise ne peut pas dépasser 100%'],
+      default: 0
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: [0, 'Le prix du pack ne peut pas être négatif']
+    },
+    badge: {
+      type: String,
+      trim: true,
+      maxlength: [60, 'Le badge ne peut pas dépasser 60 caractères'],
+      default: ''
+    },
+    isPopular: {
+      type: Boolean,
+      default: false
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [160, 'La description du pack ne peut pas dépasser 160 caractères'],
+      default: ''
+    }
+  }],
   rating: {
     average: {
       type: Number,

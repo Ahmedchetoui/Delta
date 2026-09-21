@@ -35,9 +35,23 @@ function mapOrderResponse(order) {
   };
 }
 
-async function buildOrderItems(items, products) {
+async function buildOrderItems(items, products, packId = null) {
   let subtotal = 0;
   const orderItems = [];
+  let appliedPackInfo = null;
+
+  // Les tailles/couleurs sont envoyées en lignes séparées. On doit donc
+  // additionner leurs quantités avant de vérifier que l'offre choisie
+  // correspond exactement au pack configuré.
+  const qtyByProduct = {};
+  for (const item of items) {
+    const productId = String(item.product);
+    qtyByProduct[productId] = (qtyByProduct[productId] || 0) + Number(item.quantity || 0);
+  }
+
+  if (packId && Object.keys(qtyByProduct).length !== 1) {
+    throw new OrderServiceError('Une offre pack ne peut concerner qu’un seul produit par commande', 400);
+  }
 
   for (const item of items) {
     const product = products.find((p) => p._id.toString() === item.product);
@@ -71,22 +85,61 @@ async function buildOrderItems(items, products) {
       );
     }
 
-    const finalPrice = product.getFinalPrice();
-    subtotal += finalPrice * item.quantity;
+    const totalProductQuantity = qtyByProduct[String(product._id)] || item.quantity;
+    let itemPrice = product.getFinalPrice();
+    let itemPackName = null;
+
+    if (product.pricingMethod === 'pack') {
+      const matchedPack = packId
+        ? product.packs.id(packId)
+        : product.packs.find((pack) => pack.quantity === totalProductQuantity);
+
+      if (!matchedPack) {
+        throw new OrderServiceError('L’offre pack sélectionnée n’existe plus. Veuillez choisir une offre disponible.', 400);
+      }
+      if (matchedPack.quantity !== totalProductQuantity) {
+        throw new OrderServiceError(
+          `L’offre « ${matchedPack.title} » est prévue pour ${matchedPack.quantity} article(s)`,
+          400
+        );
+      }
+
+      // Le prix et la remise sont toujours lus depuis la base : ils ne peuvent
+      // pas être modifiés dans le navigateur avant la validation de commande.
+      itemPrice = matchedPack.price / totalProductQuantity;
+      itemPackName = matchedPack.title;
+      appliedPackInfo = {
+        packId: matchedPack._id.toString(),
+        title: matchedPack.title,
+        quantity: matchedPack.quantity,
+        price: matchedPack.price,
+        originalPrice: matchedPack.originalPrice ?? (product.getFinalPrice() * matchedPack.quantity),
+        discount: matchedPack.discount || 0,
+      };
+    } else if (packId) {
+      throw new OrderServiceError('Cette offre pack ne correspond pas au produit commandé', 400);
+    }
+
+    subtotal += itemPrice * item.quantity;
 
     orderItems.push({
       product: product._id,
       name: product.name,
-      price: finalPrice,
+      price: Math.round(itemPrice * 100) / 100,
       quantity: item.quantity,
       size: item.size || null,
       color: item.color || null,
       image: getOrderItemImage(product.images, item.color),
       sku: product.sku || null,
+      packName: itemPackName,
     });
   }
 
-  return { orderItems, subtotal };
+  // Évite tout écart de centimes entre les différentes lignes (tailles /
+  // couleurs) et le prix exact du pack défini par l'admin.
+  if (appliedPackInfo) subtotal = appliedPackInfo.price;
+
+  return { orderItems, subtotal, packInfo: appliedPackInfo };
 }
 
 async function syncOrderWithFiabilo(orderId, adminUserId = null) {
@@ -172,6 +225,7 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
   try {
     const {
       items,
+      packId,
       shippingAddress,
       billingAddress,
       notes,
@@ -189,7 +243,7 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
       throw new OrderServiceError('Un ou plusieurs produits ne sont pas disponibles', 400);
     }
 
-    const { orderItems, subtotal } = await buildOrderItems(items, products);
+    const { orderItems, subtotal, packInfo } = await buildOrderItems(items, products, packId);
     const shippingCost = calculateShippingCost();
     const tax = 0;
     const total = subtotal + shippingCost + tax;
@@ -201,6 +255,7 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
     const orderDoc = {
       user: userId || null,
       items: orderItems,
+      packInfo: packInfo || null,
       shippingAddress: normalizedShipping,
       billingAddress: billingAddress || normalizedShipping,
       paymentMethod: PAYMENT_METHOD_COD,
@@ -237,6 +292,7 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
 async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKey = null) {
   const {
     items,
+    packId,
     shippingAddress,
     billingAddress,
     notes,
@@ -254,7 +310,7 @@ async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKe
     throw new OrderServiceError('Un ou plusieurs produits ne sont pas disponibles', 400);
   }
 
-  const { orderItems, subtotal } = await buildOrderItems(items, products);
+  const { orderItems, subtotal, packInfo } = await buildOrderItems(items, products, packId);
   const shippingCost = calculateShippingCost();
   const tax = 0;
   const total = subtotal + shippingCost + tax;
@@ -283,6 +339,7 @@ async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKe
     const orderDoc = {
       user: userId || null,
       items: orderItems,
+      packInfo: packInfo || null,
       shippingAddress: normalizedShipping,
       billingAddress: billingAddress || normalizedShipping,
       paymentMethod: PAYMENT_METHOD_COD,
@@ -411,4 +468,7 @@ module.exports = {
   createOrder,
   mapOrderResponse,
   syncOrderWithFiabilo,
+  // Exporté pour les tests unitaires : le prix d'une offre doit toujours être
+  // déterminé côté serveur, jamais par les données fournies par le client.
+  buildOrderItems,
 };

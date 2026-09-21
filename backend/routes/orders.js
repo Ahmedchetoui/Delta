@@ -66,6 +66,10 @@ const orderValidation = [
   body('items.*.quantity')
     .isInt({ min: 1, max: MAX_ITEM_QUANTITY })
     .withMessage(`La quantité doit être entre 1 et ${MAX_ITEM_QUANTITY}`),
+  body('packId')
+    .optional({ values: 'null' })
+    .isMongoId()
+    .withMessage('Offre pack invalide'),
   body('shippingAddress.firstName')
     .trim()
     .isLength({ min: 1, max: 50 })

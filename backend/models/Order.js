@@ -46,8 +46,19 @@ const orderSchema = new mongoose.Schema({
     size: String,
     color: String,
     image: String,
-    sku: String
+    sku: String,
+    // Reste vide pour une vente standard ; permet à l'admin d'identifier
+    // immédiatement les lignes issues d'une offre par pack.
+    packName: String
   }],
+  packInfo: {
+    packId: String,
+    title: String,
+    quantity: Number,
+    price: Number,
+    originalPrice: Number,
+    discount: Number
+  },
   shippingAddress: {
     firstName: {
       type: String,

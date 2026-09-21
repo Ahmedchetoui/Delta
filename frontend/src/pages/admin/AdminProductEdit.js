@@ -5,6 +5,7 @@ import api from '../../services/api';
 import ProductColorPicker from '../../components/admin/ProductColorPicker';
 import VariantColorSelect from '../../components/admin/VariantColorSelect';
 import ProductImageManager from '../../components/admin/ProductImageManager';
+import ProductPackManager from '../../components/admin/ProductPackManager';
 import { normalizeProductColors } from '../../utils/colorUtils';
 import { normalizeProductImages } from '../../utils/productImages';
 import {
@@ -32,6 +33,8 @@ const AdminProductEdit = () => {
     isNew: false,
     isOnSale: false,
     discount: '',
+    pricingMethod: 'standard',
+    packs: [],
     images: [],
     colors: [],
     variants: []
@@ -71,6 +74,8 @@ const AdminProductEdit = () => {
           isNew: !!product.isNewProduct,
           isOnSale: !!product.isOnSale,
           discount: product.discount || '',
+          pricingMethod: product.pricingMethod || 'standard',
+          packs: product.packs || [],
           images: normalizeProductImages(product.images).map((img) => ({
             ...img,
             preview: img.url,
@@ -172,6 +177,8 @@ const AdminProductEdit = () => {
       submitData.append('isFeatured', String(formData.isFeatured));
       submitData.append('isNew', String(formData.isNew));
       submitData.append('isOnSale', String(formData.isOnSale));
+      submitData.append('pricingMethod', formData.pricingMethod);
+      submitData.append('packs', JSON.stringify(formData.packs));
       if (formData.discount) {
         submitData.append('discount', String(formData.discount));
       }
@@ -347,7 +354,7 @@ const AdminProductEdit = () => {
         <div className="bg-blue-50/60 p-5 rounded-xl border border-blue-200 space-y-4">
           <h3 className="text-base font-bold text-gray-900">Statuts & Badges d'affichage</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <label className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
               <input
                 type="checkbox"
@@ -388,6 +395,15 @@ const AdminProductEdit = () => {
             </label>
           </div>
         </div>
+
+        <ProductPackManager
+          pricingMethod={formData.pricingMethod}
+          packs={formData.packs}
+          productName={formData.name}
+          productPrice={formData.price}
+          onChangePricingMethod={(pricingMethod) => setFormData((current) => ({ ...current, pricingMethod }))}
+          onChangePacks={(packs) => setFormData((current) => ({ ...current, packs }))}
+        />
 
         {/* Couleurs */}
         <div>

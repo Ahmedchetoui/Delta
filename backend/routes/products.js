@@ -8,6 +8,7 @@ const publicCache = require('../middleware/publicCache');
 const { publicCacheRevalidate } = require('../middleware/publicCache');
 const { reviewCreateLimiter } = require('../middleware/rateLimiters');
 const { publishCatalogUpdate } = require('../services/catalogRealtime');
+const { MAX_ITEM_QUANTITY } = require('../utils/orderConstants');
 const {
   normalizeProductImages,
   buildImagesFromUploads,
@@ -38,7 +39,7 @@ const SORT_ALIASES = {
   'name-desc': 'name_desc',
 };
 
-const LIST_PRODUCT_FIELDS = 'name slug description price originalPrice discount images category brand totalStock isFeatured isNewProduct isOnSale rating soldCount variants sizes colors createdAt';
+const LIST_PRODUCT_FIELDS = 'name slug description price originalPrice discount images category brand totalStock isFeatured isNewProduct isOnSale pricingMethod packs rating soldCount variants sizes colors createdAt';
 
 function normalizeSort(sort) {
   return SORT_ALIASES[sort] || sort;
@@ -46,6 +47,77 @@ function normalizeSort(sort) {
 
 function escapeRegex(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function parsePackPrice(value, field, { optional = false } = {}) {
+  if (optional && (value === undefined || value === null || value === '')) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error(`${field} est invalide`);
+  }
+  return Math.round(parsed * 100) / 100;
+}
+
+// Ne jamais faire confiance au prix envoyé dans une commande. Cette
+// normalisation ne sert qu'à enregistrer les offres que l'admin a définies.
+function normalizePacks(packs, productName = 'Article') {
+  if (!Array.isArray(packs)) {
+    throw new Error('Les packs doivent être une liste');
+  }
+
+  const seenQuantities = new Set();
+  let popularAlreadySet = false;
+
+  return packs.map((pack, index) => {
+    const quantity = Number(pack?.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_ITEM_QUANTITY) {
+      throw new Error(`La quantité du pack ${index + 1} est invalide`);
+    }
+    if (seenQuantities.has(quantity)) {
+      throw new Error(`La quantité ${quantity} est configurée plusieurs fois`);
+    }
+    seenQuantities.add(quantity);
+
+    const title = String(pack?.title || `${quantity} ${productName}`)
+      .trim()
+      .slice(0, 100);
+    if (!title) {
+      throw new Error(`Le titre du pack ${index + 1} est requis`);
+    }
+
+    const originalPrice = parsePackPrice(pack?.originalPrice, `Le prix avant remise du pack ${index + 1}`, { optional: true });
+    const price = parsePackPrice(pack?.price, `Le prix final du pack ${index + 1}`);
+    const discount = parsePackPrice(pack?.discount ?? 0, `La remise du pack ${index + 1}`);
+    if (discount > 100) {
+      throw new Error(`La remise du pack ${index + 1} ne peut pas dépasser 100%`);
+    }
+    if (originalPrice !== undefined && price > originalPrice) {
+      throw new Error(`Le prix final du pack ${index + 1} ne peut pas dépasser son prix avant remise`);
+    }
+
+    const wantsPopular = pack?.isPopular === true || pack?.isPopular === 'true';
+    const isPopular = wantsPopular && !popularAlreadySet;
+    popularAlreadySet = popularAlreadySet || isPopular;
+
+    return {
+      quantity,
+      title,
+      originalPrice,
+      discount,
+      price,
+      badge: String(pack?.badge || '').trim().slice(0, 60),
+      isPopular,
+      description: String(pack?.description || '').trim().slice(0, 160),
+    };
+  });
+}
+
+function parsePacks(value, productName) {
+  const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+  return normalizePacks(parsed, productName);
 }
 
 function normalizeVariants(variants = []) {
@@ -460,6 +532,8 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
       isFeatured,
       isNew,
       isOnSale,
+      pricingMethod,
+      packs,
       tags,
       weight,
       dimensions,
@@ -499,6 +573,23 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
           message: 'Format de variantes invalide'
         });
       }
+    }
+
+    const selectedPricingMethod = pricingMethod === undefined ? 'standard' : pricingMethod;
+    if (!['standard', 'pack'].includes(selectedPricingMethod)) {
+      return res.status(400).json({ message: 'Méthode de vente invalide' });
+    }
+
+    let processedPacks = [];
+    if (packs !== undefined && packs !== '') {
+      try {
+        processedPacks = parsePacks(packs, name);
+      } catch (error) {
+        return res.status(400).json({ message: error.message || 'Format de packs invalide' });
+      }
+    }
+    if (selectedPricingMethod === 'pack' && processedPacks.length === 0) {
+      return res.status(400).json({ message: 'Ajoutez au moins une offre avant d’activer la vente par pack' });
     }
 
     // Traiter les couleurs si fournies
@@ -549,6 +640,8 @@ router.post('/', authenticateToken, requireAdmin, uploadProductImages, uploadBuf
       price: parseFloat(price),
       originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
       discount: discount ? parseFloat(discount) : 0,
+      pricingMethod: selectedPricingMethod,
+      packs: processedPacks,
       images,
       category,
       subCategory,
@@ -674,6 +767,8 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
       isNew,
       isOnSale,
       isActive,
+      pricingMethod,
+      packs,
       tags,
       weight,
       dimensions,
@@ -757,6 +852,28 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     if (weight !== undefined) product.weight = parseFloat(weight);
     if (metaTitle !== undefined) product.metaTitle = metaTitle;
     if (metaDescription !== undefined) product.metaDescription = metaDescription;
+
+    if (pricingMethod !== undefined && !['standard', 'pack'].includes(pricingMethod)) {
+      return res.status(400).json({ message: 'Méthode de vente invalide' });
+    }
+
+    let processedPacks = null;
+    if (packs !== undefined) {
+      try {
+        processedPacks = parsePacks(packs || '[]', name || product.name);
+      } catch (error) {
+        return res.status(400).json({ message: error.message || 'Format de packs invalide' });
+      }
+    }
+
+    const nextPricingMethod = pricingMethod === undefined ? product.pricingMethod : pricingMethod;
+    const nextPacks = processedPacks === null ? product.packs : processedPacks;
+    if (nextPricingMethod === 'pack' && (!nextPacks || nextPacks.length === 0)) {
+      return res.status(400).json({ message: 'Ajoutez au moins une offre avant d’activer la vente par pack' });
+    }
+
+    if (pricingMethod !== undefined) product.pricingMethod = pricingMethod;
+    if (processedPacks !== null) product.packs = processedPacks;
 
     // Traiter les variantes
     if (variants) {

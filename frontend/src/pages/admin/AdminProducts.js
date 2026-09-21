@@ -35,6 +35,8 @@ const AdminProducts = () => {
         category: p?.category?.name || '-',
         stock: p.totalStock ?? 0,
         soldCount: p.soldCount ?? 0,
+        pricingMethod: p.pricingMethod || 'standard',
+        packsCount: p.packs?.length || 0,
         isActive: p.isActive !== false,
       }));
       setProducts(list);
@@ -137,7 +139,14 @@ const AdminProducts = () => {
               {products.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-gray-900">{product.name}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900">{product.name}</span>
+                      {product.pricingMethod === 'pack' && (
+                        <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-800">
+                          🎁 Pack ({product.packsCount})
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{product.category}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
