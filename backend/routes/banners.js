@@ -413,4 +413,115 @@ router.put('/:id/toggle', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// @route   POST /api/banners/migrate-to-cloud
+// @desc    Migrer les images locales vers Cloudinary
+// @access  Private (Admin)
+router.post('/migrate-to-cloud', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { cloudinary: cld, enabled: cloudEnabled, getCloudinaryFolder } = require('../config/cloudinary');
+    if (!cloudEnabled || !cld) {
+      return res.status(400).json({ message: 'Cloudinary non configuré' });
+    }
+
+    const banners = await Banner.find();
+    const results = [];
+
+    for (const banner of banners) {
+      const fields = ['image', 'mobileImage'];
+      let needsSave = false;
+
+      for (const field of fields) {
+        const ref = banner[field];
+        if (!ref || /^https?:\/\//i.test(ref)) continue;
+
+        const uploadBase = require('path').join(__dirname, '..', process.env.UPLOAD_PATH || '../uploads');
+        const filePath = require('path').join(uploadBase, ref);
+        const fs = require('fs');
+
+        if (!fs.existsSync(filePath)) {
+          results.push({ id: banner._id, field, status: 'file_missing', ref });
+          continue;
+        }
+
+        try {
+          const folder = getCloudinaryFolder();
+          const result = await cld.uploader.upload(filePath, {
+            folder,
+            resource_type: 'image',
+            quality: 'auto:good',
+            fetch_format: 'auto',
+          });
+          banner[field] = result.secure_url;
+          needsSave = true;
+          results.push({ id: banner._id, field, status: 'migrated', url: result.secure_url });
+        } catch (err) {
+          results.push({ id: banner._id, field, status: 'error', error: err.message });
+        }
+      }
+
+      if (needsSave) await banner.save();
+    }
+
+    res.json({ message: 'Migration terminée', results });
+  } catch (error) {
+    console.error('Erreur migration bannières:', error);
+    res.status(500).json({ message: 'Erreur lors de la migration' });
+  }
+});
+
+// Auto-migration: migrate local banner images to Cloudinary on server startup
+const autoMigrateLocalBanners = async () => {
+  try {
+    const { cloudinary: cld, enabled: cloudEnabled, getCloudinaryFolder } = require('../config/cloudinary');
+    if (!cloudEnabled || !cld) return;
+
+    const fs = require('fs');
+    const pathMod = require('path');
+
+    const banners = await Banner.find();
+    let migratedCount = 0;
+
+    for (const banner of banners) {
+      let needsSave = false;
+
+      for (const field of ['image', 'mobileImage']) {
+        const ref = banner[field];
+        if (!ref || /^https?:\/\//i.test(ref)) continue;
+
+        const uploadBase = pathMod.join(__dirname, '..', process.env.UPLOAD_PATH || '../uploads');
+        const filePath = pathMod.join(uploadBase, ref);
+
+        if (!fs.existsSync(filePath)) continue;
+
+        try {
+          const folder = getCloudinaryFolder();
+          const result = await cld.uploader.upload(filePath, {
+            folder,
+            resource_type: 'image',
+            quality: 'auto:good',
+            fetch_format: 'auto',
+          });
+          banner[field] = result.secure_url;
+          needsSave = true;
+          console.log(`🔄 Banner "${banner.title}" ${field}: migré local → Cloudinary`);
+        } catch (err) {
+          console.warn(`⚠️  Banner "${banner.title}" ${field}: échec migration Cloudinary:`, err.message);
+        }
+      }
+
+      if (needsSave) {
+        await banner.save();
+        migratedCount++;
+      }
+    }
+
+    if (migratedCount > 0) {
+      console.log(`✅ Auto-migration: ${migratedCount} bannière(s) migrée(s) vers Cloudinary`);
+    }
+  } catch (err) {
+    console.warn('⚠️  Auto-migration bannières échouée (non bloquant):', err.message);
+  }
+};
+
 module.exports = router;
+module.exports.autoMigrateLocalBanners = autoMigrateLocalBanners;
