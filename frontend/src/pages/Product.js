@@ -29,6 +29,7 @@ import {
 } from '../constants/tunisiaGovernorates';
 import { calculateShippingCost } from '../constants/shipping';
 import ProductReviews from '../components/product/ProductReviews';
+import ProductPackSelector from '../components/product/ProductPackSelector';
 import { trackViewContent, trackAddToCart, trackInitiateCheckout, trackPurchase } from '../utils/metaPixel';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -48,6 +49,7 @@ const Product = () => {
 
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [isOrdering, setIsOrdering] = useState(false);
+  const [selectedPackId, setSelectedPackId] = useState(null);
 
   // Champs d'informations de livraison
   const [firstName, setFirstName] = useState('');
@@ -57,8 +59,35 @@ const Product = () => {
   const [city, setCity] = useState(DEFAULT_CITY);
   const [streetAddress, setStreetAddress] = useState('');
 
-
   const deliveryCost = calculateShippingCost();
+
+  const isPackMode = useMemo(() => {
+    return currentProduct?.pricingMethod === 'pack' && Array.isArray(currentProduct?.packs) && currentProduct.packs.length > 0;
+  }, [currentProduct]);
+
+  useEffect(() => {
+    if (isPackMode && currentProduct?.packs?.length > 0) {
+      const defaultPack = currentProduct.packs.find((p) => p.isPopular) || currentProduct.packs[0];
+      if (defaultPack) {
+        setSelectedPackId(defaultPack._id || defaultPack.title);
+        setQuantity(defaultPack.quantity);
+      }
+    }
+  }, [isPackMode, currentProduct]);
+
+  const selectedPack = useMemo(() => {
+    if (!isPackMode) return null;
+    return (
+      currentProduct.packs.find(
+        (p) => (p._id && String(p._id) === String(selectedPackId)) || p.title === selectedPackId
+      ) || currentProduct.packs[0]
+    );
+  }, [isPackMode, currentProduct, selectedPackId]);
+
+  const handleSelectPack = (pack) => {
+    setSelectedPackId(pack._id || pack.title);
+    setQuantity(pack.quantity);
+  };
 
   const displayFinalPrice = useMemo(() => {
     if (!currentProduct) return 0;
@@ -94,7 +123,9 @@ const Product = () => {
   }, [currentProduct, displayOriginalPrice, displayFinalPrice]);
 
   const productPrice = displayFinalPrice;
-  const subtotal = productPrice * quantity;
+  const subtotal = isPackMode && selectedPack
+    ? Number(selectedPack.price || 0)
+    : productPrice * quantity;
   const total = subtotal + deliveryCost;
 
   const displayColors = useMemo(() => {
@@ -399,6 +430,7 @@ const Product = () => {
     try {
       const orderData = {
         items: buildOrderItemsFromProduct(),
+        packId: isPackMode && selectedPack ? (selectedPack._id || null) : null,
         shippingAddress: {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -542,16 +574,20 @@ const Product = () => {
 
               <div className="flex items-center gap-3 mb-6 flex-wrap">
                 <div className="text-3xl font-bold" style={{ color: '#B8860B' }}>
-                  {productPrice % 1 === 0 ? productPrice : productPrice.toFixed(2)} {t('currency')}
+                  {isPackMode && selectedPack
+                    ? (selectedPack.price % 1 === 0 ? selectedPack.price : selectedPack.price.toFixed(2))
+                    : (productPrice % 1 === 0 ? productPrice : productPrice.toFixed(2))} {t('currency')}
                 </div>
-                {displayOriginalPrice && (
+                {(isPackMode && selectedPack ? selectedPack.originalPrice : displayOriginalPrice) && (
                   <div className="text-xl text-gray-400 line-through">
-                    {displayOriginalPrice % 1 === 0 ? displayOriginalPrice : displayOriginalPrice.toFixed(2)} {t('currency')}
+                    {(isPackMode && selectedPack ? selectedPack.originalPrice : displayOriginalPrice) % 1 === 0
+                      ? (isPackMode && selectedPack ? selectedPack.originalPrice : displayOriginalPrice)
+                      : (isPackMode && selectedPack ? selectedPack.originalPrice : displayOriginalPrice).toFixed(2)} {t('currency')}
                   </div>
                 )}
-                {discountPercent && (
+                {(isPackMode && selectedPack ? (selectedPack.badge || (selectedPack.discount ? `-${selectedPack.discount}%` : null)) : discountPercent) && (
                   <span className="px-2.5 py-1 bg-red-600 text-white text-xs font-bold rounded-full uppercase">
-                    -{discountPercent}%
+                    {isPackMode && selectedPack ? (selectedPack.badge || `-${selectedPack.discount}%`) : `-${discountPercent}%`}
                   </span>
                 )}
               </div>
@@ -559,27 +595,37 @@ const Product = () => {
 
             {/* Quantité & Options */}
             <div className="space-y-6">
-              {/* Quantité */}
-              <div className="bg-white border border-gray-300 rounded-lg p-3">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">{t('quantity')}</h3>
-                <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
-                  >
-                    -
-                  </button>
-                  <span className="w-8 text-center font-medium text-sm">{quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
-                  >
-                    +
-                  </button>
+              {/* Sélecteur de pack ou quantité classique */}
+              {isPackMode ? (
+                <ProductPackSelector
+                  packs={currentProduct.packs}
+                  selectedPackId={selectedPack?._id || selectedPack?.title}
+                  onSelectPack={handleSelectPack}
+                  currency={t('currency')}
+                />
+              ) : (
+                /* Quantité */
+                <div className="bg-white border border-gray-300 rounded-lg p-3">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">{t('quantity')}</h3>
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                    >
+                      -
+                    </button>
+                    <span className="w-8 text-center font-medium text-sm">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-6 h-6 border border-gray-400 rounded flex items-center justify-center hover:bg-gray-50 text-sm font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {quantity === 1 ? (
                 // Mode unitaire simple
@@ -839,6 +885,19 @@ const Product = () => {
               </div>
 
               <div className="space-y-3 mb-6 text-sm">
+                {isPackMode && selectedPack && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-blue-900">🎁 Offre : {selectedPack.title}</span>
+                      <span className="font-bold text-blue-900">{selectedPack.price} {t('currency')}</span>
+                    </div>
+                    {selectedPack.badge && (
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#22c55e] text-white">
+                        {selectedPack.badge}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="bg-gray-50 rounded-lg p-3 space-y-1">
                   <p className="font-semibold text-gray-900 mb-1">{currentProduct.name}</p>
                   <p className="text-gray-600">{t('quantity')} : {quantity}</p>

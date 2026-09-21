@@ -110,6 +110,52 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  pricingMethod: {
+    type: String,
+    enum: ['standard', 'pack'],
+    default: 'standard'
+  },
+  packs: [{
+    quantity: {
+      type: Number,
+      required: true,
+      min: [1, 'La quantité du pack doit être au moins 1']
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    originalPrice: {
+      type: Number,
+      min: 0
+    },
+    discount: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: [0, 'Le prix du pack ne peut pas être négatif']
+    },
+    badge: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    isPopular: {
+      type: Boolean,
+      default: false
+    },
+    description: {
+      type: String,
+      trim: true,
+      default: ''
+    }
+  }],
   rating: {
     average: {
       type: Number,

@@ -35,9 +35,17 @@ function mapOrderResponse(order) {
   };
 }
 
-async function buildOrderItems(items, products) {
+async function buildOrderItems(items, products, packId = null) {
   let subtotal = 0;
   const orderItems = [];
+  let appliedPackInfo = null;
+
+  // Calculer la quantité totale par produit pour détecter les packs
+  const qtyByProduct = {};
+  for (const item of items) {
+    const pId = String(item.product);
+    qtyByProduct[pId] = (qtyByProduct[pId] || 0) + (item.quantity || 1);
+  }
 
   for (const item of items) {
     const product = products.find((p) => p._id.toString() === item.product);
@@ -71,22 +79,58 @@ async function buildOrderItems(items, products) {
       );
     }
 
-    const finalPrice = product.getFinalPrice();
-    subtotal += finalPrice * item.quantity;
+    // Vérifier si un pack s'applique à ce produit
+    let itemPrice = product.getFinalPrice();
+    let itemPackName = null;
+    const totalProductQty = qtyByProduct[String(product._id)] || item.quantity;
+
+    if (product.packs && product.packs.length > 0) {
+      let matchedPack = null;
+      if (packId) {
+        matchedPack = product.packs.id ? product.packs.id(packId) : product.packs.find(p => String(p._id) === String(packId));
+      }
+      if (!matchedPack && (product.pricingMethod === 'pack' || packId)) {
+        matchedPack = product.packs.find((p) => p.quantity === totalProductQty);
+      }
+
+      if (matchedPack && totalProductQty > 0) {
+        // Le prix unitaire est proratisé pour que la somme corresponde exactement au prix du pack
+        itemPrice = matchedPack.price / totalProductQty;
+        itemPackName = matchedPack.title;
+        if (!appliedPackInfo) {
+          appliedPackInfo = {
+            packId: matchedPack._id ? matchedPack._id.toString() : null,
+            title: matchedPack.title,
+            quantity: matchedPack.quantity,
+            price: matchedPack.price,
+            originalPrice: matchedPack.originalPrice || (product.getFinalPrice() * matchedPack.quantity),
+            discount: matchedPack.discount || 0,
+          };
+        }
+      }
+    }
+
+    subtotal += itemPrice * item.quantity;
 
     orderItems.push({
       product: product._id,
       name: product.name,
-      price: finalPrice,
+      price: Math.round(itemPrice * 100) / 100,
       quantity: item.quantity,
       size: item.size || null,
       color: item.color || null,
       image: getOrderItemImage(product.images, item.color),
       sku: product.sku || null,
+      packName: itemPackName,
     });
   }
 
-  return { orderItems, subtotal };
+  // Si un pack a été appliqué et qu'il y a un éventuel écart d'arrondi
+  if (appliedPackInfo && orderItems.length > 0) {
+    subtotal = appliedPackInfo.price;
+  }
+
+  return { orderItems, subtotal, packInfo: appliedPackInfo };
 }
 
 async function syncOrderWithFiabilo(orderId, adminUserId = null) {
@@ -172,6 +216,7 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
   try {
     const {
       items,
+      packId,
       shippingAddress,
       billingAddress,
       notes,
@@ -189,7 +234,7 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
       throw new OrderServiceError('Un ou plusieurs produits ne sont pas disponibles', 400);
     }
 
-    const { orderItems, subtotal } = await buildOrderItems(items, products);
+    const { orderItems, subtotal, packInfo } = await buildOrderItems(items, products, packId);
     const shippingCost = calculateShippingCost();
     const tax = 0;
     const total = subtotal + shippingCost + tax;
@@ -201,6 +246,7 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
     const orderDoc = {
       user: userId || null,
       items: orderItems,
+      packInfo: packInfo || null,
       shippingAddress: normalizedShipping,
       billingAddress: billingAddress || normalizedShipping,
       paymentMethod: PAYMENT_METHOD_COD,
@@ -237,6 +283,7 @@ async function createOrderWithTransaction(orderData, userId, idempotencyKey = nu
 async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKey = null) {
   const {
     items,
+    packId,
     shippingAddress,
     billingAddress,
     notes,
@@ -254,7 +301,7 @@ async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKe
     throw new OrderServiceError('Un ou plusieurs produits ne sont pas disponibles', 400);
   }
 
-  const { orderItems, subtotal } = await buildOrderItems(items, products);
+  const { orderItems, subtotal, packInfo } = await buildOrderItems(items, products, packId);
   const shippingCost = calculateShippingCost();
   const tax = 0;
   const total = subtotal + shippingCost + tax;
@@ -283,6 +330,7 @@ async function createOrderWithSequentialUpdates(orderData, userId, idempotencyKe
     const orderDoc = {
       user: userId || null,
       items: orderItems,
+      packInfo: packInfo || null,
       shippingAddress: normalizedShipping,
       billingAddress: billingAddress || normalizedShipping,
       paymentMethod: PAYMENT_METHOD_COD,

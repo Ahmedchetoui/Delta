@@ -5,6 +5,7 @@ import api from '../../services/api';
 import ProductColorPicker from '../../components/admin/ProductColorPicker';
 import VariantColorSelect from '../../components/admin/VariantColorSelect';
 import ProductImageManager from '../../components/admin/ProductImageManager';
+import ProductPackManager from '../../components/admin/ProductPackManager';
 import { normalizeProductColors } from '../../utils/colorUtils';
 import { normalizeProductImages } from '../../utils/productImages';
 import {
@@ -32,6 +33,8 @@ const AdminProductEdit = () => {
     isNew: false,
     isOnSale: false,
     discount: '',
+    pricingMethod: 'standard',
+    packs: [],
     images: [],
     colors: [],
     variants: []
@@ -71,6 +74,8 @@ const AdminProductEdit = () => {
           isNew: !!product.isNewProduct,
           isOnSale: !!product.isOnSale,
           discount: product.discount || '',
+          pricingMethod: product.pricingMethod || 'standard',
+          packs: product.packs || [],
           images: normalizeProductImages(product.images).map((img) => ({
             ...img,
             preview: img.url,
@@ -172,6 +177,8 @@ const AdminProductEdit = () => {
       submitData.append('isFeatured', String(formData.isFeatured));
       submitData.append('isNew', String(formData.isNew));
       submitData.append('isOnSale', String(formData.isOnSale));
+      submitData.append('pricingMethod', formData.pricingMethod || 'standard');
+      submitData.append('packs', JSON.stringify(formData.packs || []));
       if (formData.discount) {
         submitData.append('discount', String(formData.discount));
       }
@@ -388,6 +395,20 @@ const AdminProductEdit = () => {
             </label>
           </div>
         </div>
+
+        {/* Méthode de vente & Gestion des packs */}
+        <ProductPackManager
+          pricingMethod={formData.pricingMethod}
+          packs={formData.packs}
+          productName={formData.name}
+          productPrice={formData.price}
+          onChangePricingMethod={(method) =>
+            setFormData((prev) => ({ ...prev, pricingMethod: method }))
+          }
+          onChangePacks={(packs) =>
+            setFormData((prev) => ({ ...prev, packs }))
+          }
+        />
 
         {/* Couleurs */}
         <div>

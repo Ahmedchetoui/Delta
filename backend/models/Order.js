@@ -46,8 +46,17 @@ const orderSchema = new mongoose.Schema({
     size: String,
     color: String,
     image: String,
-    sku: String
+    sku: String,
+    packName: String
   }],
+  packInfo: {
+    packId: String,
+    title: String,
+    quantity: Number,
+    price: Number,
+    originalPrice: Number,
+    discount: Number
+  },
   shippingAddress: {
     firstName: {
       type: String,

@@ -217,7 +217,14 @@ const OrderDetailsModal = ({ order, isOpen, onClose }) => {
 
           {/* Articles commandés */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Articles commandés</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Articles commandés</h3>
+              {order.packInfo && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200 self-start sm:self-auto">
+                  <span>🎁</span> Offre Pack : {order.packInfo.title} ({order.packInfo.price} DT{order.packInfo.originalPrice ? ` au lieu de ${order.packInfo.originalPrice} DT` : ''})
+                </span>
+              )}
+            </div>
             <div className="space-y-4">
               {order.items.map((item, index) => (
                 <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
@@ -230,6 +237,11 @@ const OrderDetailsModal = ({ order, isOpen, onClose }) => {
                   )}
                   <div className="flex-1">
                     <h4 className="text-sm font-medium text-gray-900">{item.name}</h4>
+                    {item.packName && (
+                      <span className="inline-block text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded mr-2">
+                        {item.packName}
+                      </span>
+                    )}
                     {item.size && (
                       <p className="text-sm text-gray-600">Taille: {item.size}</p>
                     )}
