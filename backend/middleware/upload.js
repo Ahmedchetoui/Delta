@@ -221,12 +221,15 @@ const handleUploadError = (error, req, res, next) => {
 // Fonction pour supprimer un fichier
 const deleteFile = async (ref) => {
   if (!ref) return false;
+  const target = typeof ref === 'object' && ref !== null ? (ref.url || '') : String(ref);
+  if (!target) return false;
+
   // Si c'est une URL Cloudinary, détruire la ressource
-  if ((useCloudinary && cloudinary) && /^https?:\/\//i.test(ref) && ref.includes('res.cloudinary.com')) {
+  if ((useCloudinary && cloudinary) && /^https?:\/\//i.test(target) && target.includes('res.cloudinary.com')) {
     try {
       // Extraire public_id à partir de l'URL
       // Exemple: https://res.cloudinary.com/<cloud>/image/upload/v12345/folder/name.jpg
-      const withoutQuery = ref.split('?')[0];
+      const withoutQuery = target.split('?')[0];
       const parts = withoutQuery.split('/');
       const uploadIndex = parts.findIndex(p => p === 'upload');
       const publicIdWithExt = parts.slice(uploadIndex + 2).join('/');
@@ -240,7 +243,7 @@ const deleteFile = async (ref) => {
   }
 
   // Sinon, suppression locale
-  const filePath = path.join(__dirname, process.env.UPLOAD_PATH || '../uploads', ref);
+  const filePath = path.join(__dirname, process.env.UPLOAD_PATH || '../uploads', target);
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
     return true;

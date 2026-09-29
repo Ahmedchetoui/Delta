@@ -249,10 +249,13 @@ productSchema.index({ isActive: 1, category: 1, createdAt: -1 });
 productSchema.pre('validate', function(next) {
   // Utilise la propriété d'état de Mongoose `this.isNew` seulement (pas de champ utilisateur "isNew")
   if (this.isModified('name') || this.isNew) {
-    this.slug = (this.name || '')
+    const rawSlug = (this.name || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+    this.slug = rawSlug || `produit-${Date.now()}`;
   }
 
   // Calculer le prix avec remise

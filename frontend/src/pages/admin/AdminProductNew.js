@@ -86,13 +86,28 @@ const AdminProductNew = () => {
   const addVariant = () => setForm((f) => ({ ...f, variants: [...f.variants, { size: '', color: f.colors[0]?.name || '', stock: 0 }] }));
   const removeVariant = (idx) => setForm((f) => ({ ...f, variants: f.variants.filter((_, i) => i !== idx) }));
 
-  const canSave = useMemo(() => {
-    return form.name.trim() && form.description.trim() && form.price && form.category && form.images.length > 0;
+  // Même règles que le backend. L'admin reçoit l'erreur utile avant l'envoi,
+  // au lieu du toast générique « Données invalides ».
+  const validationMessage = useMemo(() => {
+    if (form.name.trim().length < 2) return 'Le nom doit contenir au moins 2 caractères';
+    if (form.description.trim().length < 3) return 'La description doit contenir au moins 3 caractères';
+
+    const price = Number(form.price);
+    if (!Number.isFinite(price) || price < 0) return 'Le prix de vente doit être un nombre positif ou égal à zéro';
+    if (!/^[a-f\d]{24}$/i.test(form.category)) return 'Veuillez sélectionner une catégorie valide';
+    if (!form.images.some((image) => image.file)) return 'Ajoutez au moins une image du produit';
+    if (form.pricingMethod === 'pack' && form.packs.length === 0) return 'Ajoutez au moins une offre pack';
+    return '';
   }, [form]);
+
+  const canSave = !validationMessage;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!canSave) return;
+    if (!canSave) {
+      toast.error(validationMessage);
+      return;
+    }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -129,8 +144,12 @@ const AdminProductNew = () => {
       navigate('/admin/products');
     } catch (err) {
       console.error('Erreur création produit:', err);
-      const msg = err?.response?.data?.message
-        || err?.response?.data?.errors?.join?.(', ')
+      const apiErrors = err?.response?.data?.errors;
+      const details = Array.isArray(apiErrors)
+        ? apiErrors.map((entry) => entry?.msg || entry?.message || String(entry)).filter(Boolean).join(' · ')
+        : '';
+      const msg = details
+        || err?.response?.data?.message
         || 'Erreur lors de la création du produit';
       toast.error(msg);
     } finally {

@@ -827,7 +827,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadProductImages, uploadB
     // Mettre à jour les images du produit
     if (finalImages.length > 0) {
       product.images = finalImages;
-    } else if (req.body.existingImages || req.body.imagesToDelete || req.files || req.uploadedImages) {
+    } else if (req.body.existingImages || req.body.imagesToDelete || (req.files && req.files.length > 0) || (req.uploadedImages && req.uploadedImages.length > 0)) {
       // Si des modifications d'images ont été tentées mais qu'il ne reste aucune image
       return res.status(400).json({
         message: 'Au moins une image est requise pour le produit'
@@ -975,7 +975,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     }
 
     // Supprimer les images (Cloudinary ou local)
-    await Promise.all((product.images || []).map((img) => deleteFile(img)));
+    await Promise.all((product.images || []).map((img) => deleteFile(img?.url || img)));
 
     await Product.findByIdAndDelete(req.params.id);
 
