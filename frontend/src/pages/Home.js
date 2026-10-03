@@ -83,7 +83,7 @@ const Home = () => {
     <div className="min-h-screen bg-white -mt-14 md:-mt-16">
       {/* Hero Banner plein écran bord à bord (edge-to-edge sans espace vide) */}
       {showHeroSkeleton ? (
-        <section className="relative w-full h-[560px] sm:h-[640px] md:h-[720px] lg:h-[800px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
+        <section className="relative w-full h-[620px] sm:h-[700px] md:h-[780px] lg:h-[860px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
           <div className="relative flex h-full items-center justify-center px-4 text-center pt-14 md:pt-16">
             <div>
               <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>
@@ -100,7 +100,7 @@ const Home = () => {
       ) : heroSlides.length > 0 ? (
         <HeroSlider slides={heroSlides} />
       ) : (
-        <section className="relative w-full h-[560px] sm:h-[640px] md:h-[720px] lg:h-[800px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
+        <section className="relative w-full h-[620px] sm:h-[700px] md:h-[780px] lg:h-[860px] overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-slate-900 text-white">
           <div className="relative flex h-full items-center justify-center px-4 text-center pt-14 md:pt-16">
             <div>
               <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-blue-200">{t('heroTag')}</p>

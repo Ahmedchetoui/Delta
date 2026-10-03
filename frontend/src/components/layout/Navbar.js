@@ -27,15 +27,11 @@ const Navbar = () => {
 
   const cartItemsCount = items.reduce((total, item) => total + item.quantity, 0);
 
-  // Close menu on scroll
+  // Close menu on scroll (listen only when menu is open)
   useEffect(() => {
-    const handleScroll = () => {
-      if (isMenuOpen) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
+    if (!isMenuOpen) return undefined;
+    const handleScroll = () => setIsMenuOpen(false);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMenuOpen]);
 
@@ -84,8 +80,8 @@ const Navbar = () => {
             <img
               src={require('../../assets/logo/delta.webp')}
               alt="Delta Fashion"
-              width="160"
-              height="40"
+              width="240"
+              height="67"
               className="h-9 md:h-10 w-auto object-contain object-left"
               loading="eager"
               decoding="async"

@@ -1,23 +1,28 @@
 {
-  "specVersion": "1.0.0",
-  "name": "Delta Fashion",
-  "description": "Boutique de prêt-à-porter en ligne en Tunisie avec commande en ligne et livraison express.",
-  "homepage": "https://delta-fashion.tn",
-  "documentation": "https://delta-fashion.tn/llms.txt",
+  "specVersion": "1.0",
   "entries": [
     {
-      "id": "delta-shop-catalog",
-      "name": "Catalogue Produits",
-      "description": "Catalogue en ligne des articles de mode, vêtements et accessoires Delta Fashion.",
-      "type": "catalog",
-      "url": "https://delta-fashion.tn/shop"
+      "identifier": "delta-fashion-catalog",
+      "displayName": "Delta Fashion Catalogue",
+      "description": "Catalogue de vêtements, prêt-à-porter et articles de mode en ligne en Tunisie avec livraison rapide.",
+      "mediaType": "application/ai-catalog+json",
+      "url": "https://delta-fashion.tn/shop",
+      "representativeQueries": [
+        "vêtements mode homme et femme",
+        "boutique en ligne prêt-à-porter tunisie",
+        "nouvelle collection habits tendance"
+      ]
     },
     {
-      "id": "delta-contact",
-      "name": "Support Client Delta Fashion",
-      "description": "Coordonnées du support et assistance client.",
-      "type": "support",
-      "url": "https://delta-fashion.tn/contact"
+      "identifier": "delta-fashion-skills",
+      "displayName": "Delta Fashion Assistance",
+      "description": "Documentation et informations sur les commandes, livraison et service client Delta Fashion.",
+      "mediaType": "text/markdown; profile=\"urn:air:agent-skills\"",
+      "url": "https://delta-fashion.tn/llms.txt",
+      "representativeQueries": [
+        "suivi de commande delta fashion",
+        "contact et livraison tunisie"
+      ]
     }
   ]
 }

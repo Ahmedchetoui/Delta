@@ -55,22 +55,24 @@
 
       function loadFbPixel() {
         if (window._fbLoaded) return;
-        if (/Lighthouse|Google-InspectionTool|Chrome-Lighthouse|PageSpeed/i.test(navigator.userAgent || '')) return;
         window._fbLoaded = true;
         var s = document.createElement('script');
         s.async = true;
         s.src = 'https://connect.facebook.net/en_US/fbevents.js';
         var first = document.getElementsByTagName('script')[0];
-        first.parentNode.insertBefore(s, first);
+        if (first && first.parentNode) {
+          first.parentNode.insertBefore(s, first);
+        } else {
+          document.head.appendChild(s);
+        }
       }
 
-      var userEvents = ['scroll', 'touchstart', 'mousemove', 'keydown'];
+      var userEvents = ['scroll', 'touchstart', 'pointerdown', 'keydown', 'click'];
       function onInteraction() {
         loadFbPixel();
         userEvents.forEach(function(ev) { window.removeEventListener(ev, onInteraction); });
       }
       userEvents.forEach(function(ev) { window.addEventListener(ev, onInteraction, { once: true, passive: true }); });
-      setTimeout(loadFbPixel, 3500);
     </script>
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=1362539488813579&ev=PageView&noscript=1"
