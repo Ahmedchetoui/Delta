@@ -101,7 +101,24 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // Middleware de sécurité
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // CSP appliqué au niveau du frontend Vercel
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false, // Permet aux images /uploads d'être chargées sans blocage
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true
+    },
+    frameguard: {
+      action: 'deny'
+    },
+    referrerPolicy: {
+      policy: 'strict-origin-when-cross-origin'
+    }
+  })
+);
 app.use(compression());
 
 // Rate limiting global (catalogue + navigation)
