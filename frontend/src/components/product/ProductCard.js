@@ -157,9 +157,9 @@ const ProductCard = ({ product, priority = false }) => {
             <HeartIcon className="h-5 w-5 transition-colors" />
           </button>
 
-          {/* Indicateurs Diaporama */}
+          {/* Indicateurs Diaporama avec cibles tactiles conformes WCAG (>=28px) et sans animation non-composée sur width */}
           {allImages.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-md">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 z-20 bg-black/40 px-2 py-0.5 rounded-full backdrop-blur-md">
               {allImages.map((_, idx) => (
                 <button
                   key={idx}
@@ -169,13 +169,18 @@ const ProductCard = ({ product, priority = false }) => {
                     e.stopPropagation();
                     setCurrentImgIndex(idx);
                   }}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    idx === currentImgIndex
-                      ? 'w-5 bg-white'
-                      : 'w-2 bg-white/60 hover:bg-white'
-                  }`}
+                  className="h-7 w-7 flex items-center justify-center focus:outline-none"
+                  aria-label={lang === 'ar' ? `عرض الصورة ${idx + 1}` : `Voir photo ${idx + 1}`}
                   title={lang === 'ar' ? `عرض الصورة ${idx + 1}` : `Voir photo ${idx + 1}`}
-                />
+                >
+                  <span
+                    className={`h-2 rounded-full transition-opacity duration-200 ${
+                      idx === currentImgIndex
+                        ? 'w-5 bg-white opacity-100'
+                        : 'w-2 bg-white opacity-60 hover:opacity-100'
+                    }`}
+                  />
+                </button>
               ))}
             </div>
           )}
@@ -192,29 +197,29 @@ const ProductCard = ({ product, priority = false }) => {
               {product.name}
             </h3>
 
-            {/* Tailles */}
+            {/* Tailles (text-gray-700 pour conformité contraste WCAG AA) */}
             {derivedSizes?.length > 0 && (
               <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                <span className="text-xs font-semibold text-gray-400">
+                <span className="text-xs font-semibold text-gray-700">
                   {lang === 'ar' ? 'المقاسات:' : 'Tailles:'}
                 </span>
                 {derivedSizes.slice(0, 5).map((size, idx) => (
                   <span
                     key={idx}
-                    className="px-2 py-0.5 text-xs font-medium border border-gray-200 rounded-md text-gray-600 bg-gray-50/50"
+                    className="px-2 py-0.5 text-xs font-medium border border-gray-200 rounded-md text-gray-700 bg-gray-50/50"
                   >
                     {size}
                   </span>
                 ))}
                 {derivedSizes.length > 5 && (
-                  <span className="text-xs text-gray-400 font-medium">+{derivedSizes.length - 5}</span>
+                  <span className="text-xs text-gray-600 font-medium">+{derivedSizes.length - 5}</span>
                 )}
               </div>
             )}
 
-            {/* Couleurs */}
+            {/* Couleurs (text-gray-700 pour conformité contraste WCAG AA) */}
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-semibold text-gray-400">
+              <span className="text-xs font-semibold text-gray-700">
                 {lang === 'ar' ? 'الألوان:' : 'Couleurs:'}
               </span>
               {colorItems.length > 0 ? (
@@ -233,20 +238,20 @@ const ProductCard = ({ product, priority = false }) => {
                   })}
                 </div>
               ) : (
-                <span className="text-xs text-gray-400">-</span>
+                <span className="text-xs text-gray-600">-</span>
               )}
             </div>
           </div>
 
           <div>
-            {/* Prix & Statut Stock */}
+            {/* Prix & Statut Stock (text-gray-500 pour prix barré avec ratio contraste >= 4.5:1) */}
             <div className="flex items-baseline justify-between mb-4 gap-2 flex-wrap sm:flex-nowrap">
               <div className="flex items-baseline gap-1.5 flex-wrap">
                 <span className="text-xl sm:text-2xl font-extrabold text-blue-600 whitespace-nowrap">
                   {displayFinalPrice % 1 === 0 ? displayFinalPrice : displayFinalPrice.toFixed(2)} {t('currency')}
                 </span>
                 {displayOriginalPrice && (
-                  <span className="text-xs sm:text-sm text-gray-400 line-through whitespace-nowrap">
+                  <span className="text-xs sm:text-sm text-gray-500 font-medium line-through whitespace-nowrap">
                     {displayOriginalPrice % 1 === 0 ? displayOriginalPrice : displayOriginalPrice.toFixed(2)} {t('currency')}
                   </span>
                 )}

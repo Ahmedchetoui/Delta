@@ -246,6 +246,7 @@ const Home = () => {
             <input
               type="email"
               placeholder={t('yourEmail')}
+              aria-label={t('yourEmail') || 'Email'}
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
               className="flex-1 w-full px-6 py-4 rounded-xl focus:ring-2 focus:ring-blue-400 focus:outline-none text-gray-900 text-base"

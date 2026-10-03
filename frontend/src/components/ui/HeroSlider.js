@@ -196,20 +196,25 @@ const HeroSlider = ({ slides = [] }) => {
         </button>
       )}
 
-      {/* Horizontal Bar Indicators like Alfarouk */}
+      {/* Horizontal Bar Indicators with WCAG touch targets (>=32px) and no non-composited animations */}
       {slides.length > 1 && (
-        <div className="absolute bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2 flex items-center space-x-2.5 rtl:space-x-reverse z-20">
+        <div className="absolute bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2 flex items-center space-x-1.5 rtl:space-x-reverse z-20">
           {slides.map((_, index) => (
             <button
               key={index}
+              type="button"
               onClick={() => goToSlide(index)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                index === currentSlide
-                  ? 'w-10 md:w-14 bg-blue-500 shadow-md'
-                  : 'w-5 md:w-7 bg-white/40 hover:bg-white/70'
-              }`}
-              aria-label={`Slide ${index + 1}`}
-            />
+              className="py-3 px-1.5 flex items-center justify-center focus:outline-none"
+              aria-label={tx(`Aller à la diapositive ${index + 1}`, `الانتقال إلى الشريحة ${index + 1}`)}
+            >
+              <span
+                className={`h-1.5 rounded-full transition-opacity duration-200 ${
+                  index === currentSlide
+                    ? 'w-10 md:w-14 bg-blue-500 shadow-md opacity-100'
+                    : 'w-6 md:w-8 bg-white opacity-40 hover:opacity-80'
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}

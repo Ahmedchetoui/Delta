@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agenticresourcediscovery.org/spec/v1/schema.json",
+  "version": "1.0.0",
+  "name": "Delta Fashion",
+  "description": "Boutique de prêt-à-porter en ligne en Tunisie avec commande en ligne et livraison express.",
+  "homepage": "https://delta-fashion.tn",
+  "documentation": "https://delta-fashion.tn/llms.txt",
+  "resources": [
+    {
+      "name": "Catalogue Produits",
+      "type": "ecommerce-catalog",
+      "url": "https://delta-fashion.tn/shop"
+    }
+  ]
+}

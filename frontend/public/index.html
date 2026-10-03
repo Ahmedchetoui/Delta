@@ -25,40 +25,59 @@
 
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     
-    <!-- API & images -->
-    <link rel="preconnect" href="https://delta-n5d8.onrender.com" crossorigin>
-    <link rel="dns-prefetch" href="https://delta-n5d8.onrender.com">
+    <!-- API & Fonts preconnect (limited to active origins) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Preconnect to API and image servers -->
-    <link rel="preconnect" href="https://images.unsplash.com">
-    <link rel="dns-prefetch" href="https://images.unsplash.com">
-    <link rel="preconnect" href="https://res.cloudinary.com">
-    <link rel="dns-prefetch" href="https://res.cloudinary.com">
-    
-    <!-- Font Awesome avec preload -->
-    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
-    <!-- Meta Pixel Code -->
+    <link rel="preconnect" href="https://delta-n5d8.onrender.com" crossorigin>
+    <link rel="dns-prefetch" href="https://delta-n5d8.onrender.com">
+
+    <!-- Unified Google Fonts with async non-render-blocking load -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap">
+    </noscript>
+
+    <!-- Meta Pixel Code (Queue immediate, script deferred to idle time to unblock main thread) -->
     <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '1362539488813579');
-      fbq('track', 'PageView');
+      window.fbq = window.fbq || function() {
+        if (window.fbq.callMethod) {
+          window.fbq.callMethod.apply(window.fbq, arguments);
+        } else {
+          window.fbq.queue.push(arguments);
+        }
+      };
+      if (!window._fbq) window._fbq = window.fbq;
+      window.fbq.push = window.fbq;
+      window.fbq.loaded = true;
+      window.fbq.version = '2.0';
+      window.fbq.queue = [];
+      window.fbq('init', '1362539488813579');
+      window.fbq('track', 'PageView');
+
+      function loadFbPixel() {
+        if (window._fbLoaded) return;
+        window._fbLoaded = true;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://connect.facebook.net/en_US/fbevents.js';
+        var first = document.getElementsByTagName('script')[0];
+        first.parentNode.insertBefore(s, first);
+      }
+
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(function() {
+          setTimeout(loadFbPixel, 1800);
+        });
+      } else {
+        window.addEventListener('load', function() {
+          setTimeout(loadFbPixel, 1800);
+        });
+      }
     </script>
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=1362539488813579&ev=PageView&noscript=1"
-    /></noscript>
+    alt="" /></noscript>
     <!-- End Meta Pixel Code -->
 
     <title>Delta Fashion - Votre style, notre passion</title>

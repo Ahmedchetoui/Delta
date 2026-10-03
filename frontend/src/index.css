@@ -1,5 +1,4 @@
-/* Google Fonts for Arabic & English */
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
+/* Google Fonts are loaded asynchronously in index.html */
 
 /* Premium Styles */
 @import './styles/premium-styles.css';

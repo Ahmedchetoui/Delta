@@ -84,8 +84,11 @@ const Navbar = () => {
             <img
               src={require('../../assets/logo/delta.jpg')}
               alt="Delta Fashion"
+              width="160"
+              height="40"
               className="h-9 md:h-10 w-auto object-contain object-left"
               loading="eager"
+              decoding="async"
             />
           </Link>
 
@@ -135,17 +138,26 @@ const Navbar = () => {
 
               {/* Search Icon (Mobile) */}
               <button
+                type="button"
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
                 className={`p-1.5 ${iconClasses}`}
-                aria-label={t('openSearch')}
+                aria-label={t('openSearch') || 'Rechercher'}
+                title={t('openSearch') || 'Rechercher'}
               >
-                <MagnifyingGlassIcon className="h-6 w-6" />
+                <span className="sr-only">{t('openSearch') || 'Rechercher'}</span>
+                <MagnifyingGlassIcon className="h-6 w-6" aria-hidden="true" />
               </button>
             </div>
 
             {/* Cart */}
-            <Link to="/cart" className={`relative p-1.5 ${iconClasses}`}>
-              <ShoppingCartIcon className="h-6 w-6" />
+            <Link
+              to="/cart"
+              className={`relative p-1.5 ${iconClasses}`}
+              aria-label={t('cart') || 'Panier'}
+              title={t('cart') || 'Panier'}
+            >
+              <span className="sr-only">{t('cart') || 'Panier'}</span>
+              <ShoppingCartIcon className="h-6 w-6" aria-hidden="true" />
               {cartItemsCount > 0 && (
                 <span className="absolute -top-1 -right-1 rtl:-right-auto rtl:-left-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-md">
                   {cartItemsCount}
@@ -156,8 +168,12 @@ const Navbar = () => {
             {/* User Menu */}
             {isAuthenticated ? (
               <div className="hidden md:block relative group">
-                <button className={`flex items-center space-x-2 rtl:space-x-reverse p-1.5 ${iconClasses}`}>
-                  <UserIcon className="h-6 w-6" />
+                <button
+                  type="button"
+                  className={`flex items-center space-x-2 rtl:space-x-reverse p-1.5 ${iconClasses}`}
+                  aria-label={user?.firstName || 'Profil'}
+                >
+                  <UserIcon className="h-6 w-6" aria-hidden="true" />
                   <span className="hidden sm:block">{user?.firstName}</span>
                 </button>
 
@@ -187,6 +203,7 @@ const Navbar = () => {
                     </>
                   )}
                   <button
+                    type="button"
                     onClick={handleLogout}
                     className="block w-full text-left rtl:text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
@@ -202,14 +219,17 @@ const Navbar = () => {
 
             {/* Mobile Menu Button */}
             <button
+              type="button"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`md:hidden p-1.5 ${iconClasses}`}
-              aria-label={t('openMenu')}
+              aria-label={t('openMenu') || 'Menu'}
+              title={t('openMenu') || 'Menu'}
             >
+              <span className="sr-only">{t('openMenu') || 'Menu'}</span>
               {isMenuOpen ? (
-                <XMarkIcon className="h-6 w-6" />
+                <XMarkIcon className="h-6 w-6" aria-hidden="true" />
               ) : (
-                <Bars3Icon className="h-6 w-6" />
+                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
               )}
             </button>
           </div>

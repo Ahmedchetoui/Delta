@@ -136,7 +136,7 @@ app.use(
     next();
   },
   express.static(path.join(__dirname, 'uploads'), {
-    maxAge: '1d', // Cache pour 1 jour
+    maxAge: '365d', // Cache pour 1 an (recommandé Lighthouse / PageSpeed)
     immutable: true
   })
 );
