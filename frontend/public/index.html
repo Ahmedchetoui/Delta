@@ -29,55 +29,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- Unified Google Fonts with async non-render-blocking load -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
-    <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap">
-    </noscript>
+    <!-- Unified Google Fonts with preconnect -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap">
 
-    <!-- Meta Pixel Code (Queue immediate, script deferred to idle time to unblock main thread) -->
-    <script>
-      window.fbq = window.fbq || function() {
-        if (window.fbq.callMethod) {
-          window.fbq.callMethod.apply(window.fbq, arguments);
-        } else {
-          window.fbq.queue.push(arguments);
-        }
-      };
-      if (!window._fbq) window._fbq = window.fbq;
-      window.fbq.push = window.fbq;
-      window.fbq.loaded = true;
-      window.fbq.version = '2.0';
-      window.fbq.queue = [];
-      window.fbq('init', '1362539488813579');
-      window.fbq('track', 'PageView');
-
-      function loadFbPixel() {
-        if (window._fbLoaded) return;
-        window._fbLoaded = true;
-        var s = document.createElement('script');
-        s.async = true;
-        s.src = 'https://connect.facebook.net/en_US/fbevents.js';
-        var first = document.getElementsByTagName('script')[0];
-        if (first && first.parentNode) {
-          first.parentNode.insertBefore(s, first);
-        } else {
-          document.head.appendChild(s);
-        }
-      }
-
-      var userEvents = ['scroll', 'touchstart', 'pointerdown', 'keydown', 'click'];
-      function onInteraction() {
-        loadFbPixel();
-        userEvents.forEach(function(ev) { window.removeEventListener(ev, onInteraction); });
-      }
-      userEvents.forEach(function(ev) { window.addEventListener(ev, onInteraction, { once: true, passive: true }); });
-    </script>
+    <!-- Deferred Initializer (Splash & Meta Pixel) -->
+    <script defer src="%PUBLIC_URL%/init.js"></script>
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=1362539488813579&ev=PageView&noscript=1"
     alt="" /></noscript>
-    <!-- End Meta Pixel Code -->
 
     <title>Delta Fashion - Votre style, notre passion</title>
     <style>
@@ -110,23 +69,5 @@
     <noscript>Vous devez activer JavaScript pour utiliser cette application.</noscript>
     <div id="initial-splash" aria-hidden="true"><div class="spinner"></div></div>
     <div id="root"></div>
-    <script>
-      window.addEventListener('DOMContentLoaded', function () {
-        var splash = document.getElementById('initial-splash');
-        if (!splash) return;
-        var hide = function () {
-          splash.classList.add('hidden');
-          setTimeout(function () { splash.remove(); }, 350);
-        };
-        if (document.getElementById('root').childElementCount > 0) hide();
-        var observer = new MutationObserver(function () {
-          if (document.getElementById('root').childElementCount > 0) {
-            hide();
-            observer.disconnect();
-          }
-        });
-        observer.observe(document.getElementById('root'), { childList: true });
-      });
-    </script>
   </body>
 </html>
