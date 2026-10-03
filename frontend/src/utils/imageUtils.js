@@ -39,6 +39,12 @@ export function resolveImageUrl(src, width = 800, cacheKey) {
 }
 
 export function getResponsiveImageSrcSet(src, widths, cacheKey) {
+  if (!src || !Array.isArray(widths) || widths.length === 0) return undefined;
+  // Seules les images servies par Cloudinary ou Unsplash peuvent être redimensionnées dynamiquement via URL.
+  // Pour les uploads locaux, renvoyer undefined évite que le navigateur n'envoie 4 requêtes concurrentes inutiles.
+  const isCdn = src.includes('res.cloudinary.com') || src.includes('images.unsplash.com');
+  if (!isCdn) return undefined;
+
   return widths
     .map((width) => `${resolveImageUrl(src, width, cacheKey)} ${width}w`)
     .join(', ');

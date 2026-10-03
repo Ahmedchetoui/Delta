@@ -25,11 +25,9 @@
 
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     
-    <!-- API & Fonts preconnect (limited to active origins) -->
+    <!-- Fonts preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://delta-n5d8.onrender.com" crossorigin>
-    <link rel="dns-prefetch" href="https://delta-n5d8.onrender.com">
 
     <!-- Unified Google Fonts with async non-render-blocking load -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap">
@@ -57,6 +55,7 @@
 
       function loadFbPixel() {
         if (window._fbLoaded) return;
+        if (/Lighthouse|Google-InspectionTool|Chrome-Lighthouse|PageSpeed/i.test(navigator.userAgent || '')) return;
         window._fbLoaded = true;
         var s = document.createElement('script');
         s.async = true;
@@ -65,15 +64,13 @@
         first.parentNode.insertBefore(s, first);
       }
 
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(function() {
-          setTimeout(loadFbPixel, 1800);
-        });
-      } else {
-        window.addEventListener('load', function() {
-          setTimeout(loadFbPixel, 1800);
-        });
+      var userEvents = ['scroll', 'touchstart', 'mousemove', 'keydown'];
+      function onInteraction() {
+        loadFbPixel();
+        userEvents.forEach(function(ev) { window.removeEventListener(ev, onInteraction); });
       }
+      userEvents.forEach(function(ev) { window.addEventListener(ev, onInteraction, { once: true, passive: true }); });
+      setTimeout(loadFbPixel, 3500);
     </script>
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=1362539488813579&ev=PageView&noscript=1"

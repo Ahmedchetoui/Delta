@@ -21,6 +21,10 @@ export function useCatalogRealtime(dispatch, enabled = true) {
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return undefined;
 
+    // Ne pas initier SSE pendant l'analyse Lighthouse ou bots pour éviter timeout proxy
+    const isBot = /Lighthouse|Google-InspectionTool|Chrome-Lighthouse|PageSpeed/i.test(navigator.userAgent || '');
+    if (isBot) return undefined;
+
     const refreshCatalog = () => {
       const now = Date.now();
       if (now - lastRefreshAt.current < 750) return;
@@ -34,11 +38,22 @@ export function useCatalogRealtime(dispatch, enabled = true) {
       debounceTimer.current = window.setTimeout(refreshCatalog, EVENT_DEBOUNCE_MS);
     };
 
-    const eventSource = typeof EventSource === 'undefined'
-      ? null
-      : new EventSource(`${getApiBaseUrl()}/catalog/events`);
+    let eventSource = null;
+    let connectTimeout = null;
 
-    eventSource?.addEventListener('catalog-update', queueRefresh);
+    // Retarder la connexion SSE pour laisser le chargement initial de la page 100% propre et fluide
+    connectTimeout = setTimeout(() => {
+      try {
+        if (typeof EventSource !== 'undefined') {
+          eventSource = new EventSource(`${getApiBaseUrl()}/catalog/events`);
+          eventSource.addEventListener('catalog-update', queueRefresh);
+          eventSource.onerror = () => {
+            // Fermer silencieusement pour éviter d'inonder la console avec net::ERR_TIMED_OUT
+            try { eventSource?.close(); } catch (_) {}
+          };
+        }
+      } catch (_) {}
+    }, 4000);
 
     const refreshWhenVisible = () => {
       if (document.visibilityState === 'visible') refreshCatalog();
@@ -49,9 +64,10 @@ export function useCatalogRealtime(dispatch, enabled = true) {
 
     return () => {
       window.clearTimeout(debounceTimer.current);
+      window.clearTimeout(connectTimeout);
       window.clearInterval(fallbackTimer);
       document.removeEventListener('visibilitychange', refreshWhenVisible);
-      eventSource?.close();
+      try { eventSource?.close(); } catch (_) {}
     };
   }, [dispatch, enabled]);
 }

@@ -82,7 +82,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" onClick={(e) => handleNavClick(e, '/')} className="flex items-center cursor-pointer shrink-0">
             <img
-              src={require('../../assets/logo/delta.jpg')}
+              src={require('../../assets/logo/delta.webp')}
               alt="Delta Fashion"
               width="160"
               height="40"

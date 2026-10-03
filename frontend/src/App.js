@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { useDispatch } from 'react-redux';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
@@ -7,7 +7,6 @@ import 'react-toastify/dist/ReactToastify.css';
 // Layout Components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-import LandingPage from './components/layout/LandingPage';
 import ScrollToTop from './components/ui/ScrollToTop';
 import { bootstrapApp } from './utils/bootstrapApp';
 import { useCatalogRealtime } from './hooks/useCatalogRealtime';
@@ -58,13 +57,6 @@ const PageLoader = () => (
 function App() {
   const dispatch = useDispatch();
   const { isRTL, tx } = useLanguage();
-  const [showLanding, setShowLanding] = useState(() => {
-    return !(
-      localStorage.getItem('hasSeenLanding') ||
-      sessionStorage.getItem('hasSeenLanding')
-    );
-  });
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -72,23 +64,13 @@ function App() {
     }
   }, [dispatch]);
 
-  useCatalogRealtime(dispatch, !showLanding);
+  useCatalogRealtime(dispatch, true);
 
   useEffect(() => {
     // Les données se chargent en arrière-plan : aucun appel API ne doit
     // empêcher le visiteur de voir la navigation et le contenu de la page.
     void bootstrapApp(dispatch);
   }, [dispatch]);
-
-  const handleLandingComplete = () => {
-    localStorage.setItem('hasSeenLanding', 'true');
-    sessionStorage.setItem('hasSeenLanding', 'true');
-    setShowLanding(false);
-  };
-
-  if (showLanding) {
-    return <LandingPage onComplete={handleLandingComplete} />;
-  }
 
 
   return (
