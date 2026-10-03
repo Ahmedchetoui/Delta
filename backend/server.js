@@ -157,13 +157,7 @@ app.use(
     immutable: true
   }),
   (req, res) => {
-    // Si le fichier image est introuvable sur le disque (supprimé ou manquant sur Render) :
-    // Renvoyer un SVG transparent propre avec code 200 et cache long durée,
-    // ce qui élimine les dizaines d'erreurs 404 rouges dans la console qui faisaient chuter Bonnes Pratiques.
-    res.status(200);
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.send('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect fill="#f3f4f6" width="400" height="400"/></svg>');
+    res.status(404).json({ message: 'Image introuvable' });
   }
 );
 

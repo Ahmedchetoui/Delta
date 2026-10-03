@@ -53,29 +53,47 @@ const Home = () => {
   };
 
   const heroSlides = useMemo(() => {
-    return banners.map((banner) => ({
-      id: banner._id,
-      title: banner.title,
-      subtitle: banner.subtitle,
-      description: banner.description,
-      image: resolveImageUrl(banner.image, 1600),
-      imageSrcSet: getResponsiveImageSrcSet(banner.image, [768, 1200, 1600, 1920]),
-      mobileImage: banner.mobileImage ? resolveImageUrl(banner.mobileImage, 800) : null,
-      mobileImageSrcSet: banner.mobileImage ? getResponsiveImageSrcSet(banner.mobileImage, [360, 480, 768, 1080]) : null,
-      link: banner.buttonLink,
-      buttonText: banner.buttonText,
-      showCollectionBadge: banner.showCollectionBadge,
-      collectionBadgeText: banner.collectionBadgeText,
-      showBrandTitle: banner.showBrandTitle,
-      brandTitle: banner.brandTitle,
-      showButton: banner.showButton,
-      backgroundColor: banner.backgroundColor,
-      textColor: banner.textColor,
-      position: banner.position,
-    }));
+    return banners
+      .filter((banner) => {
+        // Ignorer les bannières brouillon/test sans image Cloudinary
+        if (!banner.image) return false;
+        if (banner.title === '...' && !/^https?:\/\//i.test(banner.image)) return false;
+        return true;
+      })
+      .map((banner) => {
+        const isImageCdn = /^https?:\/\//i.test(banner.image || '');
+        const isMobileImageCdn = /^https?:\/\//i.test(banner.mobileImage || '');
+
+        // Si l'image principale est sur CDN (Cloudinary) mais l'image mobile est un chemin local /uploads manquant sur Render :
+        // Ne pas utiliser ce chemin local cassé pour mobileImage ; laisser l'image CDN de haute qualité s'afficher partout.
+        const effectiveMobileImage = isMobileImageCdn
+          ? banner.mobileImage
+          : (!isImageCdn && banner.mobileImage ? banner.mobileImage : null);
+
+        return {
+          id: banner._id,
+          title: banner.title,
+          subtitle: banner.subtitle,
+          description: banner.description,
+          image: resolveImageUrl(banner.image, 1600),
+          imageSrcSet: getResponsiveImageSrcSet(banner.image, [768, 1200, 1600, 1920]),
+          mobileImage: effectiveMobileImage ? resolveImageUrl(effectiveMobileImage, 800) : null,
+          mobileImageSrcSet: effectiveMobileImage ? getResponsiveImageSrcSet(effectiveMobileImage, [360, 480, 768, 1080]) : null,
+          link: banner.buttonLink,
+          buttonText: banner.buttonText,
+          showCollectionBadge: banner.showCollectionBadge,
+          collectionBadgeText: banner.collectionBadgeText,
+          showBrandTitle: banner.showBrandTitle,
+          brandTitle: banner.brandTitle,
+          showButton: banner.showButton,
+          backgroundColor: banner.backgroundColor,
+          textColor: banner.textColor,
+          position: banner.position,
+        };
+      });
   }, [banners]);
 
-  const showHeroSkeleton = homeLoading && banners.length === 0;
+  const showHeroSkeleton = homeLoading && heroSlides.length === 0;
 
   const activeCategories = categories.filter((c) => !c.parentCategory);
 
