@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import deltaLogo from '../../assets/logo/delta.jpg';
+import { useLanguage } from '../../context/LanguageContext';
 
 const LANDING_DURATION_MS = 550;
 
 const LandingPage = ({ onComplete }) => {
+  const { tx } = useLanguage();
   useEffect(() => {
     // Cet écran est purement visuel. Il ne doit jamais attendre l'API,
     // notamment après le démarrage à froid du serveur Render.
@@ -50,7 +52,7 @@ const LandingPage = ({ onComplete }) => {
           >
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-              Ouverture de la boutique...
+              {tx('Ouverture de la boutique...', 'جاري فتح المتجر...')}
             </div>
           </motion.div>
         </div>

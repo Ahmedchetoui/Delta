@@ -8,16 +8,19 @@ import {
   DEFAULT_CITY,
   DEFAULT_GOVERNORATE,
   TUNISIA_GOVERNORATES,
+  getGovernorateLabel,
 } from '../constants/tunisiaGovernorates';
 import { getImagesForColor, getProductImageUrl } from '../utils/productImages';
 import { normalizeCartColors } from '../utils/cartColors';
 import { calculateShippingCost } from '../constants/shipping';
 import { trackInitiateCheckout, trackPurchase } from '../utils/metaPixel';
+import { useLanguage } from '../context/LanguageContext';
 
 
 const Checkout = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, tx, lang } = useLanguage();
   const items = useSelector(selectCartItems);
   const totalAmount = useSelector(selectCartTotal);
   
@@ -35,12 +38,15 @@ const Checkout = () => {
 
   // Trigger InitiateCheckout event when checkout page loads
   useEffect(() => {
-    document.title = 'Finaliser la commande - Delta Fashion';
     if (items.length > 0) {
       trackInitiateCheckout(items, totalAmount + calculateShippingCost());
     }
-    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
   }, [items, totalAmount]);
+
+  useEffect(() => {
+    document.title = `${tx('Finaliser la commande', 'إتمام الطلب')} - Delta Fashion`;
+    return () => { document.title = `Delta Fashion - ${t('heroTitle')}`; };
+  }, [t, tx]);
 
   // Charger les informations invité au chargement de la page
   useEffect(() => {
@@ -80,18 +86,18 @@ const Checkout = () => {
     
     // Validation
     if (!formData.firstName || !formData.lastName || !formData.phone || !formData.address || !formData.city) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+      toast.error(tx('Veuillez remplir tous les champs obligatoires', 'يرجى ملء جميع الحقول الإلزامية'));
       return;
     }
 
     const phoneDigits = formData.phone.replace(/\D/g, '');
     if (phoneDigits.length < 8) {
-      toast.error('Numéro de téléphone invalide (8 chiffres minimum)');
+      toast.error(tx('Numéro de téléphone invalide (8 chiffres minimum)', 'رقم الهاتف غير صالح (8 أرقام على الأقل)'));
       return;
     }
 
     if (items.length === 0) {
-      toast.error('Votre panier est vide');
+      toast.error(t('emptyCartTitle'));
       return;
     }
 
@@ -126,7 +132,7 @@ const Checkout = () => {
       // Vider le panier après commande réussie
       dispatch(clearCart());
 
-      toast.success('Commande passée avec succès !');
+      toast.success(tx('Commande passée avec succès !', 'تم إرسال الطلب بنجاح!'));
       
       // Sauvegarder les informations de commande en localStorage pour suivi
       const orderInfo = {
@@ -161,7 +167,7 @@ const Checkout = () => {
 
     } catch (error) {
       console.error('Erreur lors de la commande:', error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+      toast.error(error.response?.data?.message || tx('Erreur lors de la commande', 'حدث خطأ أثناء الطلب'));
     } finally {
       setIsSubmitting(false);
     }
@@ -174,11 +180,11 @@ const Checkout = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Finaliser la commande</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{tx('Finaliser la commande', 'إتمام الطلب')}</h1>
           <p className="text-gray-600">
-            Vous pouvez commander sans créer de compte. 
-            <Link to="/guest-order-tracking" className="text-blue-600 hover:text-blue-800 ml-1">
-              Suivre une commande existante
+            {tx('Vous pouvez commander sans créer de compte.', 'يمكنك الطلب دون إنشاء حساب.')}
+            <Link to="/guest-order-tracking" className="text-blue-600 hover:text-blue-800 mx-1">
+              {tx('Suivre une commande existante', 'متابعة طلب سابق')}
             </Link>
           </p>
         </div>
@@ -189,9 +195,9 @@ const Checkout = () => {
             {/* Shipping Address */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Adresse de livraison</h2>
+                <h2 className="text-xl font-semibold text-gray-900">{tx('Adresse de livraison', 'عنوان التوصيل')}</h2>
                 <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                  ✓ Commande sans inscription
+                  ✓ {tx('Commande sans inscription', 'طلب بدون تسجيل')}
                 </div>
               </div>
               
@@ -202,10 +208,10 @@ const Checkout = () => {
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-blue-800">Commande simplifiée</h3>
+                  <div className="ml-3 rtl:ml-0 rtl:mr-3">
+                    <h3 className="text-sm font-medium text-blue-800">{tx('Commande simplifiée', 'طلب مبسط')}</h3>
                     <div className="mt-1 text-sm text-blue-700">
-                      <p>Remplissez simplement les informations essentielles pour passer votre commande.</p>
+                      <p>{tx('Remplissez simplement les informations essentielles pour passer votre commande.', 'املأ المعلومات الأساسية فقط لإتمام طلبك.')}</p>
                     </div>
                   </div>
                 </div>
@@ -215,7 +221,7 @@ const Checkout = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prénom *
+                      {t('firstName')} *
                     </label>
                     <input
                       type="text"
@@ -223,13 +229,13 @@ const Checkout = () => {
                       required
                       value={formData.firstName}
                       onChange={handleChange}
-                      placeholder="Prénom"
+                      placeholder={t('firstName')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom *
+                      {t('lastName')} *
                     </label>
                     <input
                       type="text"
@@ -237,7 +243,7 @@ const Checkout = () => {
                       required
                       value={formData.lastName}
                       onChange={handleChange}
-                      placeholder="Nom"
+                      placeholder={t('lastName')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -245,7 +251,7 @@ const Checkout = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Numéro de téléphone *
+                    {tx('Numéro de téléphone', 'رقم الهاتف')} *
                   </label>
                   <input
                     type="tel"
@@ -253,16 +259,16 @@ const Checkout = () => {
                     required
                     value={formData.phone}
                     onChange={handleChange}
-                    placeholder="Ex: +216 XX XXX XXX"
+                    placeholder={tx('Ex: +216 XX XXX XXX', 'مثال: XX XXX XXX 216+')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Nécessaire pour suivre votre commande</p>
+                  <p className="text-xs text-gray-500 mt-1">{tx('Nécessaire pour suivre votre commande', 'ضروري لمتابعة طلبك')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Gouvernorat *
+                      {t('governorate')} *
                     </label>
                     <select
                       name="governorate"
@@ -272,13 +278,13 @@ const Checkout = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       {TUNISIA_GOVERNORATES.map((gov) => (
-                        <option key={gov} value={gov}>{gov}</option>
+                        <option key={gov} value={gov}>{getGovernorateLabel(gov, lang)}</option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ville *
+                      {t('city')} *
                     </label>
                     <input
                       type="text"
@@ -286,7 +292,7 @@ const Checkout = () => {
                       required
                       value={formData.city}
                       onChange={handleChange}
-                      placeholder="Votre ville"
+                      placeholder={t('yourCity')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -294,7 +300,7 @@ const Checkout = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Adresse de livraison *
+                    {tx('Adresse de livraison', 'عنوان التوصيل')} *
                   </label>
                   <textarea
                     name="address"
@@ -302,21 +308,21 @@ const Checkout = () => {
                     required
                     value={formData.address}
                     onChange={handleChange}
-                    placeholder="Adresse complète de livraison"
+                    placeholder={tx('Adresse complète de livraison', 'عنوان التوصيل بالكامل')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 {/* Paiement à la livraison uniquement */}
                 <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Mode de paiement</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">{tx('Mode de paiement', 'طريقة الدفع')}</h3>
                   <div className="flex items-center p-4 border border-green-200 bg-green-50 rounded-lg">
-                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4 text-green-700 font-bold text-sm">
-                      DT
+                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4 rtl:mr-0 rtl:ml-4 text-green-700 font-bold text-sm">
+                      {t('currency')}
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">Paiement à la livraison</div>
-                      <div className="text-sm text-gray-600">Payez en espèces à la réception de votre commande</div>
+                      <div className="font-medium text-gray-900">{tx('Paiement à la livraison', 'الدفع عند الاستلام')}</div>
+                      <div className="text-sm text-gray-600">{tx('Payez en espèces à la réception de votre commande', 'ادفع نقداً عند استلام طلبك')}</div>
                     </div>
                   </div>
                 </div>
@@ -329,11 +335,11 @@ const Checkout = () => {
                 >
                   {isSubmitting ? (
                     <>
-                      <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-                      Commande en cours...
+                      <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2 rtl:mr-0 rtl:ml-2" />
+                      {t('orderInProgress')}
                     </>
                   ) : (
-                    'Confirmer la commande'
+                    t('confirmOrder')
                   )}
                 </button>
               </form>
@@ -343,12 +349,12 @@ const Checkout = () => {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Résumé de la commande</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">{tx('Résumé de la commande', 'ملخص الطلب')}</h2>
               
               {/* Order Items */}
               <div className="space-y-4 mb-6">
                 {items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-3">
+                  <div key={item.id} className="flex items-center space-x-3 rtl:space-x-reverse">
                     <img
                       src={getProductImageUrl(
                         getImagesForColor(
@@ -364,11 +370,11 @@ const Checkout = () => {
                         {item.product?.name}
                       </p>
                       <p className="text-sm text-gray-500">
-                        Qté: {item.quantity}
+                        {t('quantity')}: {item.quantity}
                       </p>
                     </div>
                     <p className="text-sm font-medium text-gray-900">
-                      {(item.price * item.quantity).toFixed(2)} DT
+                      {(item.price * item.quantity).toFixed(2)} {t('currency')}
                     </p>
                   </div>
                 ))}
@@ -377,20 +383,20 @@ const Checkout = () => {
               {/* Order Totals */}
               <div className="border-t border-gray-200 pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Sous-total</span>
-                  <span className="font-medium">{totalAmount.toFixed(2)} DT</span>
+                  <span className="text-gray-600">{t('subtotal')}</span>
+                  <span className="font-medium">{totalAmount.toFixed(2)} {t('currency')}</span>
                 </div>
                 
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Livraison</span>
-                  <span className="font-medium">{shippingCost.toFixed(2)} DT</span>
+                  <span className="text-gray-600">{t('deliveryCost')}</span>
+                  <span className="font-medium">{shippingCost.toFixed(2)} {t('currency')}</span>
                 </div>
                 
                 <div className="border-t border-gray-200 pt-2">
                   <div className="flex justify-between">
-                    <span className="text-lg font-semibold text-gray-900">Total</span>
+                    <span className="text-lg font-semibold text-gray-900">{t('total')}</span>
                     <span className="text-lg font-semibold text-gray-900">
-                      {finalTotal.toFixed(2)} DT
+                      {finalTotal.toFixed(2)} {t('currency')}
                     </span>
                   </div>
                 </div>
@@ -398,9 +404,9 @@ const Checkout = () => {
 
               {/* Security Badge */}
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                <div className="flex items-center justify-center space-x-2 rtl:space-x-reverse text-sm text-gray-500">
                   <span>🔒</span>
-                  <span>Paiement sécurisé</span>
+                  <span>{tx('Paiement sécurisé', 'دفع آمن')}</span>
                 </div>
               </div>
             </div>

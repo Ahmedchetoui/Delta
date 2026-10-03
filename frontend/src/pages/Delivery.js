@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TruckIcon, ClockIcon, ShieldCheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
-import { TUNISIA_GOVERNORATES } from '../constants/tunisiaGovernorates';
+import { TUNISIA_GOVERNORATES, getGovernorateLabel } from '../constants/tunisiaGovernorates';
 import { useLanguage } from '../context/LanguageContext';
 
 const Delivery = () => {
@@ -174,7 +174,7 @@ const Delivery = () => {
               {TUNISIA_GOVERNORATES.map((governorate) => (
                 <li key={governorate} className="flex items-center gap-2">
                   <span className="text-blue-600">•</span>
-                  <span>{governorate}</span>
+                  <span>{getGovernorateLabel(governorate, lang)}</span>
                 </li>
               ))}
             </ul>

@@ -137,7 +137,7 @@ const Navbar = () => {
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
                 className={`p-1.5 ${iconClasses}`}
-                aria-label="Ouvrir la recherche"
+                aria-label={t('openSearch')}
               >
                 <MagnifyingGlassIcon className="h-6 w-6" />
               </button>
@@ -204,6 +204,7 @@ const Navbar = () => {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`md:hidden p-1.5 ${iconClasses}`}
+              aria-label={t('openMenu')}
             >
               {isMenuOpen ? (
                 <XMarkIcon className="h-6 w-6" />

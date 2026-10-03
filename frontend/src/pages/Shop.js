@@ -58,7 +58,7 @@ const Shop = () => {
     document.title = search
       ? `${t('searchResultsFor')}: "${search}" - Delta Fashion`
       : `${t('shopTitle')} - Delta Fashion`;
-    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
+    return () => { document.title = `Delta Fashion - ${t('heroTitle')}`; };
   }, [search, t]);
 
   useEffect(() => {

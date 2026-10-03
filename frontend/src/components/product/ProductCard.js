@@ -152,7 +152,7 @@ const ProductCard = ({ product, priority = false }) => {
             type="button"
             onClick={handleWishlist}
             className="absolute top-3 right-3 rtl:right-auto rtl:left-3 w-9 h-9 flex items-center justify-center bg-white/90 hover:bg-white text-gray-700 hover:text-red-500 rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110 z-20"
-            aria-label="Ajouter aux favoris"
+            aria-label={lang === 'ar' ? 'أضف إلى المفضلة' : 'Ajouter aux favoris'}
           >
             <HeartIcon className="h-5 w-5 transition-colors" />
           </button>
@@ -174,7 +174,7 @@ const ProductCard = ({ product, priority = false }) => {
                       ? 'w-5 bg-white'
                       : 'w-2 bg-white/60 hover:bg-white'
                   }`}
-                  title={`Voir photo ${idx + 1}`}
+                  title={lang === 'ar' ? `عرض الصورة ${idx + 1}` : `Voir photo ${idx + 1}`}
                 />
               ))}
             </div>
@@ -227,7 +227,7 @@ const ProductCard = ({ product, priority = false }) => {
                         onMouseEnter={() => handleColorHover(c.name)}
                         className="w-4 h-4 rounded-full border border-gray-300 shadow-xs cursor-pointer hover:scale-125 transition-transform"
                         style={{ backgroundColor: hex }}
-                        title={`Couleur ${c.name}`}
+                        title={c.name}
                       />
                     );
                   })}

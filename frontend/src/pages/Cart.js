@@ -10,6 +10,7 @@ import { expandCartItemForOrder, formatColorsLabel, normalizeCartColors } from '
 import {
   DEFAULT_CITY,
   DEFAULT_GOVERNORATE,
+  getGovernorateLabel,
 } from '../constants/tunisiaGovernorates';
 import { calculateShippingCost } from '../constants/shipping';
 import { useLanguage } from '../context/LanguageContext';
@@ -46,7 +47,7 @@ const Cart = () => {
         console.error('Erreur lors du chargement des informations invité:', error);
       }
     }
-    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
+    return () => { document.title = `Delta Fashion - ${t('heroTitle')}`; };
   }, [t]);
 
   const deliveryCost = calculateShippingCost();
@@ -164,7 +165,7 @@ const Cart = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('governorate')}:</label>
-              <div className="text-left rtl:text-right text-gray-900 font-medium">{governorate}</div>
+              <div className="text-left rtl:text-right text-gray-900 font-medium">{getGovernorateLabel(governorate, lang)}</div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('city')}:</label>
@@ -315,7 +316,7 @@ const Cart = () => {
                         {normalizeCartColors(item).length > 0 && (
                           <span>
                             {item.size ? ' · ' : ''}
-                            {t('color')}{item.quantity > 1 ? 's' : ''}: {formatColorsLabel(normalizeCartColors(item))}
+                            {t('color')}{item.quantity > 1 && lang !== 'ar' ? 's' : ''}: {formatColorsLabel(normalizeCartColors(item))}
                           </span>
                         )}
                       </div>

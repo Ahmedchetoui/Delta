@@ -11,6 +11,7 @@ import LandingPage from './components/layout/LandingPage';
 import ScrollToTop from './components/ui/ScrollToTop';
 import { bootstrapApp } from './utils/bootstrapApp';
 import { useCatalogRealtime } from './hooks/useCatalogRealtime';
+import { useLanguage } from './context/LanguageContext';
 
 // Protected Route Component
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -56,6 +57,7 @@ const PageLoader = () => (
 
 function App() {
   const dispatch = useDispatch();
+  const { isRTL, tx } = useLanguage();
   const [showLanding, setShowLanding] = useState(() => {
     return !(
       localStorage.getItem('hasSeenLanding') ||
@@ -193,9 +195,9 @@ function App() {
               <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                   <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
-                  <p className="text-xl text-gray-600 mb-8">Page non trouvée</p>
+                  <p className="text-xl text-gray-600 mb-8">{tx('Page non trouvée', 'الصفحة غير موجودة')}</p>
                   <Link to="/" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                    Retour à l'accueil
+                    {tx("Retour à l'accueil", 'العودة إلى الرئيسية')}
                   </Link>
                 </div>
               </div>
@@ -208,12 +210,12 @@ function App() {
 
       {/* Toast Notifications */}
       <ToastContainer
-        position="top-right"
+        position={isRTL ? "top-left" : "top-right"}
         autoClose={3000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
-        rtl={false}
+        rtl={isRTL}
         pauseOnFocusLoss
         draggable
         pauseOnHover

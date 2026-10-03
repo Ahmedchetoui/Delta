@@ -197,6 +197,13 @@ export const translations = {
     enterFirstNameError: "Veuillez indiquer votre prénom",
     thankYouReview: "Merci pour votre avis !",
     cannotPublishReview: "Impossible de publier l'avis",
+    openSearch: "Ouvrir la recherche",
+    openMenu: "Menu principal",
+    share: "Partager",
+    favorite: "Favori",
+    star: "Étoile",
+    invalidEmailError: "Veuillez saisir une adresse email valide",
+    newsletterThanks: "Merci ! Vous serez informé de nos offres et nouveautés 🎉",
   },
   ar: {
     // Navigation
@@ -396,5 +403,12 @@ export const translations = {
     enterFirstNameError: "يرجى إدخال اسمك الأول",
     thankYouReview: "شكراً لك على تقييمك!",
     cannotPublishReview: "تعذر نشر التقييم",
+    openSearch: "فتح البحث",
+    openMenu: "القائمة الرئيسية",
+    share: "مشاركة",
+    favorite: "المفضلة",
+    star: "تقييم",
+    invalidEmailError: "يرجى إدخال بريد إلكتروني صالح",
+    newsletterThanks: "شكراً لك! سيصلك كل جديد وعروضنا المميزة 🎉",
   }
 };

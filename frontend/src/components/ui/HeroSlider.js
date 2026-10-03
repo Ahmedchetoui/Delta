@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
+import { useLanguage } from '../../context/LanguageContext';
 
 const renderBrandTitle = (title) => {
   const text = (title || 'DELTA FASHION').trim();
@@ -20,6 +21,7 @@ const renderBrandTitle = (title) => {
 };
 
 const HeroSlider = ({ slides = [] }) => {
+  const { tx } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -108,7 +110,7 @@ const HeroSlider = ({ slides = [] }) => {
                   {slide.showCollectionBadge !== false && (
                     <div className="mb-6">
                       <span className="inline-block px-6 py-2 bg-black/40 border border-white/40 text-white text-xs md:text-sm font-bold rounded-full uppercase tracking-wider shadow-lg">
-                        {slide.collectionBadgeText || '✨ NOUVELLE COLLECTION ✨'}
+                        {slide.collectionBadgeText || tx('✨ NOUVELLE COLLECTION ✨', '✨ تشكيلة جديدة ✨')}
                       </span>
                     </div>
                   )}
@@ -161,7 +163,7 @@ const HeroSlider = ({ slides = [] }) => {
                         className="inline-flex items-center px-8 py-3.5 md:py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full md:rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl text-sm md:text-base hover:scale-105"
                       >
                         {slide.buttonText}
-                        <ArrowRightIcon className="ml-2 h-5 w-5 rtl:rotate-180 transition-transform group-hover:translate-x-1" />
+                        <ArrowRightIcon className="ml-2 rtl:ml-0 rtl:mr-2 h-5 w-5 rtl:rotate-180 transition-transform group-hover:translate-x-1" />
                       </Link>
                     </div>
                   )}
@@ -178,7 +180,7 @@ const HeroSlider = ({ slides = [] }) => {
         <button
           onClick={goToPrevious}
           className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 w-11 h-11 md:w-13 md:h-13 rounded-full bg-black/30 backdrop-blur-md hover:bg-black/60 text-white border border-white/25 transition-all duration-300 flex items-center justify-center hover:scale-110 z-20"
-          aria-label="Previous slide"
+          aria-label={tx('Previous slide', 'الشريحة السابقة')}
         >
           <ChevronLeftIcon className="h-6 w-6 rtl:rotate-180" />
         </button>
@@ -188,7 +190,7 @@ const HeroSlider = ({ slides = [] }) => {
         <button
           onClick={goToNext}
           className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 w-11 h-11 md:w-13 md:h-13 rounded-full bg-black/30 backdrop-blur-md hover:bg-black/60 text-white border border-white/25 transition-all duration-300 flex items-center justify-center hover:scale-110 z-20"
-          aria-label="Next slide"
+          aria-label={tx('Next slide', 'الشريحة التالية')}
         >
           <ChevronRightIcon className="h-6 w-6 rtl:rotate-180" />
         </button>

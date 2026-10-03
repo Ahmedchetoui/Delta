@@ -26,6 +26,7 @@ import {
   DEFAULT_CITY,
   DEFAULT_GOVERNORATE,
   TUNISIA_GOVERNORATES,
+  getGovernorateLabel,
 } from '../constants/tunisiaGovernorates';
 import { calculateShippingCost } from '../constants/shipping';
 import ProductReviews from '../components/product/ProductReviews';
@@ -37,7 +38,7 @@ const Product = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { t } = useLanguage();
+  const { t, tx, lang } = useLanguage();
 
   const { currentProduct, isLoading, isRefreshing } = useSelector((state) => state.products);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -325,8 +326,8 @@ const Product = () => {
       trackViewContent(currentProduct);
       document.title = `${currentProduct.name} - Delta Fashion`;
     }
-    return () => { document.title = 'Delta Fashion - Votre style, notre passion'; };
-  }, [currentProduct]);
+    return () => { document.title = `Delta Fashion - ${t('heroTitle')}`; };
+  }, [currentProduct, t]);
 
   useEffect(() => {
     const refreshProduct = () => setCatalogVersion((version) => version + 1);
@@ -336,32 +337,32 @@ const Product = () => {
 
   const validateOrderForm = () => {
     if (!firstName.trim()) {
-      toast.error('Veuillez saisir votre prénom');
+      toast.error(tx('Veuillez saisir votre prénom', 'يرجى إدخال اسمك الأول'));
       return false;
     }
     if (!lastName.trim()) {
-      toast.error('Veuillez saisir votre nom');
+      toast.error(tx('Veuillez saisir votre nom', 'يرجى إدخال اللقب'));
       return false;
     }
     if (!phone.trim()) {
-      toast.error('Veuillez saisir votre numéro de téléphone');
+      toast.error(tx('Veuillez saisir votre numéro de téléphone', 'يرجى إدخال رقم الهاتف'));
       return false;
     }
     const phoneDigits = phone.replace(/\D/g, '');
     if (phoneDigits.length < 8) {
-      toast.error('Numéro de téléphone invalide (8 chiffres minimum)');
+      toast.error(tx('Numéro de téléphone invalide (8 chiffres minimum)', 'رقم الهاتف غير صالح (8 أرقام على الأقل)'));
       return false;
     }
     if (!governorate.trim()) {
-      toast.error('Veuillez sélectionner un gouvernorat');
+      toast.error(tx('Veuillez sélectionner un gouvernorat', 'يرجى اختيار الولاية'));
       return false;
     }
     if (!city.trim()) {
-      toast.error('Veuillez saisir votre ville');
+      toast.error(tx('Veuillez saisir votre ville', 'يرجى إدخال المدينة'));
       return false;
     }
     if (!streetAddress.trim()) {
-      toast.error('Veuillez saisir votre adresse complète');
+      toast.error(tx('Veuillez saisir votre adresse complète', 'يرجى إدخال العنوان بالكامل'));
       return false;
     }
     if (hasVariants) {
@@ -369,8 +370,11 @@ const Product = () => {
       if (sizesForOrder.length < quantity || sizesForOrder.some((s) => !s)) {
         toast.error(
           quantity === 1
-            ? 'Veuillez sélectionner une taille'
-            : `Veuillez sélectionner une taille pour chaque article (${quantity} tailles)`
+            ? tx('Veuillez sélectionner une taille', 'يرجى اختيار المقاس')
+            : tx(
+                `Veuillez sélectionner une taille pour chaque article (${quantity} tailles)`,
+                `يرجى اختيار مقاس لكل منتج (${quantity} مقاسات)`
+              )
         );
         return false;
       }
@@ -380,8 +384,11 @@ const Product = () => {
       if (colorsForOrder.length < quantity || colorsForOrder.some((c) => !c)) {
         toast.error(
           quantity === 1
-            ? 'Veuillez sélectionner une couleur'
-            : `Veuillez sélectionner une couleur pour chaque article (${quantity} couleurs)`
+            ? tx('Veuillez sélectionner une couleur', 'يرجى اختيار اللون')
+            : tx(
+                `Veuillez sélectionner une couleur pour chaque article (${quantity} couleurs)`,
+                `يرجى اختيار لون لكل منتج (${quantity} ألوان)`
+              )
         );
         return false;
       }
@@ -445,7 +452,7 @@ const Product = () => {
 
       trackPurchase(response.data.order.orderNumber, response.data.order.total || total);
 
-      toast.success('Commande enregistrée avec succès !');
+      toast.success(tx('Commande enregistrée avec succès !', 'تم تسجيل الطلب بنجاح!'));
       setShowOrderModal(false);
 
       navigate('/order-confirmation', {
@@ -456,7 +463,7 @@ const Product = () => {
       });
     } catch (error) {
       console.error('Erreur lors de la commande:', error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la commande');
+      toast.error(error.response?.data?.message || tx('Erreur lors de la commande', 'حدث خطأ أثناء الطلب'));
     } finally {
       setIsOrdering(false);
     }
@@ -466,19 +473,19 @@ const Product = () => {
 
 
   if (isLoading && !currentProduct) {
-    return <Loading size="large" text="Chargement du produit..." />;
+    return <Loading size="large" text={tx('Chargement du produit...', 'جاري تحميل المنتج...')} />;
   }
 
   if (!currentProduct) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Produit non trouvé</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('productNotFound')}</h1>
           <button
             onClick={() => navigate('/shop')}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Retour à la boutique
+            {t('backToShop')}
           </button>
         </div>
       </div>
@@ -490,10 +497,10 @@ const Product = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         {/* Breadcrumb amélioré */}
         <nav className="mb-8">
-          <ol className="flex items-center space-x-2 text-sm">
-            <li><Link to="/" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">Accueil</Link></li>
+          <ol className="flex items-center space-x-2 rtl:space-x-reverse text-sm">
+            <li><Link to="/" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">{t('homeNav')}</Link></li>
             <li><span className="text-gray-400">•</span></li>
-            <li><Link to="/shop" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">Boutique</Link></li>
+            <li><Link to="/shop" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">{t('shopNav')}</Link></li>
             <li><span className="text-gray-400">•</span></li>
             <li><Link to={`/shop?category=${currentProduct.category?._id}`} className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
               {currentProduct.category?.name}
@@ -796,7 +803,7 @@ const Product = () => {
                     className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-400 focus:border-transparent"
                   >
                     {TUNISIA_GOVERNORATES.map((gov) => (
-                      <option key={gov} value={gov}>{gov}</option>
+                      <option key={gov} value={gov}>{getGovernorateLabel(gov, lang)}</option>
                     ))}
                   </select>
                 </div>
@@ -886,7 +893,7 @@ const Product = () => {
                 {isPackMode && selectedPack && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-blue-900">🎁 Offre : {selectedPack.title}</span>
+                      <span className="font-bold text-blue-900">🎁 {tx('Offre', 'العرض')} : {selectedPack.title}</span>
                       <span className="font-bold text-blue-900">{Number(selectedPack.price).toFixed(2)} {t('currency')}</span>
                     </div>
                     {selectedPack.badge && (
@@ -917,7 +924,7 @@ const Product = () => {
                   <p className="text-gray-600">{firstName} {lastName}</p>
                   <p className="text-gray-600">{phone}</p>
                   <p className="text-gray-600">{streetAddress}</p>
-                  <p className="text-gray-600">{city}, {governorate}</p>
+                  <p className="text-gray-600">{city}, {getGovernorateLabel(governorate, lang)}</p>
                 </div>
 
                 <div className="flex justify-between font-bold text-base pt-1">

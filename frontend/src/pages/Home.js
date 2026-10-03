@@ -24,10 +24,10 @@ const Home = () => {
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();
     if (!newsletterEmail.trim() || !newsletterEmail.includes('@')) {
-      toast.error('Veuillez saisir une adresse email valide');
+      toast.error(t('invalidEmailError'));
       return;
     }
-    toast.success('Merci ! Vous serez informé de nos offres et nouveautés 🎉');
+    toast.success(t('newsletterThanks'));
     setNewsletterEmail('');
   };
 

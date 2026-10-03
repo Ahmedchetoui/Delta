@@ -18,10 +18,10 @@ const Footer = () => {
   const handleFooterNewsletter = (e) => {
     e.preventDefault();
     if (!footerEmail.trim() || !footerEmail.includes('@')) {
-      toast.error('Veuillez saisir une adresse email valide');
+      toast.error(t('invalidEmailError'));
       return;
     }
-    toast.success('Merci ! Vous serez informé de nos offres et nouveautés 🎉');
+    toast.success(t('newsletterThanks'));
     setFooterEmail('');
   };
 
@@ -38,13 +38,13 @@ const Footer = () => {
               {t('footerDesc')}
             </p>
             <div className="flex space-x-4 rtl:space-x-reverse mt-6">
-              <button type="button" className="text-gray-400 hover:text-white transition-colors" aria-label="Partager">
+              <button type="button" className="text-gray-400 hover:text-white transition-colors" aria-label={t('share')}>
                 <ShareIcon className="h-6 w-6" />
               </button>
-              <button type="button" className="text-gray-400 hover:text-white transition-colors" aria-label="Favori">
+              <button type="button" className="text-gray-400 hover:text-white transition-colors" aria-label={t('favorite')}>
                 <HeartIcon className="h-6 w-6" />
               </button>
-              <button type="button" className="text-gray-400 hover:text-white transition-colors" aria-label="Étoile">
+              <button type="button" className="text-gray-400 hover:text-white transition-colors" aria-label={t('star')}>
                 <StarIcon className="h-6 w-6" />
               </button>
             </div>

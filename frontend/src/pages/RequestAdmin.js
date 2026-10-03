@@ -15,10 +15,12 @@ import {
   ClockIcon,
   XCircleIcon
 } from '@heroicons/react/24/outline';
+import { useLanguage } from '../context/LanguageContext';
 
 const RequestAdmin = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t, tx, lang } = useLanguage();
   const { user } = useSelector((state) => state.auth);
   const { userRequest, isCreating, error } = useSelector((state) => state.adminRequests);
 
@@ -53,16 +55,16 @@ const RequestAdmin = () => {
     e.preventDefault();
     
     if (!formData.reason.trim()) {
-      toast.error('Veuillez expliquer pourquoi vous souhaitez devenir administrateur');
+      toast.error(tx('Veuillez expliquer pourquoi vous souhaitez devenir administrateur', 'يرجى توضيح سبب رغبتك في أن تصبح مسؤولاً'));
       return;
     }
 
     try {
       await dispatch(createAdminRequest(formData)).unwrap();
-      toast.success('Demande d\'administration envoyée avec succès !');
+      toast.success(tx('Demande d\'administration envoyée avec succès !', 'تم إرسال طلب صلاحية المسؤول بنجاح!'));
       dispatch(fetchUserAdminRequestStatus());
     } catch (error) {
-      toast.error(error || 'Erreur lors de l\'envoi de la demande');
+      toast.error(error || tx('Erreur lors de l\'envoi de la demande', 'حدث خطأ أثناء إرسال الطلب'));
     }
   };
 
@@ -82,13 +84,13 @@ const RequestAdmin = () => {
   const getStatusText = (status) => {
     switch (status) {
       case 'approved':
-        return 'Approuvée';
+        return tx('Approuvée', 'تمت الموافقة');
       case 'rejected':
-        return 'Rejetée';
+        return tx('Rejetée', 'مرفوض');
       case 'pending':
-        return 'En attente';
+        return tx('En attente', 'قيد الانتظار');
       default:
-        return 'Inconnu';
+        return tx('Inconnu', 'غير معروف');
     }
   };
 
@@ -115,10 +117,10 @@ const RequestAdmin = () => {
                 {getStatusIcon(userRequest.status)}
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Demande d'Administration
+                {t('requestAdminNav')}
               </h1>
               <p className="text-gray-600">
-                Statut de votre demande
+                {tx('Statut de votre demande', 'حالة طلبك')}
               </p>
             </div>
 
@@ -132,13 +134,13 @@ const RequestAdmin = () => {
 
               {/* Détails de la demande */}
               <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Détails de la demande</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{tx('Détails de la demande', 'تفاصيل الطلب')}</h3>
                 
                 <div className="space-y-4">
                   <div className="flex items-center">
-                    <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
+                    <UserIcon className="h-5 w-5 text-gray-400 mr-3 rtl:mr-0 rtl:ml-3" />
                     <div>
-                      <p className="text-sm text-gray-500">Nom complet</p>
+                      <p className="text-sm text-gray-500">{t('fullName')}</p>
                       <p className="font-medium text-gray-900">
                         {userRequest.firstName} {userRequest.lastName}
                       </p>
@@ -146,7 +148,7 @@ const RequestAdmin = () => {
                   </div>
 
                   <div className="flex items-center">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3" />
+                    <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3 rtl:mr-0 rtl:ml-3" />
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
                       <p className="font-medium text-gray-900">{userRequest.email}</p>
@@ -154,25 +156,25 @@ const RequestAdmin = () => {
                   </div>
 
                   <div className="flex items-center">
-                    <PhoneIcon className="h-5 w-5 text-gray-400 mr-3" />
+                    <PhoneIcon className="h-5 w-5 text-gray-400 mr-3 rtl:mr-0 rtl:ml-3" />
                     <div>
-                      <p className="text-sm text-gray-500">Téléphone</p>
-                      <p className="font-medium text-gray-900">{userRequest.phone}</p>
+                      <p className="text-sm text-gray-500">{t('phone')}</p>
+                      <p className="font-medium text-gray-900" dir="ltr">{userRequest.phone}</p>
                     </div>
                   </div>
 
                   <div className="flex items-start">
-                    <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-3 mt-1" />
+                    <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-3 rtl:mr-0 rtl:ml-3 mt-1" />
                     <div>
-                      <p className="text-sm text-gray-500">Raison</p>
+                      <p className="text-sm text-gray-500">{tx('Raison', 'السبب')}</p>
                       <p className="font-medium text-gray-900">{userRequest.reason}</p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-500">Date de soumission</p>
+                    <p className="text-sm text-gray-500">{tx('Date de soumission', 'تاريخ الإرسال')}</p>
                     <p className="font-medium text-gray-900">
-                      {new Date(userRequest.createdAt).toLocaleDateString('fr-FR', {
+                      {new Date(userRequest.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-TN' : 'fr-FR', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -187,7 +189,7 @@ const RequestAdmin = () => {
               {/* Notes de révision */}
               {userRequest.reviewNotes && (
                 <div className="bg-blue-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Notes de révision</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{tx('Notes de révision', 'ملاحظات المراجعة')}</h3>
                   <p className="text-gray-700">{userRequest.reviewNotes}</p>
                 </div>
               )}
@@ -198,7 +200,7 @@ const RequestAdmin = () => {
                   onClick={() => navigate('/profile')}
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Retour au profil
+                  {tx('Retour au profil', 'العودة إلى الملف الشخصي')}
                 </button>
               </div>
             </div>
@@ -214,23 +216,23 @@ const RequestAdmin = () => {
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Demande d'Administration
+              {t('requestAdminNav')}
             </h1>
             <p className="text-gray-600">
-              Demandez à devenir administrateur de Delta Fashion
+              {tx('Demandez à devenir administrateur de Delta Fashion', 'اطلب الحصول على صلاحية مسؤول في Delta Fashion')}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Informations utilisateur */}
             <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Vos informations</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{tx('Vos informations', 'معلوماتك')}</h3>
               
               <div className="space-y-4">
                 <div className="flex items-center">
-                  <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
+                  <UserIcon className="h-5 w-5 text-gray-400 mr-3 rtl:mr-0 rtl:ml-3" />
                   <div>
-                    <p className="text-sm text-gray-500">Nom complet</p>
+                    <p className="text-sm text-gray-500">{t('fullName')}</p>
                     <p className="font-medium text-gray-900">
                       {user?.firstName} {user?.lastName}
                     </p>
@@ -238,7 +240,7 @@ const RequestAdmin = () => {
                 </div>
 
                 <div className="flex items-center">
-                  <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3" />
+                  <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3 rtl:mr-0 rtl:ml-3" />
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
                     <p className="font-medium text-gray-900">{user?.email}</p>
@@ -247,7 +249,7 @@ const RequestAdmin = () => {
 
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Téléphone
+                    {t('phone')}
                   </label>
                   <input
                     type="tel"
@@ -265,7 +267,7 @@ const RequestAdmin = () => {
             {/* Raison */}
             <div>
               <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-2">
-                Pourquoi souhaitez-vous devenir administrateur ? *
+                {tx('Pourquoi souhaitez-vous devenir administrateur ? *', 'لماذا ترغب في أن تصبح مسؤولاً؟ *')}
               </label>
               <textarea
                 id="reason"
@@ -274,29 +276,29 @@ const RequestAdmin = () => {
                 onChange={handleChange}
                 rows={6}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Expliquez vos motivations et votre expérience..."
+                placeholder={tx('Expliquez vos motivations et votre expérience...', 'اشرح دوافعك وخبراتك...')}
                 required
               />
               <p className="text-sm text-gray-500 mt-2">
-                Maximum 500 caractères
+                {tx('Maximum 500 caractères', 'الحد الأقصى 500 حرف')}
               </p>
             </div>
 
             {/* Boutons */}
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 rtl:space-x-reverse">
               <button
                 type="button"
                 onClick={() => navigate('/profile')}
                 className="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors"
               >
-                Annuler
+                {tx('Annuler', 'إلغاء')}
               </button>
               <button
                 type="submit"
                 disabled={isCreating}
                 className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isCreating ? 'Envoi en cours...' : 'Envoyer la demande'}
+                {isCreating ? tx('Envoi en cours...', 'جاري الإرسال...') : tx('Envoyer la demande', 'إرسال الطلب')}
               </button>
             </div>
           </form>

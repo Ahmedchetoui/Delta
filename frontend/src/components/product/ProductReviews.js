@@ -40,7 +40,7 @@ function StarRating({ value, onChange, readonly = false, size = 'md' }) {
 
 const ProductReviews = ({ productId, reviews = [], rating = { average: 0, count: 0 } }) => {
   const dispatch = useDispatch();
-  const { t, language } = useLanguage();
+  const { t, lang: language } = useLanguage();
   const { user } = useSelector((state) => state.auth || {});
 
   const [guestName, setGuestName] = useState('');

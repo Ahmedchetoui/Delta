@@ -4,8 +4,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { login } from '../store/slices/authSlice';
 import { toast } from 'react-toastify';
 import Loading from '../components/ui/Loading';
+import { useLanguage } from '../context/LanguageContext';
 
 const Login = () => {
+  const { tx } = useLanguage();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -37,20 +39,20 @@ const Login = () => {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
-      toast.error('Veuillez remplir tous les champs');
+      toast.error(tx('Veuillez remplir tous les champs', 'يرجى ملء جميع الحقول'));
       return;
     }
 
     try {
       await dispatch(login(formData)).unwrap();
-      toast.success('Connexion réussie !');
+      toast.success(tx('Connexion réussie !', 'تم تسجيل الدخول بنجاح!'));
     } catch (error) {
-      toast.error(error || 'Erreur de connexion');
+      toast.error(error || tx('Erreur de connexion', 'خطأ في تسجيل الدخول'));
     }
   };
 
   if (loading) {
-    return <Loading size="large" text="Connexion en cours..." />;
+    return <Loading size="large" text={tx('Connexion en cours...', 'جاري تسجيل الدخول...')} />;
   }
 
   return (
@@ -61,7 +63,7 @@ const Login = () => {
             Delta Fashion
           </h2>
           <h3 className="text-2xl font-bold text-gray-900">
-            Connexion
+            {tx('Connexion', 'تسجيل الدخول')}
           </h3>
         </div>
       </div>
@@ -72,7 +74,7 @@ const Login = () => {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Adresse email
+                {tx('Adresse email', 'البريد الإلكتروني')}
               </label>
               <div className="mt-1">
                 <input
@@ -84,7 +86,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="votre@email.com"
+                  placeholder={tx('votre@email.com', 'example@email.com')}
                 />
               </div>
             </div>
@@ -92,7 +94,7 @@ const Login = () => {
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Mot de passe
+                {tx('Mot de passe', 'كلمة المرور')}
               </label>
               <div className="mt-1 relative">
                 <input
@@ -103,13 +105,13 @@ const Login = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Votre mot de passe"
+                  className="appearance-none block w-full px-3 py-2 pr-10 rtl:pr-3 rtl:pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder={tx('Votre mot de passe', 'كلمة المرور الخاصة بك')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 rtl:right-auto rtl:left-0 pr-3 rtl:pr-0 rtl:pl-3 flex items-center"
                 >
                   <span className="text-gray-400 text-sm">
                     {showPassword ? '👁️' : '👁️‍🗨️'}
@@ -127,14 +129,14 @@ const Login = () => {
                   type="checkbox"
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Se souvenir de moi
+                <label htmlFor="remember-me" className="ml-2 rtl:ml-0 rtl:mr-2 block text-sm text-gray-900">
+                  {tx('Se souvenir de moi', 'تذكرني')}
                 </label>
               </div>
 
               <div className="text-sm">
                 <button type="button" className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 p-0 cursor-pointer">
-                  Mot de passe oublié ?
+                  {tx('Mot de passe oublié ?', 'نسيت كلمة المرور؟')}
                 </button>
               </div>
             </div>
@@ -146,18 +148,18 @@ const Login = () => {
                 disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Connexion...' : 'Se connecter'}
+                {loading ? tx('Connexion...', 'جاري الدخول...') : tx('Se connecter', 'تسجيل الدخول')}
               </button>
             </div>
 
             {/* Sign up */}
             <div className="text-center pt-2">
-              <p className="text-sm text-gray-600 mb-3">Pas encore de compte ?</p>
+              <p className="text-sm text-gray-600 mb-3">{tx('Pas encore de compte ?', 'ليس لديك حساب؟')}</p>
               <Link
                 to="/register"
                 className="w-full inline-flex justify-center py-2 px-4 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg"
               >
-                S'inscrire
+                {tx("S'inscrire", 'إنشاء حساب')}
               </Link>
             </div>
           </form>
@@ -169,13 +171,13 @@ const Login = () => {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Ou continuez avec</span>
+                <span className="px-2 bg-white text-gray-500">{tx('Ou continuez avec', 'أو تابع باستخدام')}</span>
               </div>
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                <span className="sr-only">Se connecter avec Facebook</span>
+                <span className="sr-only">{tx('Se connecter avec Facebook', 'تسجيل الدخول عبر Facebook')}</span>
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M20 10C20 4.477 15.523 0 10 0S0 4.477 0 10c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V10h2.54V7.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V10h2.773l-.443 2.89h-2.33v6.988C16.343 19.128 20 14.991 20 10z" clipRule="evenodd" />
                 </svg>
@@ -183,7 +185,7 @@ const Login = () => {
               </button>
 
               <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                <span className="sr-only">Se connecter avec Google</span>
+                <span className="sr-only">{tx('Se connecter avec Google', 'تسجيل الدخول عبر Google')}</span>
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>

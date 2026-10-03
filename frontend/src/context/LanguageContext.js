@@ -37,8 +37,11 @@ export const LanguageProvider = ({ children }) => {
     return fallback || key;
   };
 
+  // Inline bilingual helper: tx('Texte FR', 'نص عربي')
+  const tx = (fr, ar) => (lang === 'ar' && ar !== undefined ? ar : fr);
+
   return (
-    <LanguageContext.Provider value={{ lang, setLang, toggleLanguage, t, isRTL: lang === 'ar' }}>
+    <LanguageContext.Provider value={{ lang, setLang, toggleLanguage, t, tx, isRTL: lang === 'ar' }}>
       {children}
     </LanguageContext.Provider>
   );

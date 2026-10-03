@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 const formatPrice = (value) => {
   const amount = Number(value || 0);
@@ -9,17 +10,18 @@ const formatPrice = (value) => {
 // Les valeurs affichées viennent du produit, mais le backend les revalide lors
 // de la commande afin qu'une remise ne puisse pas être falsifiée côté client.
 const ProductPackSelector = ({ packs = [], selectedPackId, onSelectPack, currency = 'DT' }) => {
+  const { tx } = useLanguage();
   if (!packs.length) return null;
 
   return (
-    <section className="space-y-3" aria-label="Choisissez votre offre">
+    <section className="space-y-3" aria-label={tx('Choisissez votre offre', 'اختر عرضك')}>
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-800 flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          Choisissez votre offre
+          {tx('Choisissez votre offre', 'اختر عرضك')}
         </h3>
         <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
-          Offres économiques
+          {tx('Offres économiques', 'عروض اقتصادية')}
         </span>
       </div>
 
@@ -30,14 +32,14 @@ const ProductPackSelector = ({ packs = [], selectedPackId, onSelectPack, currenc
             ? String(selectedPackId) === key || String(selectedPackId) === String(pack.title)
             : index === 0;
           const hasDiscount = Number(pack.discount) > 0 || Number(pack.originalPrice) > Number(pack.price);
-          const badge = pack.badge || (Number(pack.discount) > 0 ? `${Math.round(pack.discount)}% REMISE !` : '');
+          const badge = pack.badge || (Number(pack.discount) > 0 ? tx(`${Math.round(pack.discount)}% REMISE !`, `تخفيض ${Math.round(pack.discount)}%!`) : '');
 
           return (
             <button
               key={key}
               type="button"
               onClick={() => onSelectPack?.(pack)}
-              className={`relative flex w-full items-center justify-between rounded-[22px] border-2 px-5 py-3.5 text-left transition-all duration-200 ${
+              className={`relative flex w-full items-center justify-between rounded-[22px] border-2 px-5 py-3.5 text-left rtl:text-right transition-all duration-200 ${
                 isSelected
                   ? 'border-gray-900 bg-gray-400 text-gray-950 shadow-md -translate-y-0.5'
                   : 'border-transparent bg-gray-200 text-gray-900 hover:border-gray-300 hover:bg-gray-300'
