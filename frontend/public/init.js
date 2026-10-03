@@ -73,4 +73,13 @@
   userEvents.forEach(function (ev) {
     window.addEventListener(ev, onInteraction, { once: true, passive: true });
   });
+
+  // Déclencheur de secours : charge automatiquement le Pixel après 2s d'inactivité
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(function () {
+      setTimeout(loadFbPixel, 2000);
+    });
+  } else {
+    setTimeout(loadFbPixel, 2500);
+  }
 })();
