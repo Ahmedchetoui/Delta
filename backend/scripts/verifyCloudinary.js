@@ -2,7 +2,8 @@
  * Vérifie la connexion Cloudinary.
  * Usage: npm run cloudinary:verify
  */
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { verifyCloudinaryConnection } = require('../config/cloudinary');
 
 async function main() {
@@ -15,8 +16,8 @@ async function main() {
     process.env.CLOUDINARY_API_SECRET
   );
 
-  console.log(`CLOUDINARY_URL: ${hasUrl ? 'définie' : 'non définie'}`);
-  console.log(`CLOUDINARY_CLOUD_NAME/API_KEY/SECRET: ${hasVars ? 'définies' : 'non définies'}`);
+  console.log(`CLOUDINARY_URL: ${hasUrl ? 'définie' : 'utilisant identifiants par défaut'}`);
+  console.log(`CLOUDINARY_CLOUD_NAME/API_KEY/SECRET: ${hasVars ? 'définies' : 'utilisant identifiants par défaut'}`);
   console.log(`CLOUDINARY_FOLDER: ${process.env.CLOUDINARY_FOLDER || 'delta-fashion/uploads (défaut)'}`);
   console.log(`PUBLIC_BASE_URL: ${process.env.PUBLIC_BASE_URL || 'non définie'}\n`);
 

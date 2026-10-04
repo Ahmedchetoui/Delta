@@ -18,42 +18,51 @@ function parseCloudinaryUrl(url) {
   return { cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret };
 }
 
-function initCloudinary() {
-  const hasSeparateVars = !!(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET
-  );
-  const hasUrl = !!process.env.CLOUDINARY_URL;
+const DEFAULT_CLOUD_NAME = 'dhfxby62c';
+const DEFAULT_API_KEY = '947652332343198';
+const DEFAULT_API_SECRET = 'mm-zIGJdbaYRmOIVfT22SELqv1k';
+const DEFAULT_FOLDER = 'delta-fashion/uploads';
 
-  if (!hasSeparateVars && !hasUrl) {
-    return { cloudinary: null, enabled: false, mode: 'local' };
-  }
+function initCloudinary() {
+  const rawUrl = process.env.CLOUDINARY_URL;
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME || DEFAULT_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY || DEFAULT_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET || DEFAULT_API_SECRET;
+  const folder = process.env.CLOUDINARY_FOLDER || DEFAULT_FOLDER;
 
   try {
-    if (hasSeparateVars) {
-      cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET,
-        secure: true,
-      });
-    } else {
-      const parsed = parseCloudinaryUrl(process.env.CLOUDINARY_URL);
-      if (!parsed) {
-        console.warn('⚠️  CLOUDINARY_URL invalide — format attendu: cloudinary://api_key:api_secret@cloud_name');
-        return { cloudinary: null, enabled: false, mode: 'local' };
+    if (rawUrl) {
+      const parsed = parseCloudinaryUrl(rawUrl);
+      if (parsed) {
+        cloudinary.config({ ...parsed, secure: true });
+        return {
+          cloudinary,
+          enabled: true,
+          mode: 'cloudinary',
+          folder,
+          cloudName: cloudinary.config().cloud_name,
+        };
       }
-      cloudinary.config({ ...parsed, secure: true });
     }
 
-    return {
-      cloudinary,
-      enabled: true,
-      mode: 'cloudinary',
-      folder: process.env.CLOUDINARY_FOLDER || 'delta-fashion/uploads',
-      cloudName: cloudinary.config().cloud_name,
-    };
+    if (cloudName && apiKey && apiSecret) {
+      cloudinary.config({
+        cloud_name: cloudName,
+        api_key: apiKey,
+        api_secret: apiSecret,
+        secure: true,
+      });
+
+      return {
+        cloudinary,
+        enabled: true,
+        mode: 'cloudinary',
+        folder,
+        cloudName: cloudinary.config().cloud_name,
+      };
+    }
+
+    return { cloudinary: null, enabled: false, mode: 'local' };
   } catch (error) {
     console.warn('⚠️  Cloudinary non disponible:', error.message);
     return { cloudinary: null, enabled: false, mode: 'local' };
