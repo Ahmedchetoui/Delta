@@ -6,6 +6,7 @@ import ProductColorPicker from '../../components/admin/ProductColorPicker';
 import VariantColorSelect from '../../components/admin/VariantColorSelect';
 import ProductImageManager from '../../components/admin/ProductImageManager';
 import ProductPackManager from '../../components/admin/ProductPackManager';
+import { compressImageFile } from '../../utils/imageUtils';
 import { normalizeProductColors } from '../../utils/colorUtils';
 import { normalizeProductImages } from '../../utils/productImages';
 import {
@@ -107,8 +108,11 @@ const AdminProductEdit = () => {
     }));
   };
 
-  const handleAddImageFiles = (files, color = '') => {
-    const entries = files.map((file) => ({
+  const handleAddImageFiles = async (files, color = '') => {
+    const compressedFiles = await Promise.all(
+      files.map((file) => compressImageFile(file))
+    );
+    const entries = compressedFiles.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
       color,
@@ -200,9 +204,10 @@ const AdminProductEdit = () => {
         'newImageColors',
         JSON.stringify(newImages.map((img) => img.color || ''))
       );
-      newImages.forEach((image) => {
-        submitData.append('images', image.file);
-      });
+      for (const image of newImages) {
+        const compressed = await compressImageFile(image.file);
+        submitData.append('images', compressed);
+      }
       
       // Variantes
       submitData.append('variants', JSON.stringify(formData.variants));
@@ -218,7 +223,16 @@ const AdminProductEdit = () => {
       navigate('/admin/products');
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
-      toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour');
+      const apiErrors = error?.response?.data?.errors;
+      const details = Array.isArray(apiErrors)
+        ? apiErrors.map((entry) => entry?.msg || entry?.message || String(entry)).filter(Boolean).join(' · ')
+        : '';
+      const msg = details
+        || error?.response?.data?.message
+        || (error?.response?.status === 413 ? 'Photos trop volumineuses. Veuillez réduire leur taille.' : '')
+        || (error?.message === 'Network Error' ? 'Erreur de connexion. Vérifiez votre réseau internet.' : '')
+        || 'Erreur lors de la mise à jour';
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

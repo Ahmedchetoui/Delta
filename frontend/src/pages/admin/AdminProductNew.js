@@ -6,6 +6,7 @@ import ProductColorPicker from '../../components/admin/ProductColorPicker';
 import VariantColorSelect from '../../components/admin/VariantColorSelect';
 import ProductImageManager from '../../components/admin/ProductImageManager';
 import ProductPackManager from '../../components/admin/ProductPackManager';
+import { compressImageFile } from '../../utils/imageUtils';
 import {
   getVariantColorNames,
   hasImageForColor,
@@ -56,8 +57,11 @@ const AdminProductNew = () => {
     [form.variants]
   );
 
-  const onAddImageFiles = (files, color = '') => {
-    const entries = files.map((file) => ({
+  const onAddImageFiles = async (files, color = '') => {
+    const compressedFiles = await Promise.all(
+      files.map((file) => compressImageFile(file))
+    );
+    const entries = compressedFiles.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
       color,
@@ -136,11 +140,14 @@ const AdminProductNew = () => {
         JSON.stringify(form.images.map((img) => img.color || ''))
       );
       for (const image of form.images) {
-        if (image.file) fd.append('images', image.file);
+        if (image.file) {
+          const compressed = await compressImageFile(image.file);
+          fd.append('images', compressed);
+        }
       }
 
       await productService.createProduct(fd);
-      toast.success('Produit créé');
+      toast.success('Produit créé avec succès');
       navigate('/admin/products');
     } catch (err) {
       console.error('Erreur création produit:', err);
@@ -150,6 +157,8 @@ const AdminProductNew = () => {
         : '';
       const msg = details
         || err?.response?.data?.message
+        || (err?.response?.status === 413 ? 'Photos trop volumineuses. Veuillez réduire leur taille.' : '')
+        || (err?.message === 'Network Error' ? 'Erreur de connexion. Vérifiez votre réseau internet.' : '')
         || 'Erreur lors de la création du produit';
       toast.error(msg);
     } finally {

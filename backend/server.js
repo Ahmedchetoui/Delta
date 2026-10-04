@@ -137,8 +137,8 @@ app.use('/api/auth/register', registerLimiter);
 app.use(morgan('combined'));
 
 // Middleware pour parser le JSON
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // Servir les fichiers statiques (images)
 // Les fichiers sont enregistrés dans backend/uploads (voir middleware/upload.js)

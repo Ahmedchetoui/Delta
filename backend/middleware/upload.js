@@ -38,13 +38,13 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max (avant traitement sharp, pour éviter DoS)
-    files: 10 // 10 fichiers max
+    fileSize: 10 * 1024 * 1024, // 10MB max
+    files: 15 // 15 fichiers max
   }
 });
 
 // Uploads de base
-const uploadProductImages = upload.array('images', 10);
+const uploadProductImages = upload.array('images', 15);
 const uploadSingleImage = upload.single('image');
 const uploadAvatar = upload.single('avatar');
 const uploadBannerImages = upload.fields([
