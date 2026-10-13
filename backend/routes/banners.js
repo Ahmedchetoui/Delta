@@ -88,8 +88,14 @@ const bannerValidation = [
 
 // @route   GET /api/banners
 // @desc    Obtenir toutes les bannières (admin) ou actives (public)
-// @access  Public pour les actives, Admin pour toutes
-router.get('/', publicCache(300), optionalAuth, async (req, res) => {
+router.get('/', optionalAuth, (req, res, next) => {
+  const { includeInactive = false } = req.query;
+  if (includeInactive === 'true' || (req.user && req.user.role === 'admin')) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    return next();
+  }
+  return publicCache(30)(req, res, next);
+}, async (req, res) => {
   try {
     const { includeInactive = false } = req.query;
     let banners;

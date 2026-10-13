@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { resolveImageUrl, PLACEHOLDER_IMAGE } from '../../utils/imageUtils';
+import { fetchHomeData, invalidateHomeData } from '../../store/slices/homeSlice';
 
 const AdminBanners = () => {
+  const dispatch = useDispatch();
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -34,9 +37,19 @@ const AdminBanners = () => {
     loadBanners();
   }, []);
 
+  const invalidateCatalogCache = () => {
+    try {
+      window.localStorage.removeItem('delta-fashion:home:v1');
+    } catch (_) {}
+    try {
+      dispatch(invalidateHomeData());
+      dispatch(fetchHomeData({ force: true }));
+    } catch (_) {}
+  };
+
   const loadBanners = async () => {
     try {
-      const response = await api.get('/banners?includeInactive=true');
+      const response = await api.get(`/banners?includeInactive=true&_t=${Date.now()}`);
       setBanners(response.data.banners);
     } catch (error) {
       toast.error('Erreur lors du chargement des bannières');
@@ -86,6 +99,7 @@ const AdminBanners = () => {
 
       resetForm();
       loadBanners();
+      invalidateCatalogCache();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Erreur lors de la sauvegarde');
     } finally {
@@ -124,6 +138,7 @@ const AdminBanners = () => {
       await api.delete(`/banners/${id}`);
       toast.success('Bannière supprimée avec succès');
       loadBanners();
+      invalidateCatalogCache();
     } catch (error) {
       toast.error('Erreur lors de la suppression');
     }
@@ -134,6 +149,7 @@ const AdminBanners = () => {
       await api.put(`/banners/${id}/toggle`);
       toast.success('Statut mis à jour');
       loadBanners();
+      invalidateCatalogCache();
     } catch (error) {
       toast.error('Erreur lors de la mise à jour');
     }

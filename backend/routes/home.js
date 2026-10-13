@@ -96,4 +96,11 @@ router.get('/', publicCacheRevalidate(60, 300), async (req, res) => {
   }
 });
 
+function invalidateHomeCache() {
+  homeCache = null;
+  homeCacheExpiresAt = 0;
+}
+
+router.invalidateHomeCache = invalidateHomeCache;
 module.exports = router;
+module.exports.invalidateHomeCache = invalidateHomeCache;

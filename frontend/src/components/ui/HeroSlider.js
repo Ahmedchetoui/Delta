@@ -133,16 +133,18 @@ const HeroSlider = ({ slides = [] }) => {
                   )}
 
                   {/* Subtitle */}
-                  <p
-                    className="text-xl md:text-2xl lg:text-3xl text-white font-medium mb-3"
-                    style={{
-                      fontFamily: "'Montserrat', sans-serif",
-                      letterSpacing: '1px',
-                      textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)',
-                    }}
-                  >
-                    {slide.title}
-                  </p>
+                  {slide.title && slide.title.trim() !== '...' && (
+                    <p
+                      className="text-xl md:text-2xl lg:text-3xl text-white font-medium mb-3"
+                      style={{
+                        fontFamily: "'Montserrat', sans-serif",
+                        letterSpacing: '1px',
+                        textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)',
+                      }}
+                    >
+                      {slide.title}
+                    </p>
+                  )}
 
                   {/* Description */}
                   <p

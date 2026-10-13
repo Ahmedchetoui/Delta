@@ -54,12 +54,7 @@ const Home = () => {
 
   const heroSlides = useMemo(() => {
     return banners
-      .filter((banner) => {
-        // Ignorer les bannières brouillon/test sans image Cloudinary
-        if (!banner.image) return false;
-        if (banner.title === '...' && !/^https?:\/\//i.test(banner.image)) return false;
-        return true;
-      })
+      .filter((banner) => Boolean(banner && banner.image))
       .map((banner) => {
         const isImageCdn = /^https?:\/\//i.test(banner.image || '');
         const isMobileImageCdn = /^https?:\/\//i.test(banner.mobileImage || '');

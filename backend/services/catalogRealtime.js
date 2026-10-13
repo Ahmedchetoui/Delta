@@ -20,6 +20,11 @@ function send(res, event, payload) {
 }
 
 function publishCatalogUpdate(resource) {
+  try {
+    const homeRoute = require('../routes/home');
+    homeRoute.invalidateHomeCache?.();
+  } catch (_) {}
+
   const payload = {
     resource,
     updatedAt: new Date().toISOString(),
